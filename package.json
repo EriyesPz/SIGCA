@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "web": "pnpm --filter web dev",
     "dev": "concurrently \"pnpm --filter web dev\" \"pnpm --filter api dev\"",
-    "storybook": "pnpm --filter web storybook"
+    "storybook": "pnpm --filter web storybook",
+    "api": "pnpm --filter api dev"
   },
   "keywords": [],
   "author": "",
