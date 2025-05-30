@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "web": "pnpm --filter web dev",
-    "dev": "concurrently \"pnpm --filter web dev\" \"pnpm --filter api dev\""
+    "dev": "concurrently \"pnpm --filter web dev\" \"pnpm --filter api dev\"",
+    "storybook": "pnpm --filter web storybook"
   },
   "keywords": [],
   "author": "",
