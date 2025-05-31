@@ -3,7 +3,7 @@ import { Slider } from "./slider";
 import "@/index.css";
 
 const meta: Meta<typeof Slider> = {
-  title: "Slider",
+  title: "Components/Slider",
   component: Slider,
   parameters: {
     layout: "fullscreen",

@@ -57,7 +57,7 @@ const invoices = [
 ];
 
 const meta: Meta<typeof Table> = {
-  title: "Table",
+  title: "Components/Table",
   component: Table,
   tags: ["autodocs"],
   parameters: {

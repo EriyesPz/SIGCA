@@ -3,7 +3,7 @@ import { Checkbox } from "./checkbox";
 import "@/index.css";
 
 const meta: Meta<typeof Checkbox> = {
-  title: "Checkbox",
+  title: "Components/Checkbox",
   component: Checkbox,
   parameters: {
     layout: "fullscreen",

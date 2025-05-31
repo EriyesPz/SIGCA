@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import "@/index.css";
 
 const meta: Meta<typeof Input> = {
-  title: "Input",
+  title: "Components/Input",
   component: Input,
   tags: ["autodocs"],
   decorators: [

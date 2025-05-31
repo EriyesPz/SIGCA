@@ -9,7 +9,7 @@ import {
 import "@/index.css";
 
 const meta: Meta<typeof Carousel> = {
-  title: "Carousel",
+  title: "Components/Carousel",
   component: Carousel,
   parameters: {
     layout: "fullscreen",

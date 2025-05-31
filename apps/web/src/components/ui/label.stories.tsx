@@ -3,7 +3,7 @@ import "@/index.css";
 import { Label } from "@/components/ui/label";
 
 const meta: Meta<typeof Label> = {
-  title: "Label",
+  title: "Components/Label",
   component: Label,
   tags: ["autodocs"],
   decorators: [

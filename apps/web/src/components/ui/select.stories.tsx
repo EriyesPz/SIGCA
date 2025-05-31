@@ -14,7 +14,7 @@ import {
 import "@/index.css";
 
 const meta: Meta<typeof Select> = {
-  title: "Select",
+  title: "Components/Select",
   component: Select,
   tags: ["autodocs"],
   parameters: {

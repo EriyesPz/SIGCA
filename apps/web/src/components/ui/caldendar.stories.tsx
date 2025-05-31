@@ -3,7 +3,7 @@ import { Calendar } from "./calendar";
 import "@/index.css";
 
 const meta: Meta<typeof Calendar> = {
-  title: "Calendar",
+  title: "Components/Calendar",
   component: Calendar,
   parameters: {
     layout: "fullscreen",

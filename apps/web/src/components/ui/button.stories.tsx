@@ -4,7 +4,7 @@ import { CircleAlert, Bell, Trash2 } from "lucide-react"; // Opcional: si usas Ã
 import "@/index.css";
 
 const meta: Meta<typeof Button> = {
-  title: "Button",
+  title: "Components/Button",
   component: Button,
   tags: ["autodocs"],
   argTypes: {
