@@ -9,7 +9,8 @@ import {
   FormMessage,
   FormField,
 } from "./form";
-import { Input } from "@/components/ui/input";
+import { Input } from "./input";
+import { Button } from "./button"
 import "@/index.css";
 
 const meta: Meta = {
@@ -63,12 +64,12 @@ export const Default: Story = {
             )}
           />
 
-          <button
+          <Button
+            variant="default"
             type="submit"
-            className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition"
           >
-            Submit
-          </button>
+            Send
+          </Button>
         </form>
       </Form>
     );
