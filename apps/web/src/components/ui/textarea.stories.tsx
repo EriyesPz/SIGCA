@@ -8,31 +8,37 @@ const meta: Meta<typeof Textarea> = {
   parameters: {
     layout: "fullscreen",
   },
+  decorators: [
+    (Story) => (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-10">
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 export default meta;
 type Story = StoryObj<typeof Textarea>;
+
 export const Default: Story = {
   render: () => (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <Textarea placeholder="Type something..." className="w-96" />
-    </div>
+    <Textarea placeholder="Type something..." className="w-96" />
   ),
 };
+
 export const WithLabel: Story = {
   render: () => (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <label className="block mb-2 text-sm font-medium text-gray-700">
+    <div className="flex flex-col gap-2 w-96">
+      <label htmlFor="textarea-id" className="text-sm font-medium">
         Your Message
       </label>
-      <Textarea placeholder="Type your message here..." className="w-96" />
+      <Textarea id="textarea-id" placeholder="Type your message here..." />
     </div>
   ),
 };
+
 export const Resizable: Story = {
   render: () => (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <Textarea placeholder="Resizable textarea..." className="w-96 resize" />
-    </div>
+    <Textarea placeholder="Resizable textarea..." className="w-96 resize" />
   ),
 };

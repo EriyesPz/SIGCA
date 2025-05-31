@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { StoryObj, Meta } from "@storybook/react";
 import {
   Table,
   TableBody,
@@ -9,8 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from "./table";
+import "@/index.css";
 
-// 💡 Datos de ejemplo (puedes importar de otro archivo si lo deseas)
 const invoices = [
   {
     invoice: "INV001",
@@ -61,8 +61,15 @@ const meta: Meta<typeof Table> = {
   component: Table,
   tags: ["autodocs"],
   parameters: {
-    layout: "centered",
+    layout: "fullscreen",
   },
+  decorators: [
+    (Story) => (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-10">
+        <Story />
+      </div>
+    ),
+  ],
   subcomponents: {
     TableHeader: TableHeader as React.ComponentType<any>,
     TableRow: TableRow as React.ComponentType<any>,
@@ -79,7 +86,7 @@ type Story = StoryObj<typeof Table>;
 
 export const Default: Story = {
   render: () => (
-    <div className="w-full max-w-4xl mx-auto border rounded-md overflow-hidden shadow-sm">
+    <div className="w-full max-w-4xl border rounded-md overflow-hidden shadow-sm">
       <Table>
         <TableCaption>A list of your recent invoices.</TableCaption>
         <TableHeader>

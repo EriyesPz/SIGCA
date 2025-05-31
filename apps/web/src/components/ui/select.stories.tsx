@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { Meta, StoryObj } from "@storybook/react";
 import {
   Select,
   SelectContent,
@@ -20,6 +20,13 @@ const meta: Meta<typeof Select> = {
   parameters: {
     layout: "centered",
   },
+  decorators: [
+    (Story) => (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground p-10">
+        <Story />
+      </div>
+    ),
+  ],
   subcomponents: {
     SelectTrigger: SelectTrigger as React.ComponentType<any>,
     SelectValue: SelectValue as React.ComponentType<any>,

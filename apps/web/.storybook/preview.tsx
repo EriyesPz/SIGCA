@@ -1,5 +1,6 @@
-import type { Preview, Decorator } from "@storybook/react";
+import type { Decorator, Preview } from "@storybook/react";
 import { withThemeByClassName } from "@storybook/addon-themes";
+import "@/index.css";
 
 export const decorators: Decorator[] = [
   withThemeByClassName({
@@ -18,13 +19,6 @@ const preview: Preview = {
         color: /(background|color)$/i,
         date: /Date$/i,
       },
-    },
-    backgrounds: {
-      default: "light",
-      values: [
-        { name: "light", value: "#ffffff" },
-        { name: "dark", value: "#111111" },
-      ],
     },
   },
 };

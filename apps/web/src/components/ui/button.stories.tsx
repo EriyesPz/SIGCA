@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { Meta, StoryObj } from "@storybook/react";
 import { Button } from "./button";
 import { CircleAlert, Bell, Trash2 } from "lucide-react"; // Opcional: si usas íconos
 import "@/index.css";
