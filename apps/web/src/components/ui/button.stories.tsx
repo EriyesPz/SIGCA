@@ -1,52 +1,119 @@
-import type { Meta, StoryObj } from "@storybook/react";
-import { Button } from "@/components/ui/button";
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Button } from "./button";
+import { CircleAlert, Bell, Trash2 } from "lucide-react"; // Opcional: si usas íconos
 import "@/index.css";
 
 const meta: Meta<typeof Button> = {
-    title: "Button",
-    tags: ["autodocs"],
-    component: Button,
+  title: "Button",
+  component: Button,
+  tags: ["autodocs"],
+  argTypes: {
+    variant: {
+      control: "select",
+      options: ["default", "destructive", "outline", "secondary", "ghost", "link"],
+    },
+    size: {
+      control: "select",
+      options: ["default", "sm", "lg", "icon"],
+    },
+    onClick: { action: "clicked" },
+  },
 };
+
 export default meta;
 type Story = StoryObj<typeof Button>;
 
-export const Primary: Story = {
-    render: (args) => <Button {...args}>{args.children}</Button>,
-    args: {
-        children: "Button",
-        variant: "default",
-        size: "default",
-    },
+export const Default: Story = {
+  args: {
+    children: "Default",
+    variant: "default",
+    size: "default",
+  },
 };
 
-export const Variants: Story = {
-    render: (args) => (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <Button {...args} variant="default">Default</Button>
-            <Button {...args} variant="destructive">Destructive</Button>
-            <Button {...args} variant="outline">Outline</Button>
-            <Button {...args} variant="secondary">Secondary</Button>
-            <Button {...args} variant="ghost">Ghost</Button>
-            <Button {...args} variant="link">Link</Button>
-        </div>
+export const Destructive: Story = {
+  args: {
+    children: (
+      <>
+        <Trash2 className="size-4" />
+        Delete
+      </>
     ),
-    args: {
-        size: "default",
-    },
+    variant: "destructive",
+    size: "default",
+  },
 };
 
-export const Sizes: Story = {
-    render: (args) => (
-        <div style={{ display: "flex", gap: 12 }}>
-            <Button {...args} size="sm">Small</Button>
-            <Button {...args} size="default">Default</Button>
-            <Button {...args} size="lg">Large</Button>
-            <Button {...args} size="icon" aria-label="Icon">
-                <svg width="16" height="16" fill="currentColor"><circle cx="8" cy="8" r="7" /></svg>
-            </Button>
-        </div>
+export const Outline: Story = {
+  args: {
+    children: "Outline",
+    variant: "outline",
+    size: "default",
+  },
+};
+
+export const Secondary: Story = {
+  args: {
+    children: "Secondary",
+    variant: "secondary",
+    size: "default",
+  },
+};
+
+export const Ghost: Story = {
+  args: {
+    children: "Ghost",
+    variant: "ghost",
+    size: "default",
+  },
+};
+
+export const Link: Story = {
+  args: {
+    children: "Link",
+    variant: "link",
+    size: "default",
+  },
+};
+
+export const Small: Story = {
+  args: {
+    children: "Small",
+    size: "sm",
+  },
+};
+
+export const Large: Story = {
+  args: {
+    children: "Large",
+    size: "lg",
+  },
+};
+
+export const Icon: Story = {
+  args: {
+    children: <Bell className="size-4" />,
+    size: "icon",
+    "aria-label": "Notification",
+  },
+};
+
+export const WithIconAndText: Story = {
+  args: {
+    children: (
+      <>
+        <CircleAlert className="size-4" />
+        Alert
+      </>
     ),
-    args: {
-        variant: "default",
-    },
+    variant: "outline",
+    size: "default",
+  },
+};
+
+export const Disabled: Story = {
+  args: {
+    children: "Disabled",
+    disabled: true,
+  },
 };

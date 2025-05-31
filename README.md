@@ -29,4 +29,9 @@ _Lanza únicamente la API._
 
 ---
 
+## Ejecutar storybook
+```bash
+pnpm storybook
+```
+
 > _Asegúrate de tener [pnpm](https://pnpm.io/) instalado antes de ejecutar los comandos._
