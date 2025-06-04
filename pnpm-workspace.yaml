@@ -1,3 +1,6 @@
 packages:
   - apps/api
   - apps/web
+catalogs:
+  prisma:
+    prisma: latest
