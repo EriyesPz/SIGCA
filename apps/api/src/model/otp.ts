@@ -1,6 +1,6 @@
 import { db } from "./db";
 
-export const saveOtp = async (email: string, otp: string, expiresAt: Date) => {
+export const saveOTP = async (email: string, otp: string, expiresAt: Date) => {
   return db.emailOTPs.create({
     data: {
       Email: email,
@@ -10,7 +10,7 @@ export const saveOtp = async (email: string, otp: string, expiresAt: Date) => {
   });
 };
 
-export const validateOtp = async (email: string, otp: string) => {
+export const validateOTP = async (email: string, otp: string) => {
   return db.emailOTPs.findFirst({
     where: {
       Email: email,
@@ -24,9 +24,9 @@ export const validateOtp = async (email: string, otp: string) => {
   });
 };
 
-export const markOtpAsUsed = async (id: string) => {
-    return db.emailOTPs.update({
-        where: {Id: id},
-        data: {Used: true}
-    })
-}
+export const markOTPAsUsed = async (id: string) => {
+  return db.emailOTPs.update({
+    where: { Id: id },
+    data: { Used: true },
+  });
+};

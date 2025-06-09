@@ -15,13 +15,16 @@ datasource db {
 }
 
 model Users {
-  Id        String      @id @default(uuid())
-  Email     String      @unique
-  IsActive  Boolean     @default(true)
-  CreatedAt DateTime    @default(now())
+  Id        String   @id @default(uuid())
+  Email     String   @unique
+  User      String
+  Password  String?  // <-- nueva columna
+  IsActive  Boolean  @default(true)
+  CreatedAt DateTime @default(now())
   roles     UserRoles[]
   sessions  Sessions[]
 }
+
 
 model EmailOTPs {
   Id         String    @id @default(uuid())

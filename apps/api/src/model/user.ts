@@ -6,8 +6,16 @@ export async function findUserByEmail(email: string) {
   });
 }
 
-export async function createUser(email: string) {
+export async function createUser(email: string, userName: string, password: string) {
   return db.users.create({
-    data: { Email: email },
+    data: { Email: email, User: userName, Password: password },
+  });
+}
+
+
+export async function updateUserPassword(email: string, newPassword: string) {
+  return db.users.update({
+    where: { Email: email },
+    data: { Password: newPassword },
   });
 }

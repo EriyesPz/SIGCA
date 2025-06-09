@@ -9,8 +9,34 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ModeToggle } from "@/components/ui/mode-toggle";
+import React from "react";
+import { useLoginUser } from "@/lib/auth";
+import type { LoginResponse, LoginInput } from "@/lib/types";
+import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 
 export const Login = () => {
+  const navigate = useNavigate();
+  const { mutate, isPending } = useLoginUser();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginInput>();
+
+  const onSubmit = (formData: LoginInput) => {
+    mutate(formData, {
+      onSuccess: (response: LoginResponse) => {
+        console.log("Login successful, token:", response.token);
+        navigate("/");
+      },
+      onError: (error: Error) => {
+        console.error("Login failed:", error.message);
+      },
+    });
+  };
+
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4">
       {/* Toggle en la esquina superior derecha */}
@@ -28,15 +54,22 @@ export const Login = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="tu@ejemplo.com"
-                required
+                autoComplete="email"
+                disabled={isPending}
+                {...register("Email", {
+                  required: "El email es obligatorio",
+                })}
               />
+              {errors.Email && (
+                <p className="text-red-500 text-xs mt-1">{errors.Email.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -52,11 +85,24 @@ export const Login = () => {
                 id="password"
                 type="password"
                 placeholder="••••••••"
-                required
+                autoComplete="current-password"
+                disabled={isPending}
+                {...register("Password", {
+                  required: "La contraseña es obligatoria",
+                  pattern: {
+                    value:
+                      /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}[\]:;<>,.?~\\/-]).{8,}$/,
+                    message:
+                      "Debe tener 8+ caracteres, una mayúscula, un número y un símbolo especial",
+                  },
+                })}
               />
+              {errors.Password && (
+                <p className="text-red-500 text-xs mt-1">{errors.Password.message}</p>
+              )}
             </div>
-            <Button type="submit" className="w-full">
-              Iniciar Sesión
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending ? "Ingresando..." : "Iniciar Sesión"}
             </Button>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
