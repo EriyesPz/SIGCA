@@ -9,7 +9,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ModeToggle } from "@/components/ui/mode-toggle";
-import { useForm } from "react-hook-form";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+  InputOTPSeparator
+} from "@/components/ui/input-otp";
+import { useForm, Controller } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { getApiUrl } from "@/lib/client";
@@ -24,6 +30,7 @@ export const ForgotPasswordVerify = () => {
   const navigate = useNavigate();
 
   const {
+    control,
     register,
     handleSubmit,
     formState: { errors },
@@ -66,7 +73,7 @@ export const ForgotPasswordVerify = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
-            Verificar OTP
+            Cambiar contraseña
           </CardTitle>
           <CardDescription className="text-center">
             Ingresa el código recibido por correo y establece una nueva contraseña
@@ -88,19 +95,34 @@ export const ForgotPasswordVerify = () => {
                 <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
               )}
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="otp">Código OTP</Label>
-              <Input
-                id="otp"
-                type="text"
-                placeholder="123456"
-                disabled={isPending}
-                {...register("otp", { required: "El OTP es obligatorio" })}
+              <Controller
+                name="otp"
+                control={control}
+                rules={{ required: "El OTP es obligatorio" }}
+                render={({ field }) => (
+                  <InputOTP maxLength={6} {...field}>
+                    <InputOTPGroup>
+                      {[...Array(3)].map((_, index) => (
+                        <InputOTPSlot key={index} index={index} />
+                      ))}
+                    </InputOTPGroup>
+                    <InputOTPSeparator />
+                    <InputOTPGroup>
+                      {[...Array(3)].map((_, index) => (
+                        <InputOTPSlot key={index + 3} index={index + 3} />
+                      ))}
+                    </InputOTPGroup>
+                  </InputOTP>
+                )}
               />
               {errors.otp && (
                 <p className="text-red-500 text-xs mt-1">{errors.otp.message}</p>
               )}
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="newPassword">Nueva Contraseña</Label>
               <Input
@@ -120,9 +142,12 @@ export const ForgotPasswordVerify = () => {
                 })}
               />
               {errors.newPassword && (
-                <p className="text-red-500 text-xs mt-1">{errors.newPassword.message}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.newPassword.message}
+                </p>
               )}
             </div>
+
             <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? "Verificando..." : "Restablecer Contraseña"}
             </Button>
