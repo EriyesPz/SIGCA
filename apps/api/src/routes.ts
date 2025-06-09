@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import {
-  requestOtp,
   login,
   register,
   sendPasswordResetOtp,
   resetPasswordWithOtp
 } from './controllers/auth';
+import {} from './middlewares/protected';
 
 const router = Router();
 

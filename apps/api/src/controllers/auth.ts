@@ -19,7 +19,7 @@ export async function requestOtp(req: Request, res: Response): Promise<void> {
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
   await saveOTP(email, otp, expiresAt);
-  await sendOtpEmail(email, otp); // ✅ envío real
+  await sendOtpEmail(email, otp);
 
   res.json({ message: "OTP enviado al correo" });
   return;
@@ -78,7 +78,19 @@ export async function login(req: Request, res: Response): Promise<void> {
     new Date(Date.now() + 3600 * 1000)
   );
 
-  res.json({ token });
+  res.cookie("token", token, {
+    httpOnly: false,
+    secure: true,
+    sameSite: "lax",
+    maxAge: 3600 * 1000,
+  });
+  
+  res.json({
+    message: "Inicio de sesión exitoso",
+    userId: user.Id,
+    token,
+  });
+
   return;
 }
 

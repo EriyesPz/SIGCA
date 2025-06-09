@@ -18,6 +18,7 @@ const createUser = async (
       email: user.Email,
       password: user.Password,
     }),
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -35,6 +36,7 @@ const loginUser = async (user: LoginInput): Promise<LoginResponse> => {
       email: user.Email,
       password: user.Password,
     }),
+    credentials: "include",
   })
   if (!response.ok) {
     throw new Error(`Error logging in: ${response.statusText}`);

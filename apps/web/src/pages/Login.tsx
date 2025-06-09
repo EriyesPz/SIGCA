@@ -9,21 +9,29 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ModeToggle } from "@/components/ui/mode-toggle";
-import React from "react";
 import { useLoginUser } from "@/lib/auth";
 import type { LoginResponse, LoginInput } from "@/lib/types";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { useCookies } from "react-cookie";
+import { useEffect } from "react";
 
 export const Login = () => {
   const navigate = useNavigate();
   const { mutate, isPending } = useLoginUser();
+  const [cookies] = useCookies(["token"]);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginInput>();
+
+    useEffect(() => {
+    if (cookies.token) {
+      navigate("/");
+    }
+  }, [cookies.token, navigate]);
 
   const onSubmit = (formData: LoginInput) => {
     mutate(formData, {
@@ -39,11 +47,9 @@ export const Login = () => {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4">
-      {/* Toggle en la esquina superior derecha */}
       <div className="absolute top-4 right-4">
         <ModeToggle />
       </div>
-
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
