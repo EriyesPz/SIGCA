@@ -51,6 +51,12 @@ export const AppLayout = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => navigate("/almacen")}>
+                  <LayoutDashboard className="mr-2" />
+                  Almacen
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => navigate("/users")}>
                   <Users className="mr-2" />
                   Usuarios

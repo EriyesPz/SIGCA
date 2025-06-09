@@ -5,7 +5,8 @@ import { Home } from "./Home";
 import { Register } from "./Register";
 import { ForgotPasswordSendOtp } from "./Forgot-Password";
 import { ForgotPasswordVerify } from "./ForgotPassVerify";
-
+import { Warehouse } from "./Warehouse"
+ 
 export const router = createBrowserRouter([
   {
     path: "/login",
@@ -31,6 +32,10 @@ export const router = createBrowserRouter([
         path: "",
         element: <Home />,
       },
+      {
+        path: "almacen",
+        element: <Warehouse />,
+      }
     ],
   },
 ]);
