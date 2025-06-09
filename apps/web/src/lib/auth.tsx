@@ -44,6 +44,19 @@ const loginUser = async (user: LoginInput): Promise<LoginResponse> => {
   return await response.json();
 };
 
+const sendOtpEmail = async (email: string): Promise<void> => {
+  const response = await fetch(`${getApiUrl()}/forgot-password/send-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+    credentials: "include",
+  });
+  if (!response.ok) {
+    throw new Error(`Error sending OTP email: ${response.statusText}`);
+  }
+  return await response.json();
+}
+
 export const useCreateUser = (): UseMutationResult<
   UserCreatedResponse,
   Error,
@@ -63,3 +76,9 @@ export const useLoginUser = (): UseMutationResult<
     mutationFn: loginUser,
   });
 }
+
+export const useSendOtpEmail = (): UseMutationResult<void, Error, string> => {
+  return useMutation({
+    mutationFn: sendOtpEmail,
+  });
+};
