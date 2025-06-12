@@ -10,8 +10,10 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
   SidebarInset,
-  SidebarTrigger
+  SidebarTrigger,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import {
   Home as HomeIcon,
@@ -19,12 +21,40 @@ import {
   Users,
   BarChart3,
   Activity,
+  User,
+  CreditCard,
+  Bell,
+  LogOut,
+  ChevronUp,
 } from "lucide-react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useCookies } from "react-cookie";
+
 
 export const AppLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [cookies] = useCookies(["userName", "email"]);
+
+  const user = {
+  name: cookies.userName || "Invitado",
+  email: cookies.email || "sin-correo",
+  initials:
+    cookies.userName
+      ?.split(" ")
+      .map((n: string) => n[0])
+      .join("")
+      .toUpperCase() || "U",
+  avatar: "",
+};
 
   return (
     <SidebarProvider>
@@ -76,10 +106,70 @@ export const AppLayout = () => {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
-          <SidebarSeparator />
+          {/* <SidebarSeparator /> */}
         </SidebarContent>
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton
+                    size="lg"
+                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  >
+                    <Avatar className="h-8 w-8 rounded-lg">
+                      <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                      <AvatarFallback className="rounded-lg">{user.initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                      <span className="truncate font-semibold">{user.name}</span>
+                      <span className="truncate text-xs">{user.email}</span>
+                    </div>
+                    <ChevronUp className="ml-auto size-4" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                  side="bottom"
+                  align="end"
+                  sideOffset={4}
+                >
+                  <DropdownMenuLabel className="p-0 font-normal">
+                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                      <Avatar className="h-8 w-8 rounded-lg">
+                        <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                        <AvatarFallback className="rounded-lg">{user.initials}</AvatarFallback>
+                      </Avatar>
+                      <div className="grid flex-1 text-left text-sm leading-tight">
+                        <span className="truncate font-semibold">{user.name}</span>
+                        <span className="truncate text-xs">{user.email}</span>
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/account")}>
+                    <User />
+                    Cuenta
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/billing")}>
+                    <CreditCard />
+                    Facturación
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/notifications")}>
+                    <Bell />
+                    Notificaciones
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={()=> {alert("Log out")}}>
+                    <LogOut />
+                    Cerrar sesión
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
       </Sidebar>
-
       <SidebarInset>
         <div className="flex items-center justify-between px-4 py-2 border-b">
           <SidebarTrigger />

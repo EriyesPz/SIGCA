@@ -19,7 +19,7 @@ import { useEffect } from "react";
 export const Login = () => {
   const navigate = useNavigate();
   const { mutate, isPending } = useLoginUser();
-  const [cookies] = useCookies(["token"]);
+  const [cookies, setCookies] = useCookies(["token", "userName", "email"]);
 
   const {
     register,
@@ -36,7 +36,10 @@ export const Login = () => {
   const onSubmit = (formData: LoginInput) => {
     mutate(formData, {
       onSuccess: (response: LoginResponse) => {
-        console.log("Login successful, token:", response.token);
+        setCookies("token", response.token, { path: "/" });
+        setCookies("userName", response.userName, { path: "/" });
+        setCookies("email", response.email, { path: "/" });
+        console.log("Login successful, token:", response.token + " userId:", response.userName);
         navigate("/");
       },
       onError: (error: Error) => {

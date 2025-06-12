@@ -88,6 +88,8 @@ export async function login(req: Request, res: Response): Promise<void> {
   res.json({
     message: "Inicio de sesión exitoso",
     userId: user.Id,
+    userName: user.User,
+    email: user.Email,
     token,
   });
 
