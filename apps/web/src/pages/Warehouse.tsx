@@ -313,7 +313,7 @@ export const Warehouse = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
               <Package className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">SIGCA - Mapa Visual del Almacén</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mapa Visual del Almacén</h1>
             </div>
             <div className="flex items-center gap-4">
               <Badge variant="outline" className="text-sm">

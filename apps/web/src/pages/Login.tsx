@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -6,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ModeToggle } from "@/components/ui/mode-toggle";
@@ -15,11 +17,13 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useCookies } from "react-cookie";
 import { useEffect } from "react";
+import { AlertCircle } from "lucide-react";
 
 export const Login = () => {
   const navigate = useNavigate();
   const { mutate, isPending } = useLoginUser();
   const [cookies, setCookies] = useCookies(["token", "userName", "email"]);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const {
     register,
@@ -27,23 +31,31 @@ export const Login = () => {
     formState: { errors },
   } = useForm<LoginInput>();
 
-    useEffect(() => {
+  useEffect(() => {
     if (cookies.token) {
       navigate("/");
     }
   }, [cookies.token, navigate]);
 
   const onSubmit = (formData: LoginInput) => {
+    setLoginError(null);
     mutate(formData, {
       onSuccess: (response: LoginResponse) => {
         setCookies("token", response.token, { path: "/" });
         setCookies("userName", response.userName, { path: "/" });
         setCookies("email", response.email, { path: "/" });
-        console.log("Login successful, token:", response.token + " userId:", response.userName);
+        console.log(
+          "Login successful, token:",
+          response.token + " userId:",
+          response.userName
+        );
         navigate("/");
       },
       onError: (error: Error) => {
         console.error("Login failed:", error.message);
+        setLoginError(
+          "Credenciales incorrectas. Por favor, inténtalo de nuevo."
+        );
       },
     });
   };
@@ -77,7 +89,9 @@ export const Login = () => {
                 })}
               />
               {errors.Email && (
-                <p className="text-red-500 text-xs mt-1">{errors.Email.message}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.Email.message}
+                </p>
               )}
             </div>
             <div className="space-y-2">
@@ -107,9 +121,18 @@ export const Login = () => {
                 })}
               />
               {errors.Password && (
-                <p className="text-red-500 text-xs mt-1">{errors.Password.message}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.Password.message}
+                </p>
               )}
             </div>
+            {loginError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error al iniciar sesión</AlertTitle>
+                <AlertDescription>{loginError}</AlertDescription>
+              </Alert>
+            )}
             <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? "Ingresando..." : "Iniciar Sesión"}
             </Button>
