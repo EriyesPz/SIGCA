@@ -7,8 +7,13 @@ import { ForgotPasswordSendOtp } from "./Forgot-Password";
 import { ForgotPasswordVerify } from "./ForgotPassVerify";
 import { Warehouse } from "./Warehouse";
 import { ProtectedRoute } from "./Protected";
+import { NotFound } from "./Not-Found";
 
 export const router = createBrowserRouter([
+  {
+    path: "*",
+    element: <NotFound />,
+  },
   {
     path: "/login",
     element: <Login />,
