@@ -9,7 +9,7 @@ export const QuickStats = ({ filteredData }: QuickStatsProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Quick Stats</CardTitle>
+        <CardTitle>Estadisticas rápidas</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {Object.entries(filteredData).map(([warehouseId, warehouse]) => {

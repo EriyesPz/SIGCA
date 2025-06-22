@@ -133,10 +133,10 @@ export const WarehouseLocationTracker = () => {
               >
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="all" className="text-xs">
-                    All Locations
+                    Todas las Ubicaciones
                   </TabsTrigger>
                   <TabsTrigger value="by_warehouse" className="text-xs">
-                    By Warehouse
+                    Ubicaciones por Almacen
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
