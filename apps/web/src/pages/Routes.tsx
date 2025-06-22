@@ -8,6 +8,7 @@ import { ForgotPasswordVerify } from "./ForgotPassVerify";
 import { Warehouse } from "./Warehouse";
 import { ProtectedRoute } from "./Protected";
 import { NotFound } from "./Not-Found";
+import { WarehouseLocationTracker } from "./Tracker";
 
 export const router = createBrowserRouter([
   {
@@ -42,6 +43,10 @@ export const router = createBrowserRouter([
         path: "almacen",
         element: <Warehouse />,
       },
+      {
+        path: "tracker",
+        element: <WarehouseLocationTracker />
+      }
     ],
   },
 ]);

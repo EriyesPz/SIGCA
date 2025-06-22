@@ -35,9 +35,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import { useCookies } from "react-cookie";
-
 
 export const AppLayout = () => {
   const navigate = useNavigate();
@@ -45,16 +44,16 @@ export const AppLayout = () => {
   const [cookies] = useCookies(["userName", "email"]);
 
   const user = {
-  name: cookies.userName || "Invitado",
-  email: cookies.email || "sin-correo",
-  initials:
-    cookies.userName
-      ?.split(" ")
-      .map((n: string) => n[0])
-      .join("")
-      .toUpperCase() || "U",
-  avatar: "",
-};
+    name: cookies.userName || "Invitado",
+    email: cookies.email || "sin-correo",
+    initials:
+      cookies.userName
+        ?.split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase() || "U",
+    avatar: "",
+  };
 
   return (
     <SidebarProvider>
@@ -84,6 +83,12 @@ export const AppLayout = () => {
                 <SidebarMenuButton onClick={() => navigate("/almacen")}>
                   <LayoutDashboard className="mr-2" />
                   Almacen
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => navigate("/tracker")}>
+                  <LayoutDashboard className="mr-2" />
+                  Tracker
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
@@ -118,11 +123,18 @@ export const AppLayout = () => {
                     className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                   >
                     <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-                      <AvatarFallback className="rounded-lg">{user.initials}</AvatarFallback>
+                      <AvatarImage
+                        src={user.avatar || "/placeholder.svg"}
+                        alt={user.name}
+                      />
+                      <AvatarFallback className="rounded-lg">
+                        {user.initials}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">{user.name}</span>
+                      <span className="truncate font-semibold">
+                        {user.name}
+                      </span>
                       <span className="truncate text-xs">{user.email}</span>
                     </div>
                     <ChevronUp className="ml-auto size-4" />
@@ -137,11 +149,18 @@ export const AppLayout = () => {
                   <DropdownMenuLabel className="p-0 font-normal">
                     <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                       <Avatar className="h-8 w-8 rounded-lg">
-                        <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-                        <AvatarFallback className="rounded-lg">{user.initials}</AvatarFallback>
+                        <AvatarImage
+                          src={user.avatar || "/placeholder.svg"}
+                          alt={user.name}
+                        />
+                        <AvatarFallback className="rounded-lg">
+                          {user.initials}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="grid flex-1 text-left text-sm leading-tight">
-                        <span className="truncate font-semibold">{user.name}</span>
+                        <span className="truncate font-semibold">
+                          {user.name}
+                        </span>
                         <span className="truncate text-xs">{user.email}</span>
                       </div>
                     </div>
@@ -160,7 +179,11 @@ export const AppLayout = () => {
                     Notificaciones
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={()=> {alert("Log out")}}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      alert("Log out");
+                    }}
+                  >
                     <LogOut />
                     Cerrar sesión
                   </DropdownMenuItem>
