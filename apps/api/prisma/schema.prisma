@@ -4,8 +4,8 @@ generator client {
 }
 
 datasource db {
-  provider          = "postgresql"
-  url               = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Alerts {
@@ -87,7 +87,7 @@ model CargoStatusHistory {
 }
 
 model Categories {
-  Id String @id @default(uuid())
+  Id        String   @id @default(uuid())
   Name      String
   Icon      String?
   Color     String?
@@ -124,11 +124,11 @@ model Permissions {
 }
 
 model RackColumns {
-  Id           String     @id
-  LevelId      String
-  ColumnNumber Int
-  Cargo        Cargo[]
-  RackLevels   RackLevels @relation(fields: [LevelId], references: [Id], onDelete: Cascade)
+  Id         String     @id
+  LevelId    String
+  ColumnCode String     @db.VarChar(3)
+  Cargo      Cargo[]
+  RackLevels RackLevels @relation(fields: [LevelId], references: [Id], onDelete: Cascade)
 }
 
 model RackLevels {
@@ -147,6 +147,7 @@ model Racks {
   Capacity    Int
   CreatedAt   DateTime     @default(now())
   CreatedBy   String?
+  Code        String?      @db.VarChar(5)
   Cargo       Cargo[]
   RackLevels  RackLevels[]
   Users       Users?       @relation(fields: [CreatedBy], references: [Id])
@@ -204,7 +205,7 @@ model UserRoles {
 }
 
 model Users {
-  Id        String   @id @default(uuid()) 
+  Id                   String                 @id @default(uuid())
   Email                String                 @unique
   User                 String
   Password             String?
@@ -225,9 +226,8 @@ model Users {
 }
 
 model Warehouse {
-  Id String @id @default(uuid())
+  Id                                             String      @id @default(uuid())
   Name                                           String
-  Location                                       String?
   IsActive                                       Boolean     @default(true)
   CreatedAt                                      DateTime    @default(now())
   CreatedBy                                      String?
