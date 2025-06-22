@@ -9,11 +9,12 @@ import {
   StatusLegend,
   QuickStats,
   LocationDetailsModal,
-  RackLocationsModal
+  RackLocationsModal,
+  LocationsTable
 } from "@/components/warehouse";
-import { useLocations } from "@/lib/locations";
 import { buildWarehouseTree } from "@/utils/warehouse";
 import type { Location, Rack, Warehouse } from "@/lib/types";
+import { useLocations } from "@/lib/locations";
 
 export const WarehouseLocationTracker = () => {
   const { data = [], isLoading, error } = useLocations();
@@ -149,28 +150,49 @@ export const WarehouseLocationTracker = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Filter Panel */}
-          <div className="lg:w-80 space-y-6">
-            <FilterPanel
-              warehouseLocations={warehouseLocations}
-              selectedWarehouse={selectedWarehouse}
-              selectedStatus={selectedStatus}
-              searchTerm={searchTerm}
-              onWarehouseChange={setSelectedWarehouse}
-              onStatusChange={setSelectedStatus}
-              onSearchChange={setSearchTerm}
-              onResetFilters={resetFilters}
-            />
+          {/* Filter Panel - Only show for by_warehouse view */}
+          {viewMode === "by_warehouse" && (
+            <div className="lg:w-80 space-y-6">
+              <FilterPanel
+                warehouseLocations={warehouseLocations}
+                selectedWarehouse={selectedWarehouse}
+                selectedStatus={selectedStatus}
+                searchTerm={searchTerm}
+                onWarehouseChange={setSelectedWarehouse}
+                onStatusChange={setSelectedStatus}
+                onSearchChange={setSearchTerm}
+                onResetFilters={resetFilters}
+              />
 
-            <StatusLegend />
+              <StatusLegend />
 
-            <QuickStats filteredData={filteredData} />
-          </div>
+              <QuickStats filteredData={filteredData} />
+            </div>
+          )}
 
           {/* Main Content Area */}
           <div className="flex-1">
             <div className="space-y-8">
-              {viewMode === "by_warehouse" ? (
+              {viewMode === "all" ? (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <Grid3X3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    <div>
+                      <h2 className="text-2xl font-bold">
+                        All Warehouse Locations
+                      </h2>
+                      <p className="text-muted-foreground">
+                        Complete list of all locations across warehouses
+                      </p>
+                    </div>
+                  </div>
+
+                  <LocationsTable
+                    warehouseLocations={warehouseLocations}
+                    onLocationClick={handleLocationClick}
+                  />
+                </div>
+              ) : (
                 Object.entries(filteredData).map(([warehouseId, warehouse]) => (
                   <div key={warehouseId} className="space-y-6">
                     <div className="flex items-center gap-3">
@@ -197,36 +219,6 @@ export const WarehouseLocationTracker = () => {
                     </div>
                   </div>
                 ))
-              ) : (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3">
-                    <Grid3X3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                    <div>
-                      <h2 className="text-2xl font-bold">
-                        All Warehouse Locations
-                      </h2>
-                      <p className="text-muted-foreground">
-                        Combined view of all racks across warehouses
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                    {Object.entries(filteredData).flatMap(
-                      ([warehouseId, warehouse]) =>
-                        Object.values(warehouse.racks).map((rack) => (
-                          <RackCard
-                            key={rack.id}
-                            rack={rack}
-                            warehouse={warehouse}
-                            viewMode={viewMode}
-                            onRackClick={handleRackClick}
-                            onLocationClick={handleLocationClick}
-                          />
-                        ))
-                    )}
-                  </div>
-                </div>
               )}
             </div>
           </div>
