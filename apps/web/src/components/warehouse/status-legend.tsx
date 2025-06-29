@@ -5,7 +5,7 @@ export const StatusLegend = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Status Legend</CardTitle>
+        <CardTitle>Estados</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {Object.entries(statusConfig).map(([key, config]) => (

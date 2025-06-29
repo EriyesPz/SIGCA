@@ -105,7 +105,7 @@ export const LocationsTable = ({ warehouseLocations, onLocationClick }: Location
         <div className="flex items-center gap-2">
           <Package className="w-5 h-5 text-blue-600" />
           <span className="font-medium">
-            {sortedLocations.length} Location{sortedLocations.length !== 1 ? "s" : ""}
+            {sortedLocations.length} Ubicacion{sortedLocations.length !== 1 ? "s" : ""}
           </span>
         </div>
 
@@ -113,29 +113,40 @@ export const LocationsTable = ({ warehouseLocations, onLocationClick }: Location
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Search locations..."
+              placeholder="Buscar ubicaciones..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 w-full sm:w-64"
             />
           </div>
 
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="all">Estados</SelectItem>
               {Object.entries(statusConfig).map(([key, config]) => (
-                <SelectItem key={key} value={key}>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${config.color}`} />
-                    {config.label}
-                  </div>
-                </SelectItem>
+              <SelectItem key={key} value={key}>
+                <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${config.color}`} />
+                {key === "available"
+                  ? "Disponible"
+                  : key === "occupied"
+                  ? "Ocupado"
+                  : key === "reserved"
+                  ? "Reservado"
+                  : key === "In Transit"
+                  ? "En tránsito"
+                  : key === "maintenance"
+                  ? "En mantenimiento"
+                  : config.label
+                }
+                </div>
+              </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+            </Select>
         </div>
       </div>
 

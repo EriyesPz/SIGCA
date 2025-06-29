@@ -55,3 +55,48 @@ export interface Warehouse {
 export interface WarehouseData {
   [key: string]: Warehouse
 }
+
+export interface CargoFormData {
+  trackingCode: string
+  description: string
+  status: "en tránsito" | "almacenado" | "revisión" | "liberado" | "entregado"
+  weightKg: number
+  quantity: number
+  entryDate: string
+  isPerishable: boolean
+  warehouseId: string
+  rackId: string
+  level: number
+  column: number
+  documents: DocumentUpload[]
+  createdBy: string
+  createdAt?: string
+}
+
+export interface DocumentUpload {
+  id: string
+  file: File
+  type: "invoice" | "certificate" | "photo" | "other"
+  metadata: Record<string, string>
+  preview?: string
+}
+
+export interface WarehouseLocation {
+  id: string
+  name: string
+  racks: Rack[]
+}
+
+export interface Rack {
+  id: string
+  name: string
+  levels: number
+  columns: number
+  occupiedPositions: Set<string>
+}
+
+export interface Position {
+  level: number
+  column: number
+  isOccupied: boolean
+}

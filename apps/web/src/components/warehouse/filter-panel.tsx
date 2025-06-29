@@ -39,18 +39,18 @@ export const FilterPanel = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Filter className="w-5 h-5" />
-          Filters
+          Filtros
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="warehouse">Warehouse</Label>
+          <Label htmlFor="warehouse">Almacen</Label>
           <Select value={selectedWarehouse} onValueChange={onWarehouseChange}>
             <SelectTrigger>
               <SelectValue placeholder="Select warehouse" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Warehouses</SelectItem>
+              <SelectItem value="all">Todos los Almacenes</SelectItem>
               {Object.entries(warehouseLocations).map(([id, warehouse]) => (
                 <SelectItem key={id} value={id}>
                   <div className="flex items-center gap-2">
@@ -64,13 +64,13 @@ export const FilterPanel = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
+          <Label htmlFor="status">Estados</Label>
           <Select value={selectedStatus} onValueChange={onStatusChange}>
             <SelectTrigger>
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="all">Todos los Estados</SelectItem>
               {Object.entries(statusConfig).map(([key, config]) => (
                 <SelectItem key={key} value={key}>
                   <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ export const FilterPanel = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="search">Tracking Code</Label>
+          <Label htmlFor="search">Codigo de tracking</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
@@ -99,7 +99,7 @@ export const FilterPanel = ({
 
         <Button variant="outline" onClick={onResetFilters} className="w-full">
           <RotateCcw className="w-4 h-4 mr-2" />
-          Reset Filters
+          Limpiar
         </Button>
       </CardContent>
     </Card>

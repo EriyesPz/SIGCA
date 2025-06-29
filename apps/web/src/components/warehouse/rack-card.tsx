@@ -45,7 +45,7 @@ export const RackCard = ({ rack, warehouse, viewMode, onRackClick, onLocationCli
               )}
             </div>
             <Badge variant="outline" className="text-xs">
-              {occupancyRate}% Full
+              {occupancyRate}% Lleno
             </Badge>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -54,7 +54,7 @@ export const RackCard = ({ rack, warehouse, viewMode, onRackClick, onLocationCli
               {rack.levels}L × {rack.columns}C
             </span>
             <span>
-              {occupiedLocations}/{totalLocations} Occupied
+              {occupiedLocations}/{totalLocations} Ocupado
             </span>
           </div>
         </CardHeader>
@@ -63,7 +63,7 @@ export const RackCard = ({ rack, warehouse, viewMode, onRackClick, onLocationCli
             .sort((a, b) => Number.parseInt(b) - Number.parseInt(a))
             .map((level) => (
               <div key={level} className="space-y-2">
-                <div className="text-xs font-medium text-muted-foreground">Level {level}</div>
+                <div className="text-xs font-medium text-muted-foreground">Nivel {level}</div>
                 <div
                   className="grid gap-2"
                   style={{
