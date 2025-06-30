@@ -1,4 +1,4 @@
-import { getAllLocations, getLocationsByWarehouse } from "../model/locations";
+import { getAllLocations, getLocationsByWarehouse, getLocationsByRack } from "../model/locations";
 import { Request, Response } from "express";
 
 export const getLocations = async (
@@ -48,3 +48,29 @@ export const getLocationsWarehouse = async (
     return;
   }
 };
+
+export const getLocationsRack = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { rack } = req.params;
+    if (typeof rack !== "string") {
+      res
+        .status(400)
+        .json({
+          error: "Los parámetros 'warehouse' y 'rack' son requeridos y deben ser cadenas",
+        });
+      return;
+    }
+
+    const locations = await getLocationsByRack(rack);
+    if (!locations || locations.length === 0) {
+      res.status(404).json({ message: "No locations found for this rack" });
+      return;
+    }
+    res.status(200).json(locations);
+    return;
+  } catch (error) {
+    console.error(`Error al obtener ubicaciones por el rack ${error}`);
+    res.status(500).json({ error: "Internal server error" });
+    return;
+  }
+}
