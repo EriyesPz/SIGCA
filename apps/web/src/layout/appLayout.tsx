@@ -26,6 +26,7 @@ import {
   Bell,
   LogOut,
   ChevronUp,
+  Package,
 } from "lucide-react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -81,7 +82,7 @@ export const AppLayout = () => {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => navigate("/register-cargo")}>
-                  <LayoutDashboard className="mr-2" />
+                  <Package className="mr-2" />
                   Registrar
                 </SidebarMenuButton>
               </SidebarMenuItem>
