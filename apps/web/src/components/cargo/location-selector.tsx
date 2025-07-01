@@ -10,21 +10,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { MapPin, Package, Lightbulb } from "lucide-react";
-import { warehouses } from "@/data/warehouse-data";
-import type { WarehouseLocation, Rack, Position } from "@/lib/types";
+import { useWarehouses } from "@/lib/warehouse";
+import { useRacksByWarehouse } from "@/lib/rack";
+import { useLocationsByRack } from "@/lib/locations";
+import type { Position, WarehouseLocation } from "@/lib/types";
 
 interface LocationSelectorProps {
   warehouseId: string;
   rackId: string;
   level: number;
-  column: number;
+  column: string;
   onLocationChange: (
     warehouseId: string,
     rackId: string,
     level: number,
-    column: number
+    column: string
   ) => void;
 }
 
@@ -35,53 +36,37 @@ export const LocationSelector = ({
   column,
   onLocationChange,
 }: LocationSelectorProps) => {
-  const [selectedWarehouse, setSelectedWarehouse] =
-    useState<WarehouseLocation | null>(null);
-  const [selectedRack, setSelectedRack] = useState<Rack | null>(null);
   const [availablePositions, setAvailablePositions] = useState<Position[]>([]);
   const [suggestedPosition, setSuggestedPosition] = useState<Position | null>(
     null
   );
 
-  useEffect(() => {
-    if (warehouseId) {
-      const warehouse = warehouses.find((w) => w.id === warehouseId);
-      setSelectedWarehouse(warehouse || null);
-    }
-  }, [warehouseId]);
+  const { data: warehousesData = [], isLoading } = useWarehouses();
+  const { data: racksData = [], isLoading: isLoadingRacks } =
+    useRacksByWarehouse(warehouseId);
+  const { data: locationsData = [] } = useLocationsByRack(rackId);
+
+  const selectedWarehouse = warehousesData.find((w) => w.Id === warehouseId);
+  const selectedRack = racksData.find((r) => r.Id === rackId);
 
   useEffect(() => {
-    if (selectedWarehouse && rackId) {
-      const rack = selectedWarehouse.racks.find((r) => r.id === rackId);
-      setSelectedRack(rack || null);
-
-      if (rack) {
-        // Generate available positions
-        const positions: Position[] = [];
-        for (let l = 1; l <= rack.levels; l++) {
-          for (let c = 1; c <= rack.columns; c++) {
-            positions.push({
-              level: l,
-              column: c,
-              isOccupied: rack.occupiedPositions.has(`${l}-${c}`),
-            });
-          }
-        }
-        setAvailablePositions(positions);
-
-        // Find suggested position (first available)
-        const suggested = positions.find((p) => !p.isOccupied);
+    if (Array.isArray(locationsData)) {
+      const isSame =
+        JSON.stringify(locationsData) === JSON.stringify(availablePositions);
+      if (!isSame) {
+        setAvailablePositions(locationsData);
+        const suggested = locationsData.find((p) => !p.isOccupied);
         setSuggestedPosition(suggested || null);
       }
     }
-  }, [selectedWarehouse, rackId]);
+  }, [locationsData]);
 
   const handleWarehouseChange = (value: string) => {
-    onLocationChange(value, "", 0, 0);
+    onLocationChange(value, "", 0, "");
   };
 
   const handleRackChange = (value: string) => {
-    onLocationChange(warehouseId, value, 0, 0);
+    onLocationChange(warehouseId, value, 0, "");
   };
 
   const handleLevelChange = (value: string) => {
@@ -89,7 +74,7 @@ export const LocationSelector = ({
   };
 
   const handleColumnChange = (value: string) => {
-    onLocationChange(warehouseId, rackId, level, Number.parseInt(value));
+    onLocationChange(warehouseId, rackId, level, value);
   };
 
   const handlePositionClick = (pos: Position) => {
@@ -109,6 +94,11 @@ export const LocationSelector = ({
     }
   };
 
+  const levels = [...new Set(availablePositions.map((p) => p.level))].sort(
+    (a, b) => b - a
+  );
+  const columns = [...new Set(availablePositions.map((p) => p.column))].sort();
+
   return (
     <Card>
       <CardHeader>
@@ -118,7 +108,6 @@ export const LocationSelector = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Warehouse Selection */}
         <div className="space-y-2">
           <Label htmlFor="warehouse">Almacén</Label>
           <Select value={warehouseId} onValueChange={handleWarehouseChange}>
@@ -126,17 +115,22 @@ export const LocationSelector = ({
               <SelectValue placeholder="Seleccionar almacén" />
             </SelectTrigger>
             <SelectContent>
-              {warehouses.map((warehouse) => (
-                <SelectItem key={warehouse.id} value={warehouse.id}>
-                  {warehouse.name}
-                </SelectItem>
-              ))}
+              {isLoading ? (
+                <div className="px-3 py-2 text-sm text-gray-500">
+                  Cargando...
+                </div>
+              ) : (
+                warehousesData.map((w) => (
+                  <SelectItem key={w.Id} value={w.Id}>
+                    {w.Name}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Rack Selection */}
-        {selectedWarehouse && (
+        {warehouseId && (
           <div className="space-y-2">
             <Label htmlFor="rack">Rack</Label>
             <Select value={rackId} onValueChange={handleRackChange}>
@@ -144,26 +138,27 @@ export const LocationSelector = ({
                 <SelectValue placeholder="Seleccionar rack" />
               </SelectTrigger>
               <SelectContent>
-                {selectedWarehouse.racks.map((rack) => (
-                  <SelectItem key={rack.id} value={rack.id}>
-                    <div className="flex items-center justify-between w-full">
-                      <span>{rack.name}</span>
-                      <Badge variant="outline" className="ml-2">
-                        {rack.levels}L × {rack.columns}C
-                      </Badge>
-                    </div>
-                  </SelectItem>
-                ))}
+                {isLoadingRacks ? (
+                  <div className="px-3 py-2 text-sm text-gray-500">
+                    Cargando...
+                  </div>
+                ) : (
+                  racksData.map((rack) => (
+                    <SelectItem key={rack.Id} value={rack.Id}>
+                      {rack.Name}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
         )}
 
-        {selectedWarehouse && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        {availablePositions.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
               <Label>Mapa de Ubicaciones</Label>
-              <div className="flex items-center gap-4 text-xs">
+              <div className="flex gap-3 text-xs">
                 <div className="flex items-center gap-1">
                   <div className="w-3 h-3 bg-green-500 rounded" />
                   <span>Disponible</span>
@@ -179,95 +174,43 @@ export const LocationSelector = ({
               </div>
             </div>
 
-            <div className="border rounded-lg p-4">
-              {selectedWarehouse.racks.map((rack) => {
-                const rackPositions: Position[] = [];
-                for (let l = 1; l <= rack.levels; l++) {
-                  for (let c = 1; c <= rack.columns; c++) {
-                    rackPositions.push({
-                      level: l,
-                      column: c,
-                      isOccupied: rack.occupiedPositions.has(`${l}-${c}`),
-                    });
-                  }
-                }
+            <div className="border rounded-lg p-4 space-y-4">
+              {levels.map((lvl) => {
+                const row = availablePositions
+                  .filter((p) => p.level === lvl)
+                  .sort((a, b) => a.column.localeCompare(b.column));
 
                 return (
-                  <div key={rack.id} className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-sm">{rack.name}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {rack.levels}L × {rack.columns}C
-                      </Badge>
+                  <div key={lvl}>
+                    <div className="text-sm font-medium text-gray-600 mb-1">
+                      Nivel {lvl}
                     </div>
-
-                    <div className="space-y-3">
-                      {Array.from({ length: rack.levels }, (_, levelIndex) => {
-                        const currentLevel = rack.levels - levelIndex;
+                    <div
+                      className="grid gap-1"
+                      style={{
+                        gridTemplateColumns: `repeat(${row.length}, 1fr)`,
+                      }}
+                    >
+                      {row.map((pos) => {
+                        const isSelected =
+                          pos.level === level && pos.column === column;
                         return (
-                          <div key={currentLevel} className="space-y-1">
-                            <div className="text-xs font-medium text-gray-600">
-                              Nivel {currentLevel}
-                            </div>
-                            <div
-                              className="grid gap-1"
-                              style={{
-                                gridTemplateColumns: `repeat(${rack.columns}, 1fr)`,
-                              }}
-                            >
-                              {Array.from(
-                                { length: rack.columns },
-                                (_, columnIndex) => {
-                                  const currentColumn = columnIndex + 1;
-                                  const position = rackPositions.find(
-                                    (p) =>
-                                      p.level === currentLevel &&
-                                      p.column === currentColumn
-                                  );
-                                  const isSelected =
-                                    rackId === rack.id &&
-                                    level === currentLevel &&
-                                    column === currentColumn;
-                                  const isOccupied =
-                                    position?.isOccupied || false;
-
-                                  return (
-                                    <button
-                                      key={`${currentLevel}-${currentColumn}`}
-                                      onClick={() => {
-                                        if (!isOccupied) {
-                                          onLocationChange(
-                                            warehouseId,
-                                            rack.id,
-                                            currentLevel,
-                                            currentColumn
-                                          );
-                                        }
-                                      }}
-                                      disabled={isOccupied}
-                                      className={`
-                                      w-10 h-10 rounded text-xs font-medium transition-all duration-200
-                                      ${
-                                        isSelected
-                                          ? "bg-blue-500 text-white border-2 border-blue-700 shadow-md"
-                                          : isOccupied
-                                          ? "bg-red-500 text-white cursor-not-allowed opacity-60"
-                                          : "bg-green-500 text-white hover:bg-green-600 cursor-pointer hover:shadow-md"
-                                      }
-                                    `}
-                                      title={`${
-                                        rack.name
-                                      } - Nivel ${currentLevel}, Columna ${currentColumn} - ${
-                                        isOccupied ? "Ocupado" : "Disponible"
-                                      }`}
-                                    >
-                                      {currentColumn}
-                                    </button>
-                                  );
-                                }
-                              )}
-                            </div>
-                          </div>
+                          <button
+                            key={`${pos.level}-${pos.column}`}
+                            onClick={() => handlePositionClick(pos)}
+                            disabled={pos.isOccupied}
+                            className={`w-10 h-10 rounded text-xs font-medium transition-all duration-200
+                              ${
+                                isSelected
+                                  ? "bg-blue-500 text-white border-2 border-blue-700 shadow-md"
+                                  : pos.isOccupied
+                                  ? "bg-red-500 text-white cursor-not-allowed opacity-60"
+                                  : "bg-green-500 text-white hover:bg-green-600 cursor-pointer hover:shadow-md"
+                              }`}
+                            title={`Nivel ${pos.level}, Columna ${pos.column}`}
+                          >
+                            {pos.column}
+                          </button>
                         );
                       })}
                     </div>
@@ -278,11 +221,10 @@ export const LocationSelector = ({
           </div>
         )}
 
-        {/* Level and Column Selection */}
         {selectedRack && (
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="level">Nivel</Label>
+              <Label>Nivel</Label>
               <Select
                 value={level.toString()}
                 onValueChange={handleLevelChange}
@@ -291,10 +233,7 @@ export const LocationSelector = ({
                   <SelectValue placeholder="Nivel" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from(
-                    { length: selectedRack.levels },
-                    (_, i) => i + 1
-                  ).map((l) => (
+                  {levels.map((l) => (
                     <SelectItem key={l} value={l.toString()}>
                       Nivel {l}
                     </SelectItem>
@@ -304,20 +243,14 @@ export const LocationSelector = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="column">Columna</Label>
-              <Select
-                value={column.toString()}
-                onValueChange={handleColumnChange}
-              >
+              <Label>Columna</Label>
+              <Select value={column} onValueChange={handleColumnChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Columna" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from(
-                    { length: selectedRack.columns },
-                    (_, i) => i + 1
-                  ).map((c) => (
-                    <SelectItem key={c} value={c.toString()}>
+                  {columns.map((c) => (
+                    <SelectItem key={c} value={c}>
                       Columna {c}
                     </SelectItem>
                   ))}
@@ -327,8 +260,7 @@ export const LocationSelector = ({
           </div>
         )}
 
-        {/* AI Suggestion - Updated for warehouse level */}
-        {selectedWarehouse && (!rackId || !level || !column) && (
+        {suggestedPosition && (!rackId || !level || !column) && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-2">
               <Lightbulb className="w-4 h-4 text-blue-600" />
@@ -337,29 +269,31 @@ export const LocationSelector = ({
               </span>
             </div>
             <p className="text-sm text-blue-700 mb-3">
-              Haz clic directamente en el mapa para seleccionar una posición
-              disponible
+              Puedes hacer clic en una ubicación disponible o{" "}
+              <button
+                onClick={applySuggestion}
+                className="text-blue-600 underline hover:text-blue-800 font-medium"
+              >
+                aplicar sugerencia
+              </button>
             </p>
           </div>
         )}
 
-        {/* Position Grid Visualization - Show after warehouse selection */}
-
-        {/* Selected Position Summary */}
         {warehouseId && rackId && level && column && (
           <div className="bg-green-50 dark:bg-green-600 border border-green-200 dark:border-green-600 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-2">
               <Package className="w-4 h-4 text-green-600 dark:text-green-300" />
-              <span className="text-sm font-medium text-green-800 dark:text-neutral-50">
+              <span className="text-sm font-medium text-green-800 dark:text-white">
                 Ubicación Seleccionada
               </span>
             </div>
-            <div className="text-sm text-green-700 dark:text-neutral-50">
+            <div className="text-sm text-green-700 dark:text-white">
               <p>
-                <strong>Almacén:</strong> {selectedWarehouse?.name}
+                <strong>Almacén:</strong> {selectedWarehouse?.Name}
               </p>
               <p>
-                <strong>Rack:</strong> {selectedRack?.name}
+                <strong>Rack:</strong> {selectedRack?.Name}
               </p>
               <p>
                 <strong>Posición:</strong> Nivel {level}, Columna {column}

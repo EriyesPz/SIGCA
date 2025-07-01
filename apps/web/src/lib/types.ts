@@ -96,7 +96,10 @@ export interface Rack {
 }
 
 export interface Position {
-  level: number
-  column: number
-  isOccupied: boolean
+  level: number;
+  column: string;
+  isOccupied: boolean;
+  trackingCode?: string | null;
+  status?: string | null;
+  description?: string | null;
 }

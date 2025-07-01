@@ -27,7 +27,7 @@ const getLocationsByWarehouse = async (warehouse: string) => {
 
 export const getLocationsByRack = async (rack: string): Promise<any> => {
   try {
-    const response = await fetch(`${getApiUrl()}/locations-rack/rack/${rack}`);
+    const response = await fetch(`${getApiUrl()}/locations-rack/${rack}`);
     if (!response.ok) {
       throw new Error(`Error fetching locations for rack ${rack}`);
     }
