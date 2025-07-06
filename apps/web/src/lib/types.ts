@@ -59,10 +59,11 @@ export interface WarehouseData {
 export interface CargoFormData {
   trackingCode: string
   description: string
-  status: "en tránsito" | "almacenado" | "revisión" | "liberado" | "entregado"
+  status: "disponible" | "almacenado" | "reservado" | "en_transito" | "mantenimiento" | string
   weightKg: number
   quantity: number
   entryDate: string
+  exitDate?: string | null
   isPerishable: boolean
   warehouseId: string
   rackId: string
@@ -96,12 +97,14 @@ export interface Rack {
 }
 
 export interface Position {
+  rack: string;
+  rackCode: string;
+  levelId: string;
   level: number;
+  columnId: string;
   column: string;
   isOccupied: boolean;
-  trackingCode?: string | null;
-  status?: string | null;
-  description?: string | null;
+  status: string | null;
 }
 
 export interface RegisterCargoInput {
@@ -110,7 +113,7 @@ export interface RegisterCargoInput {
   status: string;
   weightKg: number;
   quantity: number;
-  entryDate: Date;
+  entryDate: Date | null;
   isPerishable: boolean;
   warehouseId: string;
   rackId: string;
@@ -118,4 +121,5 @@ export interface RegisterCargoInput {
   columnId: string;
   createdBy: string;
   exitDate?: Date | null;
+  documents?: DocumentUpload[]
 }

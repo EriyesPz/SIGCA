@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import {
   Card,
@@ -46,12 +44,30 @@ import type {
   RegisterCargoInput,
 } from "@/lib/types";
 import { useRegisterCargo } from "@/lib/cargo";
+import { useCookies } from "react-cookie";
+import { z } from "zod";
+
+const cargoSchema = z.object({
+  trackingCode: z.string().min(3, "El código debe tener al menos 3 caracteres"),
+  description: z.string().min(1, "La descripción es requerida"),
+  status: z.string(),
+  weightKg: z.number().gt(0, "El peso debe ser mayor a 0"),
+  quantity: z.number().gt(0, "La cantidad debe ser mayor a 0"),
+  entryDate: z.string(),
+  exitDate: z.string().optional().nullable(),
+  isPerishable: z.boolean(),
+  warehouseId: z.string().min(1, "Debe seleccionar una ubicación completa"),
+  rackId: z.string().min(1, "Debe seleccionar una ubicación completa"),
+  level: z.number().gt(0, "Debe seleccionar una ubicación completa"),
+  column: z.number().gt(0, "Debe seleccionar una ubicación completa"),
+  documents: z.array(z.any()),
+});
 
 export const CargoRegistration = () => {
   const [formData, setFormData] = useState<CargoFormData>({
     trackingCode: "",
     description: "",
-    status: "en tránsito",
+    status: "",
     weightKg: 0,
     quantity: 1,
     entryDate: new Date().toISOString().slice(0, 16),
@@ -63,101 +79,79 @@ export const CargoRegistration = () => {
     documents: [],
     createdBy: "usuario@empresa.com",
   });
-
+  const [cookies] = useCookies(["userId"]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const { mutate, isPending, isSuccess, isError, error } = useRegisterCargo();
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.trackingCode.trim()) {
-      newErrors.trackingCode = "El código de seguimiento es requerido";
-    } else if (formData.trackingCode.length < 3) {
-      newErrors.trackingCode = "El código debe tener al menos 3 caracteres";
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = "La descripción es requerida";
-    }
-
-    if (formData.weightKg <= 0) {
-      newErrors.weightKg = "El peso debe ser mayor a 0";
-    }
-
-    if (formData.quantity <= 0) {
-      newErrors.quantity = "La cantidad debe ser mayor a 0";
-    }
-
-    if (!formData.warehouseId) {
-      newErrors.location = "Debe seleccionar una ubicación completa";
-    }
-
-    if (!formData.rackId) {
-      newErrors.location = "Debe seleccionar una ubicación completa";
-    }
-
-    if (!formData.level || !formData.column) {
-      newErrors.location = "Debe seleccionar una ubicación completa";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) {
+  const handleSubmit = () => {
+    const parsed = cargoSchema.safeParse(formData);
+    if (!parsed.success) {
+      const zodErrors: Record<string, string> = {};
+      parsed.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          zodErrors[err.path[0] as string] = err.message;
+        }
+      });
+      setErrors(zodErrors);
       toast({
         title: "Error de validación",
-        description: "Por favor corrige los errores en el formulario",
+        description: "Por favor, corrija los errores en el formulario.",
         variant: "destructive",
       });
       return;
     }
-
+    setErrors({});
     setIsSubmitting(true);
 
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+    const input: RegisterCargoInput = {
+      ...formData,
+      entryDate: formData.entryDate ? new Date(formData.entryDate) : null,
+      exitDate: formData.exitDate ? new Date(formData.exitDate) : null,
+      columnId: formData.column.toString(),
+      levelId: formData.level.toString(),
+    };
 
-      console.log("Submitting cargo:", formData);
-
-      toast({
-        title: "¡Carga registrada exitosamente!",
-        description: `Código de seguimiento: ${formData.trackingCode}`,
-      });
-
-      // Reset form
-      setFormData({
-        trackingCode: "",
-        description: "",
-        status: "en tránsito",
-        weightKg: 0,
-        quantity: 1,
-        entryDate: new Date().toISOString().slice(0, 16),
-        isPerishable: false,
-        warehouseId: "",
-        rackId: "",
-        level: 0,
-        column: 0,
-        documents: [],
-        createdBy: "usuario@empresa.com",
-      });
-      setShowPreview(false);
-    } catch (error) {
-      toast({
-        title: "Error al registrar carga",
-        description: "Hubo un problema al guardar la información",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    mutate(input, {
+      onSuccess: () => {
+        toast({
+          title: "¡Carga registrada exitosamente!",
+          description: `Código de seguimiento: ${formData.trackingCode}`,
+        });
+        setFormData({
+          trackingCode: "",
+          description: "",
+          status: "almacenado",
+          weightKg: 0,
+          quantity: 1,
+          entryDate: new Date().toISOString().slice(0, 16),
+          isPerishable: false,
+          warehouseId: "",
+          rackId: "",
+          level: 0,
+          column: 0,
+          documents: [],
+          createdBy: "usuario@empresa.com",
+        });
+        setShowPreview(false);
+      },
+      onError: (error: any) => {
+        toast({
+          title: "Error al registrar carga",
+          description:
+            error?.message || "Hubo un problema al guardar la información",
+          variant: "destructive",
+        });
+      },
+      onSettled: () => {
+        setIsSubmitting(false);
+      },
+    });
   };
 
   const updateFormData = (updates: Partial<CargoFormData>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
-    // Clear related errors
     const newErrors = { ...errors };
     Object.keys(updates).forEach((key) => {
       delete newErrors[key];
