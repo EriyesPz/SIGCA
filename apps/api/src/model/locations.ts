@@ -143,7 +143,9 @@ export const getLocationsByRack = async (rackId: string) => {
       return {
         rack: rack.Name,
         rackCode: rack.Code ?? null,
+        levelId: level.Id,
         level: level.LevelNumber,
+        columnId: column.Id,
         column: column.ColumnCode,
         isOccupied: !!cargo,
         trackingCode: cargo?.TrackingCode ?? null,

@@ -103,3 +103,19 @@ export interface Position {
   status?: string | null;
   description?: string | null;
 }
+
+export interface RegisterCargoInput {
+  trackingCode: string;
+  description: string;
+  status: string;
+  weightKg: number;
+  quantity: number;
+  entryDate: Date;
+  isPerishable: boolean;
+  warehouseId: string;
+  rackId: string;
+  levelId: string;
+  columnId: string;
+  createdBy: string;
+  exitDate?: Date | null;
+}

@@ -22,7 +22,7 @@ import { AlertCircle } from "lucide-react";
 export const Login = () => {
   const navigate = useNavigate();
   const { mutate, isPending } = useLoginUser();
-  const [cookies, setCookies] = useCookies(["token", "userName", "email"]);
+  const [cookies, setCookies] = useCookies(["token", "userName", "email", "userId"]);
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const {
@@ -44,6 +44,7 @@ export const Login = () => {
         setCookies("token", response.token, { path: "/" });
         setCookies("userName", response.userName, { path: "/" });
         setCookies("email", response.email, { path: "/" });
+        setCookies("userId", response.userId, { path: "/" });
         console.log(
           "Login successful, token:",
           response.token + " userId:",

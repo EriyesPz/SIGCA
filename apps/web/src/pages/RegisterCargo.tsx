@@ -1,16 +1,27 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { toast } from "@/components/ui/use-toast"
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Button,
+  Input,
+  Label,
+  Textarea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Checkbox,
+  Badge,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui";
 import {
   Package,
   Save,
@@ -23,12 +34,18 @@ import {
   Hash,
   FileText,
   Snowflake,
-} from "lucide-react"
-import { LocationSelector } from "@/components/cargo/location-selector"
-import { DocumentUpload } from "@/components/cargo/document-upload"
-import { CargoPreview } from "@/components/cargo/cargo-preview"
-import { statusOptions } from "@/data/warehouse-data"
-import type { CargoFormData, DocumentUpload as DocumentUploadType } from "@/lib/types"
+} from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
+import { LocationSelector } from "@/components/cargo/location-selector";
+import { DocumentUpload } from "@/components/cargo/document-upload";
+import { CargoPreview } from "@/components/cargo/cargo-preview";
+import { statusOptions } from "@/data/warehouse-data";
+import type {
+  CargoFormData,
+  DocumentUpload as DocumentUploadType,
+  RegisterCargoInput,
+} from "@/lib/types";
+import { useRegisterCargo } from "@/lib/cargo";
 
 export const CargoRegistration = () => {
   const [formData, setFormData] = useState<CargoFormData>({
@@ -44,49 +61,49 @@ export const CargoRegistration = () => {
     level: 0,
     column: 0,
     documents: [],
-    createdBy: "usuario@empresa.com", // This would come from auth context
-  })
+    createdBy: "usuario@empresa.com",
+  });
 
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showPreview, setShowPreview] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
 
     if (!formData.trackingCode.trim()) {
-      newErrors.trackingCode = "El código de seguimiento es requerido"
+      newErrors.trackingCode = "El código de seguimiento es requerido";
     } else if (formData.trackingCode.length < 3) {
-      newErrors.trackingCode = "El código debe tener al menos 3 caracteres"
+      newErrors.trackingCode = "El código debe tener al menos 3 caracteres";
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = "La descripción es requerida"
+      newErrors.description = "La descripción es requerida";
     }
 
     if (formData.weightKg <= 0) {
-      newErrors.weightKg = "El peso debe ser mayor a 0"
+      newErrors.weightKg = "El peso debe ser mayor a 0";
     }
 
     if (formData.quantity <= 0) {
-      newErrors.quantity = "La cantidad debe ser mayor a 0"
+      newErrors.quantity = "La cantidad debe ser mayor a 0";
     }
 
     if (!formData.warehouseId) {
-      newErrors.location = "Debe seleccionar una ubicación completa"
+      newErrors.location = "Debe seleccionar una ubicación completa";
     }
 
     if (!formData.rackId) {
-      newErrors.location = "Debe seleccionar una ubicación completa"
+      newErrors.location = "Debe seleccionar una ubicación completa";
     }
 
     if (!formData.level || !formData.column) {
-      newErrors.location = "Debe seleccionar una ubicación completa"
+      newErrors.location = "Debe seleccionar una ubicación completa";
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async () => {
     if (!validateForm()) {
@@ -94,23 +111,21 @@ export const CargoRegistration = () => {
         title: "Error de validación",
         description: "Por favor corrige los errores en el formulario",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // Here you would make the actual API call
-      console.log("Submitting cargo:", formData)
+      console.log("Submitting cargo:", formData);
 
       toast({
         title: "¡Carga registrada exitosamente!",
         description: `Código de seguimiento: ${formData.trackingCode}`,
-      })
+      });
 
       // Reset form
       setFormData({
@@ -127,41 +142,46 @@ export const CargoRegistration = () => {
         column: 0,
         documents: [],
         createdBy: "usuario@empresa.com",
-      })
-      setShowPreview(false)
+      });
+      setShowPreview(false);
     } catch (error) {
       toast({
         title: "Error al registrar carga",
         description: "Hubo un problema al guardar la información",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const updateFormData = (updates: Partial<CargoFormData>) => {
-    setFormData((prev) => ({ ...prev, ...updates }))
+    setFormData((prev) => ({ ...prev, ...updates }));
     // Clear related errors
-    const newErrors = { ...errors }
+    const newErrors = { ...errors };
     Object.keys(updates).forEach((key) => {
-      delete newErrors[key]
-    })
-    setErrors(newErrors)
-  }
+      delete newErrors[key];
+    });
+    setErrors(newErrors);
+  };
 
-  const handleLocationChange = (warehouseId: string, rackId: string, level: number, column: number) => {
-    updateFormData({ warehouseId, rackId, level, column })
+  const handleLocationChange = (
+    warehouseId: string,
+    rackId: string,
+    level: number,
+    column: string
+  ) => {
+    updateFormData({ warehouseId, rackId, level, column: Number(column) });
     if (errors.location) {
-      const newErrors = { ...errors }
-      delete newErrors.location
-      setErrors(newErrors)
+      const newErrors = { ...errors };
+      delete newErrors.location;
+      setErrors(newErrors);
     }
-  }
+  };
 
   const handleDocumentsChange = (documents: DocumentUploadType[]) => {
-    updateFormData({ documents })
-  }
+    updateFormData({ documents });
+  };
 
   const isFormValid = () => {
     return (
@@ -173,8 +193,8 @@ export const CargoRegistration = () => {
       formData.rackId &&
       formData.level &&
       formData.column
-    )
-  }
+    );
+  };
 
   return (
     <div className="min-h-screen p-6">
@@ -183,9 +203,13 @@ export const CargoRegistration = () => {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <Package className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Registro de Nueva Carga</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Registro de Nueva Carga
+            </h1>
           </div>
-          <p className="text-gray-600">Complete la información para registrar una nueva carga en el almacén</p>
+          <p className="text-gray-600">
+            Complete la información para registrar una nueva carga en el almacén
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -203,14 +227,21 @@ export const CargoRegistration = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Tracking Code */}
                   <div className="space-y-2">
-                    <Label htmlFor="trackingCode" className="flex items-center gap-2">
+                    <Label
+                      htmlFor="trackingCode"
+                      className="flex items-center gap-2"
+                    >
                       <Hash className="w-4 h-4" />
                       Código de Seguimiento *
                     </Label>
                     <Input
                       id="trackingCode"
                       value={formData.trackingCode}
-                      onChange={(e) => updateFormData({ trackingCode: e.target.value.toUpperCase() })}
+                      onChange={(e) =>
+                        updateFormData({
+                          trackingCode: e.target.value.toUpperCase(),
+                        })
+                      }
                       placeholder="TRK-2024-001"
                       className={errors.trackingCode ? "border-red-500" : ""}
                     />
@@ -225,7 +256,14 @@ export const CargoRegistration = () => {
                   {/* Status */}
                   <div className="space-y-2">
                     <Label htmlFor="status">Estado</Label>
-                    <Select value={formData.status} onValueChange={(value) => updateFormData({ status: value as CargoFormData["status"] })}>
+                    <Select
+                      value={formData.status}
+                      onValueChange={(value) =>
+                        updateFormData({
+                          status: value as CargoFormData["status"],
+                        })
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -233,7 +271,9 @@ export const CargoRegistration = () => {
                         {statusOptions.map((status) => (
                           <SelectItem key={status.value} value={status.value}>
                             <div className="flex items-center gap-2">
-                              <div className={`w-3 h-3 rounded-full ${status.color}`} />
+                              <div
+                                className={`w-3 h-3 rounded-full ${status.color}`}
+                              />
                               {status.label}
                             </div>
                           </SelectItem>
@@ -255,9 +295,15 @@ export const CargoRegistration = () => {
                         step="0.1"
                         min="0"
                         value={formData.weightKg || ""}
-                        onChange={(e) => updateFormData({ weightKg: Number.parseFloat(e.target.value) || 0 })}
+                        onChange={(e) =>
+                          updateFormData({
+                            weightKg: Number.parseFloat(e.target.value) || 0,
+                          })
+                        }
                         placeholder="0.0"
-                        className={`pr-12 ${errors.weightKg ? "border-red-500" : ""}`}
+                        className={`pr-12 ${
+                          errors.weightKg ? "border-red-500" : ""
+                        }`}
                       />
                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
                         kg
@@ -279,7 +325,11 @@ export const CargoRegistration = () => {
                       type="number"
                       min="1"
                       value={formData.quantity || ""}
-                      onChange={(e) => updateFormData({ quantity: Number.parseInt(e.target.value) || 1 })}
+                      onChange={(e) =>
+                        updateFormData({
+                          quantity: Number.parseInt(e.target.value) || 1,
+                        })
+                      }
                       placeholder="1"
                       className={errors.quantity ? "border-red-500" : ""}
                     />
@@ -293,7 +343,10 @@ export const CargoRegistration = () => {
 
                   {/* Entry Date */}
                   <div className="space-y-2">
-                    <Label htmlFor="entryDate" className="flex items-center gap-2">
+                    <Label
+                      htmlFor="entryDate"
+                      className="flex items-center gap-2"
+                    >
                       <Calendar className="w-4 h-4" />
                       Fecha de Entrada
                     </Label>
@@ -301,7 +354,29 @@ export const CargoRegistration = () => {
                       id="entryDate"
                       type="datetime-local"
                       value={formData.entryDate}
-                      onChange={(e) => updateFormData({ entryDate: e.target.value })}
+                      onChange={(e) =>
+                        updateFormData({ entryDate: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  {/* Exit Date */}
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="exitDate"
+                      className="flex items-center gap-2"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      Fecha de Salida
+                    </Label>
+                    <Input
+                      id="exitDate"
+                      type="datetime-local"
+                      value={formData.entryDate}
+                      onChange={(e) =>
+                        updateFormData({ entryDate: e.target.value })
+                      }
                     />
                   </div>
 
@@ -311,9 +386,14 @@ export const CargoRegistration = () => {
                       <Checkbox
                         id="isPerishable"
                         checked={formData.isPerishable}
-                        onCheckedChange={(checked) => updateFormData({ isPerishable: !!checked })}
+                        onCheckedChange={(checked) =>
+                          updateFormData({ isPerishable: !!checked })
+                        }
                       />
-                      <Label htmlFor="isPerishable" className="flex items-center gap-2">
+                      <Label
+                        htmlFor="isPerishable"
+                        className="flex items-center gap-2"
+                      >
                         <Snowflake className="w-4 h-4" />
                         Producto Perecedero
                       </Label>
@@ -323,14 +403,19 @@ export const CargoRegistration = () => {
 
                 {/* Description */}
                 <div className="space-y-2">
-                  <Label htmlFor="description" className="flex items-center gap-2">
+                  <Label
+                    htmlFor="description"
+                    className="flex items-center gap-2"
+                  >
                     <FileText className="w-4 h-4" />
                     Descripción *
                   </Label>
                   <Textarea
                     id="description"
                     value={formData.description}
-                    onChange={(e) => updateFormData({ description: e.target.value })}
+                    onChange={(e) =>
+                      updateFormData({ description: e.target.value })
+                    }
                     placeholder="Describe el contenido de la carga..."
                     rows={3}
                     className={errors.description ? "border-red-500" : ""}
@@ -361,7 +446,10 @@ export const CargoRegistration = () => {
             )}
 
             {/* Document Upload */}
-            <DocumentUpload documents={formData.documents} onDocumentsChange={handleDocumentsChange} />
+            <DocumentUpload
+              documents={formData.documents}
+              onDocumentsChange={handleDocumentsChange}
+            />
           </div>
 
           {/* Sidebar */}
@@ -375,7 +463,9 @@ export const CargoRegistration = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Información básica</span>
-                    {formData.trackingCode && formData.description && formData.weightKg > 0 ? (
+                    {formData.trackingCode &&
+                    formData.description &&
+                    formData.weightKg > 0 ? (
                       <CheckCircle className="w-4 h-4 text-green-500" />
                     ) : (
                       <AlertCircle className="w-4 h-4 text-gray-400" />
@@ -383,7 +473,10 @@ export const CargoRegistration = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Ubicación asignada</span>
-                    {formData.warehouseId && formData.rackId && formData.level && formData.column ? (
+                    {formData.warehouseId &&
+                    formData.rackId &&
+                    formData.level &&
+                    formData.column ? (
                       <CheckCircle className="w-4 h-4 text-green-500" />
                     ) : (
                       <AlertCircle className="w-4 h-4 text-gray-400" />
@@ -391,7 +484,9 @@ export const CargoRegistration = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Documentos</span>
-                    <Badge variant="outline">{formData.documents.length} archivos</Badge>
+                    <Badge variant="outline">
+                      {formData.documents.length} archivos
+                    </Badge>
                   </div>
                 </div>
               </CardContent>
@@ -405,11 +500,17 @@ export const CargoRegistration = () => {
               <CardContent>
                 <Tabs defaultValue="preview" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="preview" className="flex items-center gap-1">
+                    <TabsTrigger
+                      value="preview"
+                      className="flex items-center gap-1"
+                    >
                       <Eye className="w-3 h-3" />
                       Vista
                     </TabsTrigger>
-                    <TabsTrigger value="json" className="flex items-center gap-1">
+                    <TabsTrigger
+                      value="json"
+                      className="flex items-center gap-1"
+                    >
                       <Code className="w-3 h-3" />
                       JSON
                     </TabsTrigger>
@@ -449,5 +550,5 @@ export const CargoRegistration = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

@@ -12,6 +12,7 @@ import {
 } from "./controllers/locations";
 import { getWarehouses } from "./controllers/warehouse";
 import { getRacksByWarehouse } from "./controllers/rack";
+import { createCargo } from "./controllers/cargo";
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.get("/locations/:warehouse", getLocationsWarehouse);
 router.get("/warehouses", getWarehouses);
 router.get("/racks/:warehouse", getRacksByWarehouse);
 router.get("/locations-rack/:rack", getLocationsRack);
+router.post("/cargo", createCargo);
 
 export { router };

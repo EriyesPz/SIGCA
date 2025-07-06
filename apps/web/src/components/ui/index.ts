@@ -15,6 +15,7 @@ export * from "./input-otp";
 export * from "./label";
 export * from "./location-cell";
 export * from "./mode-toggle";
+export * from "./rack-card"
 export * from "./select";
 export * from "./separator";
 export * from "./sheet";
@@ -24,4 +25,6 @@ export * from "./slider";
 export * from "./table";
 export * from "./tabs";
 export * from "./textarea";
+export * from "./toast";
+export * from "./tooltip";
 export * from "./tooltip";
