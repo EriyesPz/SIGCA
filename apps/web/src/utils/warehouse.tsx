@@ -21,7 +21,7 @@ export const buildWarehouseTree = (rows: any[]): WarehouseData => {
       id: `${rId}:${row.level}-${row.column}`,
       level: row.level,
       column: row.column,
-      status: row.status ?? (row.isOccupied ? "occupied" : "available"),
+      status: row.status ?? (row.isOccupied ? "almacenado" : "disponible"),
       trackingCode: row.trackingCode,
       description: row.description,
     })

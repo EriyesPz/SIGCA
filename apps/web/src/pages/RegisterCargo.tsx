@@ -350,7 +350,7 @@ export const CargoRegistration = () => {
               warehouseId={formData.warehouseId}
               rackId={formData.rackId}
               level={formData.level}
-              column={formData.column}
+              column={formData.column.toString()}
               onLocationChange={handleLocationChange}
             />
             {errors.location && (

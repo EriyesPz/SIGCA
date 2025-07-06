@@ -14,7 +14,7 @@ import { MapPin, Package, Lightbulb } from "lucide-react";
 import { useWarehouses } from "@/lib/warehouse";
 import { useRacksByWarehouse } from "@/lib/rack";
 import { useLocationsByRack } from "@/lib/locations";
-import type { Position, WarehouseLocation } from "@/lib/types";
+import type { Position } from "@/lib/types";
 
 interface LocationSelectorProps {
   warehouseId: string;
@@ -46,8 +46,8 @@ export const LocationSelector = ({
     useRacksByWarehouse(warehouseId);
   const { data: locationsData = [] } = useLocationsByRack(rackId);
 
-  const selectedWarehouse = warehousesData.find((w) => w.Id === warehouseId);
-  const selectedRack = racksData.find((r) => r.Id === rackId);
+  const selectedWarehouse = warehousesData.find((w: any) => w.Id === warehouseId);
+  const selectedRack = racksData.find((r: any) => r.Id === rackId);
 
   useEffect(() => {
     if (Array.isArray(locationsData)) {
@@ -120,7 +120,7 @@ export const LocationSelector = ({
                   Cargando...
                 </div>
               ) : (
-                warehousesData.map((w) => (
+                warehousesData.map((w: any) => (
                   <SelectItem key={w.Id} value={w.Id}>
                     {w.Name}
                   </SelectItem>
@@ -143,7 +143,7 @@ export const LocationSelector = ({
                     Cargando...
                   </div>
                 ) : (
-                  racksData.map((rack) => (
+                  racksData.map((rack: any) => (
                     <SelectItem key={rack.Id} value={rack.Id}>
                       {rack.Name}
                     </SelectItem>
@@ -165,7 +165,7 @@ export const LocationSelector = ({
                 </div>
                 <div className="flex items-center gap-1">
                   <div className="w-3 h-3 bg-red-500 rounded" />
-                  <span>Ocupado</span>
+                  <span>Almacenado</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <div className="w-3 h-3 bg-blue-500 rounded border-2 border-blue-700" />
@@ -185,21 +185,22 @@ export const LocationSelector = ({
                     <div className="text-sm font-medium text-gray-600 mb-1">
                       Nivel {lvl}
                     </div>
-                    <div
-                      className="grid gap-1"
-                      style={{
-                        gridTemplateColumns: `repeat(${row.length}, 1fr)`,
-                      }}
-                    >
-                      {row.map((pos) => {
-                        const isSelected =
-                          pos.level === level && pos.column === column;
-                        return (
-                          <button
-                            key={`${pos.level}-${pos.column}`}
-                            onClick={() => handlePositionClick(pos)}
-                            disabled={pos.isOccupied}
-                            className={`w-10 h-10 rounded text-xs font-medium transition-all duration-200
+                    <div className="overflow-x-auto">
+                      <div
+                        className="grid gap-1 min-w-max"
+                        style={{
+                          gridTemplateColumns: `repeat(${row.length}, 1fr)`,
+                        }}
+                      >
+                        {row.map((pos) => {
+                          const isSelected =
+                            pos.level === level && pos.column === column;
+                          return (
+                            <button
+                              key={`${pos.level}-${pos.column}`}
+                              onClick={() => handlePositionClick(pos)}
+                              disabled={pos.isOccupied}
+                              className={`w-10 h-10 rounded text-xs font-medium transition-all duration-200
                               ${
                                 isSelected
                                   ? "bg-blue-500 text-white border-2 border-blue-700 shadow-md"
@@ -207,12 +208,13 @@ export const LocationSelector = ({
                                   ? "bg-red-500 text-white cursor-not-allowed opacity-60"
                                   : "bg-green-500 text-white hover:bg-green-600 cursor-pointer hover:shadow-md"
                               }`}
-                            title={`Nivel ${pos.level}, Columna ${pos.column}`}
-                          >
-                            {pos.column}
-                          </button>
-                        );
-                      })}
+                              title={`Nivel ${pos.level}, Columna ${pos.column}`}
+                            >
+                              {pos.column}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 );

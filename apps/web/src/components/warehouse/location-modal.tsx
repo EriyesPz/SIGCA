@@ -14,13 +14,21 @@ interface LocationDetailsModalProps {
 export const LocationDetailsModal = ({ isOpen, onClose, selectedLocation }: LocationDetailsModalProps) => {
   if (!selectedLocation) return null
 
+  const status = statusConfig[selectedLocation.status as keyof typeof statusConfig] ?? {
+    label: selectedLocation.status || "Desconocido",
+    color: "bg-slate-400",
+    textColor: "text-slate-700",
+    bgColor: "bg-slate-50 dark:bg-slate-900/20",
+    borderColor: "border-slate-200 dark:border-slate-800",
+  }
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="sm:max-w-md">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <MapPin className="w-5 h-5" />
-            Location Details
+            Detalles
           </SheetTitle>
           <SheetDescription>
             {selectedLocation?.id} - {selectedLocation?.rack?.name}
@@ -32,13 +40,13 @@ export const LocationDetailsModal = ({ isOpen, onClose, selectedLocation }: Loca
           <div className="flex justify-center">
             <Badge
               className={`
-                ${statusConfig[selectedLocation.status as keyof typeof statusConfig].bgColor}
-                ${statusConfig[selectedLocation.status as keyof typeof statusConfig].textColor}
-                ${statusConfig[selectedLocation.status as keyof typeof statusConfig].borderColor}
+                ${status.bgColor}
+                ${status.textColor}
+                ${status.borderColor}
                 border px-4 py-2
               `}
             >
-              {statusConfig[selectedLocation.status as keyof typeof statusConfig].label}
+              {status.label}
             </Badge>
           </div>
 
@@ -46,11 +54,11 @@ export const LocationDetailsModal = ({ isOpen, onClose, selectedLocation }: Loca
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Location ID</p>
+                <p className="text-sm text-muted-foreground">Ubicación</p>
                 <p className="font-medium">{selectedLocation.id}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Position</p>
+                <p className="text-sm text-muted-foreground">Posición</p>
                 <p className="font-medium">
                   L{selectedLocation.level} C{selectedLocation.column}
                 </p>
@@ -62,10 +70,10 @@ export const LocationDetailsModal = ({ isOpen, onClose, selectedLocation }: Loca
             {selectedLocation.trackingCode && (
               <>
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Cargo Information</h3>
+                  <h3 className="text-lg font-medium">Información de la Carga</h3>
 
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Tracking Code</p>
+                    <p className="text-sm text-muted-foreground">Código de Tracking</p>
                     <div className="flex items-center gap-2">
                       <p className="font-mono font-medium">{selectedLocation.trackingCode}</p>
                       <Button variant="ghost" size="sm">
@@ -75,43 +83,43 @@ export const LocationDetailsModal = ({ isOpen, onClose, selectedLocation }: Loca
                   </div>
 
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Description</p>
+                    <p className="text-sm text-muted-foreground">Descripción</p>
                     <p>{selectedLocation.description}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Weight</p>
-                      <p className="font-medium">{selectedLocation.weight}</p>
+                      <p className="text-sm text-muted-foreground">Peso</p>
+                      <p className="font-medium">{selectedLocation.weight ?? "—"}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Dimensions</p>
-                      <p className="font-medium">{selectedLocation.dimensions}</p>
+                      <p className="text-sm text-muted-foreground">Dimensiones</p>
+                      <p className="font-medium">{selectedLocation.dimensions ?? "—"}</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Entry Date</p>
+                      <p className="text-sm text-muted-foreground">Fecha de Entrada</p>
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <p className="font-medium">{selectedLocation.entryDate}</p>
+                        <p className="font-medium">{selectedLocation.entryDate ?? "—"}</p>
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Exit Date</p>
+                      <p className="text-sm text-muted-foreground">Fecha de Salida</p>
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-muted-foreground" />
-                        <p className="font-medium">{selectedLocation.exitDate || "TBD"}</p>
+                        <p className="font-medium">{selectedLocation.exitDate ?? "TBD"}</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Assigned User</p>
+                    <p className="text-sm text-muted-foreground">Usuario Asignado</p>
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4 text-muted-foreground" />
-                      <p className="font-medium">{selectedLocation.assignedUser}</p>
+                      <p className="font-medium">{selectedLocation.assignedUser ?? "—"}</p>
                     </div>
                   </div>
                 </div>
@@ -122,10 +130,10 @@ export const LocationDetailsModal = ({ isOpen, onClose, selectedLocation }: Loca
 
             {/* Warehouse Info */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Warehouse Information</h3>
+              <h3 className="text-lg font-medium">Información del Almacén</h3>
 
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Warehouse</p>
+                <p className="text-sm text-muted-foreground">Almacén</p>
                 <p className="font-medium">{selectedLocation.warehouse?.name}</p>
               </div>
 
@@ -138,13 +146,13 @@ export const LocationDetailsModal = ({ isOpen, onClose, selectedLocation }: Loca
             {/* Action Buttons */}
             <div className="pt-4 space-y-2">
               <Button className="w-full">
-                Update Status
+                Actualizar estado
                 <ChevronRight className="ml-2 w-4 h-4" />
               </Button>
               {selectedLocation.trackingCode && (
                 <Button variant="outline" className="w-full">
                   <Truck className="mr-2 w-4 h-4" />
-                  Track Shipment
+                  Rastrear envío
                 </Button>
               )}
             </div>

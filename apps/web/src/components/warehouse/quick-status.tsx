@@ -28,7 +28,7 @@ export const QuickStats = ({ filteredData }: QuickStatsProps) => {
               <div className="font-medium text-sm">{warehouse.name}</div>
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>
-                  {occupiedLocations}/{totalLocations} ocupado
+                  {occupiedLocations}/{totalLocations} almacenado
                 </span>
                 <span>{occupancyRate}%</span>
               </div>

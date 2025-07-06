@@ -179,11 +179,11 @@ export const WarehouseLocationTracker = () => {
                     <Grid3X3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     <div>
                       <h2 className="text-2xl font-bold">
-                        All Warehouse Locations
+                        Ubicaciones
                       </h2>
-                      <p className="text-muted-foreground">
-                        Complete list of all locations across warehouses
-                      </p>
+                        <p className="text-muted-foreground">
+                        Lista completa de todas las ubicaciones en todos los almacenes
+                        </p>
                     </div>
                   </div>
 

@@ -1,16 +1,34 @@
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { statusConfig } from "@/components/common/status-config"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { statusConfig } from "@/components/common/status-config";
 import type { Location, Rack, Warehouse } from "@/lib/types";
 
 interface LocationCellProps {
-  location: Location
-  rack: Rack
-  warehouse: Warehouse
-  onLocationClick: (location: Location, rack: Rack, warehouse: Warehouse) => void
+  location: Location;
+  rack: Rack;
+  warehouse: Warehouse;
+  onLocationClick: (
+    location: Location,
+    rack: Rack,
+    warehouse: Warehouse
+  ) => void;
 }
 
-export const LocationCell = ({ location, rack, warehouse, onLocationClick }: LocationCellProps) => {
-  const status = statusConfig[location.status as keyof typeof statusConfig]
+export const LocationCell = ({
+  location,
+  rack,
+  warehouse,
+  onLocationClick,
+}: LocationCellProps) => {
+  const status = statusConfig[location.status as keyof typeof statusConfig] ?? {
+    label: location.status || "Desconocido",
+    color: "bg-slate-400",
+    borderColor: "border-slate-500",
+  };
 
   return (
     <TooltipProvider>
@@ -24,8 +42,8 @@ export const LocationCell = ({ location, rack, warehouse, onLocationClick }: Loc
               ${status.color} ${status.borderColor}
             `}
             onClick={(e) => {
-              e.stopPropagation()
-              onLocationClick(location, rack, warehouse)
+              e.stopPropagation();
+              onLocationClick(location, rack, warehouse);
             }}
           >
             L{location.level}C{location.column}
@@ -35,11 +53,15 @@ export const LocationCell = ({ location, rack, warehouse, onLocationClick }: Loc
           <div className="text-center space-y-1">
             <p className="font-semibold">{location.id}</p>
             <p className="text-sm">{status.label}</p>
-            {location.trackingCode && <p className="text-xs font-mono">{location.trackingCode}</p>}
-            {location.description && <p className="text-xs">{location.description}</p>}
+            {location.trackingCode && (
+              <p className="text-xs font-mono">{location.trackingCode}</p>
+            )}
+            {location.description && (
+              <p className="text-xs">{location.description}</p>
+            )}
           </div>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  )
-}
+  );
+};
