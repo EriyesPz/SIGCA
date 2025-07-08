@@ -24,7 +24,7 @@ export interface LoginResponse {
 export interface Location {
   id: string
   level: number
-  column: number
+  column: string;
   status: string
   trackingCode?: string | null
   description?: string | null
@@ -67,8 +67,10 @@ export interface CargoFormData {
   isPerishable: boolean
   warehouseId: string
   rackId: string
+  levelId: string
   level: number
-  column: number
+  column: string
+  columnId: string
   documents: DocumentUpload[]
   createdBy: string
   createdAt?: string
@@ -99,12 +101,14 @@ export interface Rack {
 export interface Position {
   rack: string;
   rackCode: string;
-  levelId: string;
   level: number;
-  columnId: string;
   column: string;
+  levelId: string;
+  columnId: string;
   isOccupied: boolean;
-  status: string | null;
+  trackingCode?: string | null;
+  status?: string | null;
+  description?: string | null;
 }
 
 export interface RegisterCargoInput {

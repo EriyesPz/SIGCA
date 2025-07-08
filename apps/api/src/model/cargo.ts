@@ -21,9 +21,11 @@ export const registerCargo = async (
   input: RegisterCargoInput
 ): Promise<{ cargoId: string }> => {
   const cargoId = uuidv4();
+  console.log("[DEBUG] Iniciando transacción para crear cargo");
 
   try {
     await db.$transaction(async (tx) => {
+      console.log("[DEBUG] Insertando en tabla Cargo");
       await tx.cargo.create({
         data: {
           Id: cargoId,
@@ -43,6 +45,7 @@ export const registerCargo = async (
         },
       });
 
+      console.log("[DEBUG] Insertando historial de ubicación");
       await tx.cargoLocationHistory.create({
         data: {
           Id: uuidv4(),
@@ -58,6 +61,7 @@ export const registerCargo = async (
         },
       });
 
+      console.log("[DEBUG] Insertando historial de estado");
       await tx.cargoStatusHistory.create({
         data: {
           Id: uuidv4(),
@@ -70,6 +74,7 @@ export const registerCargo = async (
       });
     });
 
+    console.log("[DEBUG] Transacción completada correctamente");
     return { cargoId };
   } catch (error) {
     console.error("Error al registrar carga:", error);

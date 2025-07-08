@@ -25,7 +25,9 @@ interface LocationSelectorProps {
     warehouseId: string,
     rackId: string,
     level: number,
-    column: string
+    column: string,
+    levelId?: string, // ← NUEVO
+    columnId?: string // ← NUEVO
   ) => void;
 }
 
@@ -46,7 +48,9 @@ export const LocationSelector = ({
     useRacksByWarehouse(warehouseId);
   const { data: locationsData = [] } = useLocationsByRack(rackId);
 
-  const selectedWarehouse = warehousesData.find((w: any) => w.Id === warehouseId);
+  const selectedWarehouse = warehousesData.find(
+    (w: any) => w.Id === warehouseId
+  );
   const selectedRack = racksData.find((r: any) => r.Id === rackId);
 
   useEffect(() => {
@@ -70,16 +74,30 @@ export const LocationSelector = ({
   };
 
   const handleLevelChange = (value: string) => {
-    onLocationChange(warehouseId, rackId, Number.parseInt(value), column);
+    onLocationChange(
+      warehouseId,
+      rackId,
+      Number.parseInt(value),
+      column,
+      "",
+      ""
+    );
   };
 
   const handleColumnChange = (value: string) => {
-    onLocationChange(warehouseId, rackId, level, value);
+    onLocationChange(warehouseId, rackId, level, value, "", "");
   };
 
   const handlePositionClick = (pos: Position) => {
     if (!pos.isOccupied) {
-      onLocationChange(warehouseId, rackId, pos.level, pos.column);
+      onLocationChange(
+        warehouseId,
+        rackId,
+        pos.level,
+        pos.column,
+        pos.levelId,
+        pos.columnId
+      );
     }
   };
 
@@ -89,7 +107,9 @@ export const LocationSelector = ({
         warehouseId,
         rackId,
         suggestedPosition.level,
-        suggestedPosition.column
+        suggestedPosition.column,
+        suggestedPosition.levelId,
+        suggestedPosition.columnId
       );
     }
   };

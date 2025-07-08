@@ -59,11 +59,14 @@ const cargoSchema = z.object({
   warehouseId: z.string().min(1, "Debe seleccionar una ubicación completa"),
   rackId: z.string().min(1, "Debe seleccionar una ubicación completa"),
   level: z.number().gt(0, "Debe seleccionar una ubicación completa"),
-  column: z.number().gt(0, "Debe seleccionar una ubicación completa"),
-  documents: z.array(z.any()),
+  column: z.string().min(1, "Debe seleccionar una ubicación completa"),
+  documents: z.array(z.any()).optional(),
 });
 
 export const CargoRegistration = () => {
+  const [cookies] = useCookies(["userId"]);
+  const userId = cookies.userId;
+  console.log("[DEBUG] Renderizando CargoRegistration");
   const [formData, setFormData] = useState<CargoFormData>({
     trackingCode: "",
     description: "",
@@ -71,21 +74,25 @@ export const CargoRegistration = () => {
     weightKg: 0,
     quantity: 1,
     entryDate: new Date().toISOString().slice(0, 16),
+    exitDate: "",
     isPerishable: false,
     warehouseId: "",
     rackId: "",
     level: 0,
-    column: 0,
+    column: "",
+    levelId: "",
+    columnId: "",
     documents: [],
-    createdBy: "usuario@empresa.com",
+    createdBy: userId || "",
   });
-  const [cookies] = useCookies(["userId"]);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const { mutate, isPending, isSuccess, isError, error } = useRegisterCargo();
 
   const handleSubmit = () => {
+    console.log("[DEBUG] handleSubmit llamado", formData);
     const parsed = cargoSchema.safeParse(formData);
     if (!parsed.success) {
       const zodErrors: Record<string, string> = {};
@@ -102,19 +109,38 @@ export const CargoRegistration = () => {
       });
       return;
     }
+
+    // ✅ Validación adicional de fechas
+    const entry = new Date(formData.entryDate);
+    const exit = formData.exitDate ? new Date(formData.exitDate) : null;
+
+    if (exit && exit < entry) {
+      toast({
+        title: "Error en las fechas",
+        description: "La fecha de salida debe ser posterior a la de entrada.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     setErrors({});
     setIsSubmitting(true);
 
     const input: RegisterCargoInput = {
       ...formData,
-      entryDate: formData.entryDate ? new Date(formData.entryDate) : null,
-      exitDate: formData.exitDate ? new Date(formData.exitDate) : null,
-      columnId: formData.column.toString(),
-      levelId: formData.level.toString(),
+      entryDate: entry,
+      exitDate: exit,
+      columnId: formData.columnId.toString(),
+      levelId: formData.levelId.toString(),
+      createdBy: userId || "",
     };
+
+    console.log("[DEBUG] Enviando datos a mutate:", input);
 
     mutate(input, {
       onSuccess: () => {
+        console.log("[DEBUG] Registro exitoso");
         toast({
           title: "¡Carga registrada exitosamente!",
           description: `Código de seguimiento: ${formData.trackingCode}`,
@@ -126,17 +152,21 @@ export const CargoRegistration = () => {
           weightKg: 0,
           quantity: 1,
           entryDate: new Date().toISOString().slice(0, 16),
+          exitDate: "",
           isPerishable: false,
           warehouseId: "",
           rackId: "",
           level: 0,
-          column: 0,
+          column: "",
+          levelId: "",
+          columnId: "",
           documents: [],
-          createdBy: "usuario@empresa.com",
+          createdBy: userId || "",
         });
         setShowPreview(false);
       },
       onError: (error: any) => {
+        console.error("[DEBUG] Error al registrar carga:", error);
         toast({
           title: "Error al registrar carga",
           description:
@@ -145,13 +175,19 @@ export const CargoRegistration = () => {
         });
       },
       onSettled: () => {
+        console.log("[DEBUG] onSettled llamado");
         setIsSubmitting(false);
       },
     });
   };
 
   const updateFormData = (updates: Partial<CargoFormData>) => {
-    setFormData((prev) => ({ ...prev, ...updates }));
+    console.log("[DEBUG] updateFormData llamado con:", updates);
+    setFormData((prev) => {
+      const updated = { ...prev, ...updates };
+      console.log("[DEBUG] Nuevo formData:", updated);
+      return updated;
+    });
     const newErrors = { ...errors };
     Object.keys(updates).forEach((key) => {
       delete newErrors[key];
@@ -163,9 +199,26 @@ export const CargoRegistration = () => {
     warehouseId: string,
     rackId: string,
     level: number,
-    column: string
+    column: string,
+    levelId?: string,
+    columnId?: string
   ) => {
-    updateFormData({ warehouseId, rackId, level, column: Number(column) });
+    console.log("[DEBUG] handleLocationChange:", {
+      warehouseId,
+      rackId,
+      level,
+      column,
+      levelId,
+      columnId,
+    });
+    updateFormData({
+      warehouseId,
+      rackId,
+      level,
+      column,
+      levelId: levelId || "",
+      columnId: columnId || "",
+    });
     if (errors.location) {
       const newErrors = { ...errors };
       delete newErrors.location;
@@ -174,11 +227,12 @@ export const CargoRegistration = () => {
   };
 
   const handleDocumentsChange = (documents: DocumentUploadType[]) => {
+    console.log("[DEBUG] handleDocumentsChange:", documents);
     updateFormData({ documents });
   };
 
   const isFormValid = () => {
-    return (
+    const valid =
       formData.trackingCode &&
       formData.description &&
       formData.weightKg > 0 &&
@@ -186,8 +240,9 @@ export const CargoRegistration = () => {
       formData.warehouseId &&
       formData.rackId &&
       formData.level &&
-      formData.column
-    );
+      formData.column;
+    console.log("[DEBUG] isFormValid:", valid);
+    return valid;
   };
 
   return (
@@ -231,11 +286,15 @@ export const CargoRegistration = () => {
                     <Input
                       id="trackingCode"
                       value={formData.trackingCode}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        console.log(
+                          "[DEBUG] trackingCode cambiado:",
+                          e.target.value
+                        );
                         updateFormData({
                           trackingCode: e.target.value.toUpperCase(),
-                        })
-                      }
+                        });
+                      }}
                       placeholder="TRK-2024-001"
                       className={errors.trackingCode ? "border-red-500" : ""}
                     />
@@ -252,11 +311,12 @@ export const CargoRegistration = () => {
                     <Label htmlFor="status">Estado</Label>
                     <Select
                       value={formData.status}
-                      onValueChange={(value) =>
+                      onValueChange={(value) => {
+                        console.log("[DEBUG] status cambiado:", value);
                         updateFormData({
                           status: value as CargoFormData["status"],
-                        })
-                      }
+                        });
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -289,11 +349,15 @@ export const CargoRegistration = () => {
                         step="0.1"
                         min="0"
                         value={formData.weightKg || ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          console.log(
+                            "[DEBUG] weightKg cambiado:",
+                            e.target.value
+                          );
                           updateFormData({
                             weightKg: Number.parseFloat(e.target.value) || 0,
-                          })
-                        }
+                          });
+                        }}
                         placeholder="0.0"
                         className={`pr-12 ${
                           errors.weightKg ? "border-red-500" : ""
@@ -319,11 +383,15 @@ export const CargoRegistration = () => {
                       type="number"
                       min="1"
                       value={formData.quantity || ""}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        console.log(
+                          "[DEBUG] quantity cambiado:",
+                          e.target.value
+                        );
                         updateFormData({
                           quantity: Number.parseInt(e.target.value) || 1,
-                        })
-                      }
+                        });
+                      }}
                       placeholder="1"
                       className={errors.quantity ? "border-red-500" : ""}
                     />
@@ -348,14 +416,17 @@ export const CargoRegistration = () => {
                       id="entryDate"
                       type="datetime-local"
                       value={formData.entryDate}
-                      onChange={(e) =>
-                        updateFormData({ entryDate: e.target.value })
-                      }
+                      onChange={(e) => {
+                        console.log(
+                          "[DEBUG] entryDate cambiado:",
+                          e.target.value
+                        );
+                        updateFormData({ entryDate: e.target.value });
+                      }}
                     />
                   </div>
 
                   {/* Exit Date */}
-
                   <div className="space-y-2">
                     <Label
                       htmlFor="exitDate"
@@ -367,10 +438,14 @@ export const CargoRegistration = () => {
                     <Input
                       id="exitDate"
                       type="datetime-local"
-                      value={formData.entryDate}
-                      onChange={(e) =>
-                        updateFormData({ entryDate: e.target.value })
-                      }
+                      value={formData.exitDate || ""}
+                      onChange={(e) => {
+                        console.log(
+                          "[DEBUG] exitDate cambiado:",
+                          e.target.value
+                        );
+                        updateFormData({ exitDate: e.target.value });
+                      }}
                     />
                   </div>
 
@@ -380,9 +455,13 @@ export const CargoRegistration = () => {
                       <Checkbox
                         id="isPerishable"
                         checked={formData.isPerishable}
-                        onCheckedChange={(checked) =>
-                          updateFormData({ isPerishable: !!checked })
-                        }
+                        onCheckedChange={(checked) => {
+                          console.log(
+                            "[DEBUG] isPerishable cambiado:",
+                            checked
+                          );
+                          updateFormData({ isPerishable: !!checked });
+                        }}
                       />
                       <Label
                         htmlFor="isPerishable"
@@ -407,9 +486,13 @@ export const CargoRegistration = () => {
                   <Textarea
                     id="description"
                     value={formData.description}
-                    onChange={(e) =>
-                      updateFormData({ description: e.target.value })
-                    }
+                    onChange={(e) => {
+                      console.log(
+                        "[DEBUG] description cambiado:",
+                        e.target.value
+                      );
+                      updateFormData({ description: e.target.value });
+                    }}
                     placeholder="Describe el contenido de la carga..."
                     rows={3}
                     className={errors.description ? "border-red-500" : ""}
@@ -469,8 +552,8 @@ export const CargoRegistration = () => {
                     <span className="text-sm">Ubicación asignada</span>
                     {formData.warehouseId &&
                     formData.rackId &&
-                    formData.level &&
-                    formData.column ? (
+                    formData.level !== 0 &&
+                    formData.column !== "" ? (
                       <CheckCircle className="w-4 h-4 text-green-500" />
                     ) : (
                       <AlertCircle className="w-4 h-4 text-gray-400" />
