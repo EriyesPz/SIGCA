@@ -1,5 +1,3 @@
-"use client";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -70,10 +68,10 @@ export const  Dashboard = () => {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <BarChart3 className="w-8 h-8 text-blue-600" />
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                   Dashboard Ejecutivo
                 </h1>
-                <Badge className="bg-green-100 text-green-800 border-green-200">
+                <Badge className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-700">
                   Sistema Activo
                 </Badge>
               </div>

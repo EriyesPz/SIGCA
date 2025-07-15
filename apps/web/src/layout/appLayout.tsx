@@ -1,4 +1,3 @@
-// src/pages/AppLayout.tsx
 import {
   SidebarProvider,
   Sidebar,
@@ -8,7 +7,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
   SidebarInset,
   SidebarTrigger,
   SidebarFooter,
@@ -16,7 +14,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import {
-  Home as HomeIcon,
+  HomeIcon,
   LayoutDashboard,
   Users,
   BarChart3,
@@ -27,6 +25,7 @@ import {
   LogOut,
   ChevronUp,
   Package,
+  Grid3X3,
 } from "lucide-react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -38,6 +37,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCookies } from "react-cookie";
+import LogoDark from "@/icons/logo-dark.svg";
 
 export const AppLayout = () => {
   const navigate = useNavigate();
@@ -60,7 +60,22 @@ export const AppLayout = () => {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <h1 className="text-lg font-semibold">Mi App</h1>
+          <div className="flex items-center p-4">
+            <SidebarHeader>
+              <div className="flex items-center justify-start">
+                <img
+                  src="/icons/logo-light.svg"
+                  alt="Logo modo claro"
+                  className="h-24 object-contain dark:hidden"
+                />
+                <img
+                  src="/icons/logo-dark.svg"
+                  alt="Logo modo oscuro"
+                  className="h-24 object-contain hidden dark:block"
+                />
+              </div>
+            </SidebarHeader>
+          </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
@@ -94,7 +109,7 @@ export const AppLayout = () => {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => navigate("/tracker")}>
-                  <LayoutDashboard className="mr-2" />
+                  <Grid3X3 className="mr-2" />
                   Tracker
                 </SidebarMenuButton>
               </SidebarMenuItem>
