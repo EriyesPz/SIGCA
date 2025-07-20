@@ -42,7 +42,7 @@ export const LocationsTable = ({
 
   const allLocations = Object.entries(warehouseLocations).flatMap(
     ([warehouseId, warehouse]: [string, any]) =>
-      Object.entries(warehouse.racks).flatMap(([rackId, rack]: [string, any]) =>
+      Object.entries(warehouse.racks).flatMap(([, rack]: [string, any]) =>
         rack.locations.map((location: any) => ({
           ...location,
           warehouseId,

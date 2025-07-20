@@ -52,7 +52,7 @@ export const generatePDFReport = async (elementId: string, config: ReportConfig)
   pdf.addImage(imgData, "PNG", imgX, imgY, imgWidth * ratio, imgHeight * ratio)
 
   // Add footer
-  const pageCount = pdf.internal.getNumberOfPages()
+  const pageCount = pdf.internal.pages.length;
   for (let i = 1; i <= pageCount; i++) {
     pdf.setPage(i)
     pdf.setFontSize(8)

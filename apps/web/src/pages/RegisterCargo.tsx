@@ -88,8 +88,8 @@ export const CargoRegistration = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
-  const { mutate, isPending, isSuccess, isError, error } = useRegisterCargo();
+  const [, setShowPreview] = useState(false);
+  const { mutate} = useRegisterCargo();
 
   const handleSubmit = () => {
     console.log("[DEBUG] handleSubmit llamado", formData);

@@ -1,5 +1,18 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarHeader, SidebarContent, SidebarGroupLabel, SidebarGroup, SidebarFooter, SidebarSeparator, SidebarInset, SidebarTrigger } from "./sidebar";
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarHeader,
+  SidebarContent,
+  SidebarGroupLabel,
+  SidebarFooter,
+  SidebarSeparator,
+  SidebarInset,
+  SidebarTrigger,
+} from "./sidebar";
 import { HomeIcon, SettingsIcon } from "lucide-react";
 import "@/index.css";
 
@@ -9,7 +22,7 @@ const meta: Meta = {
     layout: "fullscreen",
   },
   decorators: [
-    (Story) => (
+    () => (
       <SidebarProvider>
         <div className="flex min-h-screen">
           <Sidebar className="border-r">

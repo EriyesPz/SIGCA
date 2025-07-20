@@ -1,6 +1,13 @@
+"use client"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart3 } from "lucide-react"
-import { formatShortDate, getTypeColor, getTypeIcon } from "@/utils/cargo-report";
+import {
+  formatShortDate,
+  getTypeColor,
+  getTypeIcon,
+  getTypeLabel,          // 🆕 etiquetas visibles en ES
+} from "@/utils/cargo-report"
 import type { DailyCargoSummary } from "./types"
 
 interface CargoChartProps {
@@ -8,48 +15,64 @@ interface CargoChartProps {
 }
 
 export const CargoChart = ({ reports }: CargoChartProps) => {
-  const maxWeight = Math.max(...reports.map((r) => r.totals.totalWeight))
+  /* Extrae las clases bg-* y dark:bg-* del string devuelto por getTypeColor */
+  const pickBgClasses = (color: string) => {
+    const parts = color.split(" ")
+    const light = parts.find((c) => c.startsWith("bg-")) ?? ""
+    const dark = parts.find((c) => c.startsWith("dark:bg-")) ?? ""
+    return `${light} ${dark}`
+  }
 
   return (
-    <Card className="bg-white shadow-sm">
+    <Card className="bg-white dark:bg-gray-800 shadow-sm">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-blue-600" />
+        <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+          <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           Distribución Diaria por Tipo de Carga
         </CardTitle>
       </CardHeader>
+
       <CardContent>
         <div className="space-y-4">
           {reports.map((report) => (
             <div key={report.date} className="space-y-2">
+              {/* Encabezado del día */}
               <div className="flex items-center justify-between">
-                <h4 className="font-medium text-gray-700">{formatShortDate(report.date)}</h4>
-                <span className="text-sm text-gray-500">{report.totals.totalWeight.toFixed(1)} kg total</span>
+                <h4 className="font-medium text-gray-700 dark:text-gray-300">
+                  {formatShortDate(report.date)}
+                </h4>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {report.totals.totalWeight.toFixed(1)} kg total
+                </span>
               </div>
 
+              {/* Barra apilada */}
               <div className="relative">
-                <div className="flex h-8 bg-gray-100 rounded-lg overflow-hidden">
-                  {report.summary.map((typeSummary) => {
-                    const percentage = (typeSummary.totalWeight / report.totals.totalWeight) * 100
-                    const typeColorClass = getTypeColor(typeSummary.type)
+                <div className="flex h-8 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700">
+                  {report.summary.map((t) => {
+                    const pct = (t.totalWeight / report.totals.totalWeight) * 100
+                    const barColor = pickBgClasses(getTypeColor(t.type))
 
                     return (
                       <div
-                        key={typeSummary.type}
-                        className={`${typeColorClass.split(" ")[1]} flex items-center justify-center text-xs font-medium text-white relative group cursor-pointer`}
-                        style={{ width: `${percentage}%` }}
-                        title={`${typeSummary.type}: ${typeSummary.totalWeight.toFixed(1)} kg (${typeSummary.count} cargas)`}
+                        key={t.type}
+                        className={`${barColor} group relative flex cursor-pointer items-center justify-center text-xs font-medium text-white transition-opacity`}
+                        style={{ width: `${pct}%` }}
+                        title={`${getTypeLabel(t.type)}: ${t.totalWeight.toFixed(
+                          1,
+                        )} kg (${t.count} cargas)`}
                       >
-                        {percentage > 15 && (
+                        {/* Conteo visible solo si hay espacio */}
+                        {pct > 15 && (
                           <span className="flex items-center gap-1">
-                            {getTypeIcon(typeSummary.type)}
-                            {typeSummary.count}
+                            {getTypeIcon(t.type)}
+                            {t.count}
                           </span>
                         )}
 
-                        {/* Tooltip */}
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                          {typeSummary.type}: {typeSummary.totalWeight.toFixed(1)} kg ({typeSummary.count} cargas)
+                        {/* Tooltip artesanal */}
+                        <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-max -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 dark:bg-gray-900">
+                          {getTypeLabel(t.type)}: {t.totalWeight.toFixed(1)} kg ({t.count} cargas)
                         </div>
                       </div>
                     )
@@ -60,22 +83,23 @@ export const CargoChart = ({ reports }: CargoChartProps) => {
           ))}
         </div>
 
+        {/* Sin datos */}
         {reports.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            <p>No hay datos disponibles para el rango de fechas seleccionado</p>
-          </div>
+          <p className="py-8 text-center text-gray-500 dark:text-gray-400">
+            No hay datos disponibles para el rango de fechas seleccionado
+          </p>
         )}
 
-        {/* Legend */}
-        <div className="mt-6 pt-4 border-t">
-          <div className="flex flex-wrap gap-4 justify-center">
-            {["IN", "OUT", "DAMAGED", "RETURNED"].map((type) => {
-              const typeColorClass = getTypeColor(type as any)
+        {/* Leyenda */}
+        <div className="mt-6 border-t pt-4">
+          <div className="flex flex-wrap justify-center gap-4">
+            {(["IN", "OUT", "DAMAGED", "RETURNED"] as const).map((t) => {
+              const color = pickBgClasses(getTypeColor(t))
               return (
-                <div key={type} className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded ${typeColorClass.split(" ")[1]}`} />
-                  <span className="text-sm text-gray-600">
-                    {getTypeIcon(type as any)} {type}
+                <div key={t} className="flex items-center gap-2">
+                  <div className={`h-3 w-3 rounded ${color}`} />
+                  <span className="text-sm text-gray-600 dark:text-gray-300 capitalize">
+                    {getTypeIcon(t)} {getTypeLabel(t)}
                   </span>
                 </div>
               )

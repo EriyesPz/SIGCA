@@ -1,80 +1,115 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Calendar, ChevronDown, ChevronRight, Package, Truck, MapPin, Clock } from "lucide-react"
-import { formatWeight, formatNumber, getTypeColor, getTypeIcon } from "@/utils/cargo-report"
-import type { DailyCargoSummary } from "./types"
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Calendar,
+  ChevronDown,
+  ChevronRight,
+  Package,
+  Truck,
+  MapPin,
+  Clock,
+} from "lucide-react";
+import {
+  formatWeight,
+  formatNumber,
+  getTypeColor,
+  getTypeIcon,
+  getTypeLabel, // 🆕 etiqueta en ES
+} from "@/utils/cargo-report";
+import type { DailyCargoSummary } from "./types";
+import React from "react";
 
 interface DetailedTableProps {
-  reports: DailyCargoSummary[]
+  reports: DailyCargoSummary[];
 }
 
 export const DetailedTable = ({ reports }: DetailedTableProps) => {
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const toggleRowExpansion = (key: string) => {
-    const newExpanded = new Set(expandedRows)
-    if (newExpanded.has(key)) {
-      newExpanded.delete(key)
-    } else {
-      newExpanded.add(key)
-    }
-    setExpandedRows(newExpanded)
-  }
+    const copy = new Set(expandedRows);
+    copy.has(key) ? copy.delete(key) : copy.add(key);
+    setExpandedRows(copy);
+  };
 
-  // Flatten all type summaries with their dates for the table
-  const tableData = reports.flatMap((report) =>
-    report.summary.map((typeSummary) => ({
-      date: report.date,
-      type: typeSummary.type,
-      count: typeSummary.count,
-      totalWeight: typeSummary.totalWeight,
-      totalUnits: typeSummary.totalUnits,
-      items: typeSummary.items,
-      key: `${report.date}-${typeSummary.type}`,
-    })),
-  )
+  /* ---------------------------- datos a pintar ---------------------------- */
+  const tableData = reports.flatMap((r) =>
+    r.summary.map((s) => ({
+      date: r.date,
+      type: s.type,
+      count: s.count,
+      totalWeight: s.totalWeight,
+      totalUnits: s.totalUnits,
+      items: s.items,
+      key: `${r.date}-${s.type}`,
+    }))
+  );
 
+  /* ---------------------------------- UI ---------------------------------- */
   return (
-    <Card className="bg-white shadow-sm">
+    <Card className="bg-white dark:bg-gray-800 shadow-sm">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-blue-600" />
+        <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+          <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           Tabla Detallada por Día y Tipo
         </CardTitle>
       </CardHeader>
+
       <CardContent>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50">
-                <TableHead className="font-semibold w-12"></TableHead>
-                <TableHead className="font-semibold">Fecha</TableHead>
-                <TableHead className="font-semibold">Tipo de Carga</TableHead>
-                <TableHead className="text-right font-semibold">Número Total de Cargas</TableHead>
-                <TableHead className="text-right font-semibold">Peso Total (Kg)</TableHead>
-                <TableHead className="text-right font-semibold">Unidades Totales</TableHead>
+              <TableRow className="bg-gray-50 dark:bg-gray-700/40">
+                <TableHead className="w-12" />
+                <TableHead>Fecha</TableHead>
+                <TableHead>Tipo de Carga</TableHead>
+                <TableHead className="text-right"># Cargas</TableHead>
+                <TableHead className="text-right">Peso Total (Kg)</TableHead>
+                <TableHead className="text-right">Unidades</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
-              {tableData.map((row, index) => {
-                const isExpanded = expandedRows.has(row.key)
+              {tableData.map((row, idx) => {
+                const expanded = expandedRows.has(row.key);
+                const zebra =
+                  idx % 2 === 0
+                    ? "bg-white dark:bg-gray-800"
+                    : "bg-gray-50/60 dark:bg-gray-700/20";
+
                 return (
-                  <>
+                  <React.Fragment key={row.key}>
+                    {/* ------------------------------ Fila padre ----------------------------- */}
                     <TableRow
-                      key={row.key}
-                      className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50/50"} hover:bg-blue-50/50 cursor-pointer`}
+                      className={`${zebra} hover:bg-blue-50/50 dark:hover:bg-blue-900/20 cursor-pointer`}
                       onClick={() => toggleRowExpansion(row.key)}
                     >
                       <TableCell>
-                        <Button variant="ghost" size="sm" className="p-1 h-6 w-6">
-                          {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-1"
+                        >
+                          {expanded ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
                         </Button>
                       </TableCell>
+
                       <TableCell className="font-medium">
                         {new Date(row.date).toLocaleDateString("es-ES", {
                           weekday: "short",
@@ -82,106 +117,161 @@ export const DetailedTable = ({ reports }: DetailedTableProps) => {
                           day: "numeric",
                         })}
                       </TableCell>
+
                       <TableCell>
-                        <Badge className={`${getTypeColor(row.type)} font-medium`}>
-                          {getTypeIcon(row.type)} {row.type}
+                        <Badge
+                          className={`${getTypeColor(
+                            row.type
+                          )} font-medium capitalize`}
+                        >
+                          {getTypeIcon(row.type)} {getTypeLabel(row.type)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-medium">{formatNumber(row.count)}</TableCell>
-                      <TableCell className="text-right">{formatWeight(row.totalWeight)}</TableCell>
-                      <TableCell className="text-right">{formatNumber(row.totalUnits)}</TableCell>
+
+                      <TableCell className="text-right font-medium">
+                        {formatNumber(row.count)}
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        {formatWeight(row.totalWeight)}
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        {formatNumber(row.totalUnits)}
+                      </TableCell>
                     </TableRow>
 
-                    {isExpanded && (
+                    {/* ----------------------------- Fila detalle ---------------------------- */}
+                    {expanded && (
                       <TableRow>
                         <TableCell colSpan={6} className="p-0">
-                          <div className="bg-gray-50/30 p-4 border-l-4 border-blue-200">
-                            <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                              <Package className="w-4 h-4" />
-                              Detalle de Cargas - {row.type} ({row.items.length} elementos)
+                          <div className="border-l-4 border-blue-300 dark:border-blue-700 bg-gray-50/60 dark:bg-gray-900/40 p-4 space-y-4">
+                            <h4 className="mb-2 flex items-center gap-2 font-semibold text-gray-800 dark:text-gray-200">
+                              <Package className="h-4 w-4" />
+                              Detalle – {getTypeLabel(row.type)} (
+                              {row.items.length})
                             </h4>
-                            <div className="grid gap-3">
-                              {row.items.map((item) => (
-                                <div key={item.id} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-                                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                                    <div>
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <Package className="w-4 h-4 text-blue-600" />
-                                        <span className="font-medium text-gray-700">Código de Seguimiento</span>
-                                      </div>
-                                      <p className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
-                                        {item.trackingCode}
-                                      </p>
-                                    </div>
 
-                                    <div>
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <Truck className="w-4 h-4 text-green-600" />
-                                        <span className="font-medium text-gray-700">Descripción</span>
-                                      </div>
-                                      <p className="text-sm text-gray-600">{item.description}</p>
-                                    </div>
+                            {row.items.map((it) => (
+                              <div
+                                key={it.id}
+                                className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 shadow-sm"
+                              >
+                                <div className="grid gap-3 md:grid-cols-4">
+                                  {/* tracking */}
+                                  <DetailBlock
+                                    icon={
+                                      <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                    }
+                                    label="Código"
+                                  >
+                                    <span className="font-mono">
+                                      {it.trackingCode}
+                                    </span>
+                                  </DetailBlock>
 
-                                    <div>
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <MapPin className="w-4 h-4 text-purple-600" />
-                                        <span className="font-medium text-gray-700">Almacén</span>
-                                      </div>
-                                      <p className="text-sm text-gray-600">{item.warehouse}</p>
-                                    </div>
+                                  {/* description */}
+                                  <DetailBlock
+                                    icon={
+                                      <Truck className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                    }
+                                    label="Descripción"
+                                  >
+                                    {it.description}
+                                  </DetailBlock>
 
-                                    <div>
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <Clock className="w-4 h-4 text-orange-600" />
-                                        <span className="font-medium text-gray-700">Hora</span>
-                                      </div>
-                                      <p className="text-sm text-gray-600">
-                                        {new Date(item.createdAt).toLocaleTimeString("es-ES", {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })}
-                                      </p>
-                                    </div>
-                                  </div>
+                                  {/* warehouse */}
+                                  <DetailBlock
+                                    icon={
+                                      <MapPin className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                    }
+                                    label="Almacén"
+                                  >
+                                    {it.warehouse}
+                                  </DetailBlock>
 
-                                  <div className="mt-3 pt-3 border-t border-gray-200">
-                                    <div className="flex justify-between items-center">
-                                      <div className="flex gap-4">
-                                        <span className="text-sm">
-                                          <strong>Categoría:</strong> {item.cargoCategory}
-                                        </span>
-                                        <span className="text-sm">
-                                          <strong>Peso:</strong> {formatWeight(item.weightKg)}
-                                        </span>
-                                        <span className="text-sm">
-                                          <strong>Cantidad:</strong> {formatNumber(item.quantity)} unidades
-                                        </span>
-                                      </div>
-                                      <Badge className={`${getTypeColor(item.type)} text-xs`}>
-                                        {getTypeIcon(item.type)} {item.type}
-                                      </Badge>
-                                    </div>
-                                  </div>
+                                  {/* time */}
+                                  <DetailBlock
+                                    icon={
+                                      <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                                    }
+                                    label="Hora"
+                                  >
+                                    {new Date(it.createdAt).toLocaleTimeString(
+                                      "es-ES",
+                                      { hour: "2-digit", minute: "2-digit" }
+                                    )}
+                                  </DetailBlock>
                                 </div>
-                              ))}
-                            </div>
+
+                                {/* footer */}
+                                <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3 flex flex-wrap justify-between items-center">
+                                  <div className="flex gap-4 flex-wrap text-sm">
+                                    <span>
+                                      <strong>Categoría:</strong>{" "}
+                                      {it.cargoCategory}
+                                    </span>
+                                    <span>
+                                      <strong>Peso:</strong>{" "}
+                                      {formatWeight(it.weightKg)}
+                                    </span>
+                                    <span>
+                                      <strong>Cantidad:</strong>{" "}
+                                      {formatNumber(it.quantity)} u
+                                    </span>
+                                  </div>
+
+                                  <Badge
+                                    className={`${getTypeColor(
+                                      it.type
+                                    )} text-xs capitalize`}
+                                  >
+                                    {getTypeIcon(it.type)}{" "}
+                                    {getTypeLabel(it.type)}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
-                )
+                  </React.Fragment>
+                );
               })}
             </TableBody>
           </Table>
         </div>
 
         {tableData.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            <p>No hay datos disponibles para el rango de fechas seleccionado</p>
-          </div>
+          <p className="py-8 text-center text-gray-500 dark:text-gray-400">
+            No hay datos disponibles para el rango seleccionado
+          </p>
         )}
       </CardContent>
     </Card>
-  )
-}
+  );
+};
+
+/* -------------------------------------------------------------------------- */
+/*                         Bloque reutilizable de detalle                     */
+/* -------------------------------------------------------------------------- */
+const DetailBlock = ({
+  icon,
+  label,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}) => (
+  <div>
+    <div className="mb-1 flex items-center gap-2">
+      {icon}
+      <span className="font-medium text-gray-700 dark:text-gray-300">
+        {label}
+      </span>
+    </div>
+    <p className="text-sm text-gray-600 dark:text-gray-400">{children}</p>
+  </div>
+);

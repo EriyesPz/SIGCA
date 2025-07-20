@@ -1,17 +1,32 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 "use client"
 
-import { useState, useMemo } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import type React from "react"
+import { useMemo, useState } from "react"
+
+import { ArrowRightLeft, Calendar, MapPin, MoveRight, User, FileText } from "lucide-react"
+
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ArrowRightLeft, Calendar, MapPin, User, FileText, MoveRight } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+
 import { ReportFiltersComponent } from "./report-filter"
 import { ReportPreview } from "./report-preview"
+
 import { mockInternalTransfers } from "@/data/reports-data"
-import { generatePDFReport, generateExcelReport } from "@/utils/pdf-generator"
+import { generateExcelReport, generatePDFReport } from "@/utils/pdf-generator"
 import type { CargoEntryFilters as ReportFiltersType } from "./types"
 
+/* ░░░ COMPONENTE PRINCIPAL ░░░ */
 export const InternalTransfersReport = () => {
+  /* ---------- state ---------- */
   const [filters, setFilters] = useState<ReportFiltersType>({
     startDate: "2024-01-16",
     endDate: "2024-01-18",
@@ -22,7 +37,7 @@ export const InternalTransfersReport = () => {
     cargoType: "all",
   })
 
-  /* ---------- DATA ---------- */
+  /* ---------- data ---------- */
   const filteredTransfers = useMemo(() => {
     return mockInternalTransfers.filter((t) => {
       const d = new Date(t.transferDate)
@@ -31,7 +46,8 @@ export const InternalTransfersReport = () => {
 
       const inRange = d >= start && d <= end
       const codeOk =
-        !filters.trackingCode || t.trackingCode.toLowerCase().includes(filters.trackingCode.toLowerCase())
+        !filters.trackingCode ||
+        t.trackingCode.toLowerCase().includes(filters.trackingCode.toLowerCase())
       const userOk = filters.user === "all" || t.transferredBy === filters.user
 
       return inRange && codeOk && userOk
@@ -51,6 +67,7 @@ export const InternalTransfersReport = () => {
     [filteredTransfers],
   )
 
+  /* ---------- handlers ---------- */
   const resetFilters = () =>
     setFilters({
       startDate: "2024-01-16",
@@ -62,8 +79,8 @@ export const InternalTransfersReport = () => {
       cargoType: "all",
     })
 
-  const exportPDF = async () => {
-    await generatePDFReport("internal-transfers-content", {
+  const exportPDF = () =>
+    generatePDFReport("internal-transfers-content", {
       title: "Reporte de Traslados Internos",
       subtitle: "Movimientos de ubicación de cargas dentro del almacén",
       dateRange: `${filters.startDate} - ${filters.endDate}`,
@@ -71,9 +88,8 @@ export const InternalTransfersReport = () => {
       summary,
       footer: "Sistema de Gestión de Almacén",
     })
-  }
 
-  const exportExcel = () => {
+  const exportExcel = () =>
     generateExcelReport(
       filteredTransfers.map((t) => ({
         "Código de Carga": t.trackingCode,
@@ -87,22 +103,25 @@ export const InternalTransfersReport = () => {
       })),
       "reporte_traslados_internos",
     )
-  }
 
-  /* ---------- UI ---------- */
+  /* ---------- ui ---------- */
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-200">
       <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header */}
-        <div className="rounded-lg bg-white dark:bg-gray-800 shadow-sm p-6">
+        {/* ░ Header ░ */}
+        <header className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm">
           <div className="mb-2 flex items-center gap-3">
             <ArrowRightLeft className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Reporte de Traslados Internos</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Reporte de Traslados Internos
+            </h1>
           </div>
-          <p className="text-gray-600 dark:text-gray-300">Movimientos de ubicación de cargas dentro del almacén</p>
-        </div>
+          <p className="text-gray-600 dark:text-gray-300">
+            Movimientos de ubicación de cargas dentro del almacén
+          </p>
+        </header>
 
-        {/* Preview + Actions */}
+        {/* ░ Preview + Actions ░ */}
         <ReportPreview
           title="Reporte de Traslados Internos"
           data={filteredTransfers}
@@ -121,37 +140,35 @@ export const InternalTransfersReport = () => {
               title="Filtros de Traslados Internos"
             />
 
-            {/* Summary */}
+            {/* Summary cards */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-              {/* Total */}
               <SummaryCard
-                icon={<ArrowRightLeft className="h-6 w-6 text-blue-600 dark:text-blue-400" />}
-                bgLight="bg-blue-100"
-                bgDark="bg-blue-900"
+                icon={
+                  <ArrowRightLeft className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                }
+                bg="blue"
                 label="Total Traslados"
                 value={filteredTransfers.length}
               />
-              {/* Usuarios */}
               <SummaryCard
                 icon={<User className="h-6 w-6 text-green-600 dark:text-green-400" />}
-                bgLight="bg-green-100"
-                bgDark="bg-green-900"
+                bg="green"
                 label="Usuarios Activos"
                 value={new Set(filteredTransfers.map((t) => t.transferredBy)).size}
               />
-              {/* Cargas */}
               <SummaryCard
-                icon={<MapPin className="h-6 w-6 text-purple-600 dark:text-purple-400" />}
-                bgLight="bg-purple-100"
-                bgDark="bg-purple-900"
+                icon={
+                  <MapPin className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                }
+                bg="purple"
                 label="Cargas Únicas"
                 value={new Set(filteredTransfers.map((t) => t.trackingCode)).size}
               />
-              {/* Almacenes */}
               <SummaryCard
-                icon={<MapPin className="h-6 w-6 text-orange-600 dark:text-orange-400" />}
-                bgLight="bg-orange-100"
-                bgDark="bg-orange-900"
+                icon={
+                  <MapPin className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                }
+                bg="orange"
                 label="Almacenes"
                 value={
                   new Set([
@@ -165,7 +182,9 @@ export const InternalTransfersReport = () => {
             {/* Table */}
             <Card className="bg-white dark:bg-gray-800">
               <CardHeader>
-                <CardTitle className="text-gray-900 dark:text-white">Detalle de Traslados Internos</CardTitle>
+                <CardTitle className="text-gray-900 dark:text-white">
+                  Detalle de Traslados Internos
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -184,7 +203,10 @@ export const InternalTransfersReport = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredTransfers.map((t) => (
-                      <TableRow key={t.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <TableRow
+                        key={t.id}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      >
                         <TableCell className="font-mono text-sm">{t.trackingCode}</TableCell>
                         <TableCell className="max-w-xs">
                           <div className="truncate" title={t.cargoDescription}>
@@ -238,7 +260,9 @@ export const InternalTransfersReport = () => {
                           {t.notes && (
                             <div className="flex items-start gap-2">
                               <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
-                              <span className="text-sm text-muted-foreground">{t.notes}</span>
+                              <span className="text-sm text-muted-foreground">
+                                {t.notes}
+                              </span>
                             </div>
                           )}
                         </TableCell>
@@ -251,7 +275,7 @@ export const InternalTransfersReport = () => {
           </div>
         </ReportPreview>
 
-        {/* Footer */}
+        {/* ░ Footer ░ */}
         <Card className="bg-white dark:bg-gray-800">
           <CardContent className="pt-6">
             <div className="text-center text-sm text-muted-foreground">
@@ -266,7 +290,8 @@ export const InternalTransfersReport = () => {
                 })}
               </p>
               <p className="mt-1">
-                Sistema de Gestión de Almacén – {filteredTransfers.length} traslados registrados
+                Sistema de Gestión de Almacén – {filteredTransfers.length} traslados
+                registrados
               </p>
             </div>
           </CardContent>
@@ -276,32 +301,40 @@ export const InternalTransfersReport = () => {
   )
 }
 
-/* ----------  SMALL REUSABLE PIECES ---------- */
+/* ░░░ COMPONENTES AUXILIARES ░░░ */
 const SummaryCard = ({
   icon,
-  bgLight,
-  bgDark,
+  bg,
   label,
   value,
 }: {
   icon: React.ReactNode
-  bgLight: string
-  bgDark: string
+  bg: "blue" | "green" | "purple" | "orange"
   label: string
   value: number
-}) => (
-  <Card className="bg-white dark:bg-gray-800">
-    <CardContent className="p-6">
-      <div className="flex items-center gap-4">
-        <div className={`rounded-lg p-3 ${bgLight} dark:${bgDark}`}>{icon}</div>
-        <div>
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="text-2xl font-bold">{value}</p>
+}) => {
+  const bgLight = `bg-${bg}-100`
+  return (
+    <Card className="bg-white dark:bg-gray-800">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-4">
+          {/* Tailwind no permite clases dinámicas arbitrarias durante el build,
+              así que usamos estilo inline para el fondo oscuro               */}
+          <div
+            className={`rounded-lg p-3 ${bgLight}`}
+            style={{ backgroundColor: `var(--tw-${bg}-100)` }}
+          >
+            {icon}
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">{label}</p>
+            <p className="text-2xl font-bold">{value}</p>
+          </div>
         </div>
-      </div>
-    </CardContent>
-  </Card>
-)
+      </CardContent>
+    </Card>
+  )
+}
 
 const LocationTag = ({
   color,
@@ -311,14 +344,17 @@ const LocationTag = ({
   color: "red" | "green"
   warehouse: string
   rack: { rack: string; level: number; column: number }
-}) => (
-  <div className="flex items-center gap-2">
-    <MapPin className={`h-4 w-4 text-${color}-500`} />
-    <div className="text-sm">
-      <div className="font-medium">{warehouse}</div>
-      <div className="text-muted-foreground">
-        {rack.rack}-{rack.level}-{rack.column}
+}) => {
+  const pinColor = color === "red" ? "text-red-500" : "text-green-500"
+  return (
+    <div className="flex items-center gap-2">
+      <MapPin className={`h-4 w-4 ${pinColor}`} />
+      <div className="text-sm">
+        <div className="font-medium">{warehouse}</div>
+        <div className="text-muted-foreground">
+          {rack.rack}-{rack.level}-{rack.column}
+        </div>
       </div>
     </div>
-  </div>
-)
+  )
+}

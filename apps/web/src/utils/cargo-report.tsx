@@ -1,11 +1,57 @@
-import type { CargoMovement, DailyCargoSummary, CargoTypeSummary, OverallSummary } from "@/components/cargo-report/types";
+/* utils/cargo-report.ts
+   Mantiene la lógica original   –   Añade helpers de etiquetas en español */
 
-export const generateDailyCargoReports = (movements: CargoMovement[]): DailyCargoSummary[] => {
+import type {
+  CargoMovement,
+  DailyCargoSummary,
+  CargoTypeSummary,
+  OverallSummary,
+} from "@/components/cargo-report/types"
+
+/* -------------------------------------------------------------------------- */
+/* ▲ NUEVO: helpers visuales en español                                       */
+/* -------------------------------------------------------------------------- */
+export type MovementType = "IN" | "OUT" | "DAMAGED" | "RETURNED"
+
+/** Etiqueta legible para el usuario */
+export const TYPE_LABEL: Record<MovementType, string> = {
+  IN: "Entradas",
+  OUT: "Salidas",
+  DAMAGED: "Dañadas",
+  RETURNED: "Devueltas",
+}
+
+/** Colores (texto + fondo + borde) */
+export const TYPE_COLOR: Record<MovementType, string> = {
+  IN: "text-green-600 bg-green-50 border-green-200",
+  OUT: "text-blue-600 bg-blue-50 border-blue-200",
+  DAMAGED: "text-red-600 bg-red-50 border-red-200",
+  RETURNED: "text-amber-600 bg-amber-50 border-amber-200",
+}
+
+/** Emoji / ícono breve (si no usas Lucide aquí) */
+export const TYPE_ICON: Record<MovementType, string> = {
+  IN: "↗️",
+  OUT: "↙️",
+  DAMAGED: "⚠️",
+  RETURNED: "↩️",
+}
+
+/* Exposición de helpers para los componentes */
+export const getTypeLabel = (t: MovementType) => TYPE_LABEL[t]
+export const getTypeColor = (t: MovementType) => TYPE_COLOR[t]
+export const getTypeIcon = (t: MovementType) => TYPE_ICON[t]
+
+/* -------------------------------------------------------------------------- */
+/* ▲  LÓGICA ORIGINAL – sin cambios en nombres ni comportamiento             */
+/* -------------------------------------------------------------------------- */
+
+export const generateDailyCargoReports = (
+  movements: CargoMovement[],
+): DailyCargoSummary[] => {
   const groupedByDate = movements.reduce(
     (acc, movement) => {
-      if (!acc[movement.date]) {
-        acc[movement.date] = []
-      }
+      if (!acc[movement.date]) acc[movement.date] = []
       acc[movement.date].push(movement)
       return acc
     },
@@ -14,13 +60,13 @@ export const generateDailyCargoReports = (movements: CargoMovement[]): DailyCarg
 
   return Object.entries(groupedByDate)
     .map(([date, dayMovements]) => {
-      const groupByType = (type: "IN" | "OUT" | "DAMAGED" | "RETURNED"): CargoTypeSummary => {
+      const groupByType = (type: MovementType): CargoTypeSummary => {
         const typeMovements = dayMovements.filter((m) => m.type === type)
         return {
           type,
           count: typeMovements.length,
-          totalWeight: typeMovements.reduce((sum, item) => sum + item.weightKg, 0),
-          totalUnits: typeMovements.reduce((sum, item) => sum + item.quantity, 0),
+          totalWeight: typeMovements.reduce((s, i) => s + i.weightKg, 0),
+          totalUnits: typeMovements.reduce((s, i) => s + i.quantity, 0),
           items: typeMovements,
         }
       }
@@ -32,14 +78,27 @@ export const generateDailyCargoReports = (movements: CargoMovement[]): DailyCarg
 
       return {
         date,
-        summary: [inSummary, outSummary, damagedSummary, returnedSummary].filter((s) => s.count > 0),
+        summary: [
+          inSummary,
+          outSummary,
+          damagedSummary,
+          returnedSummary,
+        ].filter((s) => s.count > 0),
         totals: {
           totalCargos: dayMovements.length,
-          totalWeight: dayMovements.reduce((sum, item) => sum + item.weightKg, 0),
-          totalUnits: dayMovements.reduce((sum, item) => sum + item.quantity, 0),
+          totalWeight: dayMovements.reduce((s, i) => s + i.weightKg, 0),
+          totalUnits: dayMovements.reduce((s, i) => s + i.quantity, 0),
           byType: {
-            IN: { count: inSummary.count, weight: inSummary.totalWeight, units: inSummary.totalUnits },
-            OUT: { count: outSummary.count, weight: outSummary.totalWeight, units: outSummary.totalUnits },
+            IN: {
+              count: inSummary.count,
+              weight: inSummary.totalWeight,
+              units: inSummary.totalUnits,
+            },
+            OUT: {
+              count: outSummary.count,
+              weight: outSummary.totalWeight,
+              units: outSummary.totalUnits,
+            },
             DAMAGED: {
               count: damagedSummary.count,
               weight: damagedSummary.totalWeight,
@@ -54,18 +113,20 @@ export const generateDailyCargoReports = (movements: CargoMovement[]): DailyCarg
         },
       }
     })
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .sort((a, b) => +new Date(a.date) - +new Date(b.date))
 }
 
-export const calculateOverallSummary = (reports: DailyCargoSummary[]): OverallSummary => {
-  return reports.reduce(
-    (acc, report) => ({
-      totalReceived: acc.totalReceived + report.totals.byType.IN.count,
-      totalDispatched: acc.totalDispatched + report.totals.byType.OUT.count,
-      totalWeight: acc.totalWeight + report.totals.totalWeight,
-      totalUnits: acc.totalUnits + report.totals.totalUnits,
-      totalDamaged: acc.totalDamaged + report.totals.byType.DAMAGED.count,
-      totalReturned: acc.totalReturned + report.totals.byType.RETURNED.count,
+export const calculateOverallSummary = (
+  reports: DailyCargoSummary[],
+): OverallSummary =>
+  reports.reduce(
+    (acc, r) => ({
+      totalReceived: acc.totalReceived + r.totals.byType.IN.count,
+      totalDispatched: acc.totalDispatched + r.totals.byType.OUT.count,
+      totalWeight: acc.totalWeight + r.totals.totalWeight,
+      totalUnits: acc.totalUnits + r.totals.totalUnits,
+      totalDamaged: acc.totalDamaged + r.totals.byType.DAMAGED.count,
+      totalReturned: acc.totalReturned + r.totals.byType.RETURNED.count,
     }),
     {
       totalReceived: 0,
@@ -76,48 +137,24 @@ export const calculateOverallSummary = (reports: DailyCargoSummary[]): OverallSu
       totalReturned: 0,
     },
   )
-}
 
-export const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString("es-ES", {
+/* ---------------------------- Format helpers ----------------------------- */
+
+export const formatDate = (d: string) =>
+  new Date(d).toLocaleDateString("es-ES", {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
   })
-}
 
-export const formatShortDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString("es-ES", {
+export const formatShortDate = (d: string) =>
+  new Date(d).toLocaleDateString("es-ES", {
     month: "short",
     day: "numeric",
   })
-}
 
-export const formatWeight = (weight: number): string => {
-  return `${weight.toLocaleString("es-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg`
-}
+export const formatWeight = (w: number) =>
+  `${w.toLocaleString("es-ES", { minimumFractionDigits: 1 })} kg`
 
-export const formatNumber = (num: number): string => {
-  return num.toLocaleString("es-ES")
-}
-
-export const getTypeColor = (type: "IN" | "OUT" | "DAMAGED" | "RETURNED"): string => {
-  const colors = {
-    IN: "text-green-600 bg-green-50 border-green-200",
-    OUT: "text-blue-600 bg-blue-50 border-blue-200",
-    DAMAGED: "text-red-600 bg-red-50 border-red-200",
-    RETURNED: "text-orange-600 bg-orange-50 border-orange-200",
-  }
-  return colors[type]
-}
-
-export const getTypeIcon = (type: "IN" | "OUT" | "DAMAGED" | "RETURNED"): string => {
-  const icons = {
-    IN: "↗️",
-    OUT: "↙️",
-    DAMAGED: "⚠️",
-    RETURNED: "↩️",
-  }
-  return icons[type]
-}
+export const formatNumber = (n: number) => n.toLocaleString("es-ES")

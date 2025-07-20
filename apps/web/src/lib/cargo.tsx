@@ -1,5 +1,5 @@
 import { getApiUrl } from "./client";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { type RegisterCargoInput } from "./types";
 
 export const registerCargo = async (input: RegisterCargoInput) => {

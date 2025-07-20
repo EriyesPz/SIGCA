@@ -1,122 +1,130 @@
-"use client"
-
-import { useState, useMemo } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { useMemo, useState } from "react"
 import { FileText } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { ReportPreview } from "@/components/reports/report-preview"
 import { DateFilters } from "@/components/cargo-report/date-filters"
 import { SummaryCards } from "@/components/cargo-report/summary-card"
 import { CargoChart } from "@/components/cargo-report/cargo-chart"
 import { DetailedTable } from "@/components/cargo-report/detailed-table"
-import { ReportPreview } from "@/components/reports/report-preview"
-import { mockCargoData } from "@/data/cargo-report";
-import { generateDailyCargoReports, calculateOverallSummary } from "@/utils/cargo-report";
-import { generatePDFReport, generateExcelReport } from "@/utils/pdf-generator"
+
+import { mockCargoData } from "@/data/cargo-report"
+import {
+  generateDailyCargoReports,
+  calculateOverallSummary,
+} from "@/utils/cargo-report"
+import { generateExcelReport, generatePDFReport } from "@/utils/pdf-generator"
+
 import type { ReportFilters } from "@/components/cargo-report/types"
 
+/* ---------- componente ---------- */
 export const CargoTypeReport = () => {
   const [filters, setFilters] = useState<ReportFilters>({
     startDate: "2024-01-15",
     endDate: "2024-01-19",
   })
 
-  const filteredMovements = useMemo(() => {
-    return mockCargoData.filter((movement) => {
-      const movementDate = new Date(movement.date)
-      const startDate = new Date(filters.startDate)
-      const endDate = new Date(filters.endDate)
-
-      return movementDate >= startDate && movementDate <= endDate
+  /* ---------- datos filtrados ---------- */
+  const movements = useMemo(() => {
+    return mockCargoData.filter((m) => {
+      const d = new Date(m.date)
+      return d >= new Date(filters.startDate) && d <= new Date(filters.endDate)
     })
   }, [filters])
 
-  const dailyReports = useMemo(() => {
-    return generateDailyCargoReports(filteredMovements)
-  }, [filteredMovements])
+  const dailyReports = useMemo(
+    () => generateDailyCargoReports(movements),
+    [movements],
+  )
 
-  const overallSummary = useMemo(() => {
-    return calculateOverallSummary(dailyReports)
-  }, [dailyReports])
+  const overall = useMemo(
+    () => calculateOverallSummary(dailyReports),
+    [dailyReports],
+  )
 
-  const handleResetFilters = () => {
+  /* ---------- handlers ---------- */
+  const resetFilters = () =>
     setFilters({
       startDate: "2024-01-15",
       endDate: "2024-01-19",
     })
-  }
 
-  const handleExportPDF = async () => {
-    try {
-      await generatePDFReport("cargo-report-content", {
-        title: "Reporte diario – Carga por tipo",
-        subtitle: "Análisis detallado de movimientos de carga clasificados por tipo de operación",
-        dateRange: `${filters.startDate} - ${filters.endDate}`,
-        data: filteredMovements,
-        summary: overallSummary,
-        footer: "Sistema de Gestión de Almacén",
-      })
-    } catch (error) {
-      console.error("Error generating PDF:", error)
-      alert("Error al generar el PDF. Por favor, intente nuevamente.")
-    }
-  }
+  const exportPDF = () =>
+    generatePDFReport("cargo-report-content", {
+      title: "Reporte diario – Carga por tipo",
+      subtitle:
+        "Análisis detallado de movimientos de carga clasificados por tipo de operación",
+      dateRange: `${filters.startDate} - ${filters.endDate}`,
+      data: movements,
+      summary: overall,
+      footer: "Sistema de Gestión de Almacén",
+    })
 
-  const handleExportExcel = () => {
-    const excelData = filteredMovements.map((movement) => ({
-      "Código de Seguimiento": movement.trackingCode,
-      Fecha: movement.date,
-      Tipo: movement.type,
-      Categoría: movement.cargoCategory,
-      Descripción: movement.description,
-      "Peso (kg)": movement.weightKg,
-      Cantidad: movement.quantity,
-      Almacén: movement.warehouse,
-      "Fecha Creación": movement.createdAt,
-    }))
+  const exportExcel = () =>
+    generateExcelReport(
+      movements.map((m) => ({
+        "Código de Seguimiento": m.trackingCode,
+        Fecha: m.date,
+        Tipo: m.type,
+        Categoría: m.cargoCategory,
+        Descripción: m.description,
+        "Peso (kg)": m.weightKg,
+        Cantidad: m.quantity,
+        Almacén: m.warehouse,
+        "Fecha Creación": m.createdAt,
+      })),
+      "reporte_carga_por_tipo",
+    )
 
-    generateExcelReport(excelData, "reporte_carga_por_tipo")
-  }
-
+  /* ---------- UI ---------- */
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <FileText className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Reporte diario – Carga por tipo</h1>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-200">
+      <div className="mx-auto max-w-7xl space-y-6">
+        {/* encabezado */}
+        <header className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm">
+          <div className="mb-2 flex items-center gap-3">
+            <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Reporte diario – Carga por tipo
+            </h1>
           </div>
-          <p className="text-gray-600">Análisis detallado de movimientos de carga clasificados por tipo de operación</p>
-        </div>
+          <p className="text-gray-600 dark:text-gray-300">
+            Análisis detallado de movimientos de carga clasificados por tipo de
+            operación
+          </p>
+        </header>
 
-        {/* Report Preview and Actions */}
+        {/* preview + acciones */}
         <ReportPreview
           title="Reporte diario – Carga por tipo"
-          data={filteredMovements}
-          summary={overallSummary}
+          data={movements}
+          summary={overall}
           dateRange={`${filters.startDate} - ${filters.endDate}`}
-          onDownloadPDF={handleExportPDF}
-          onDownloadExcel={handleExportExcel}
+          onDownloadPDF={exportPDF}
+          onDownloadExcel={exportExcel}
         >
-          {/* Report Content */}
           <div id="cargo-report-content" className="space-y-6">
-            {/* Date Filters */}
-            <DateFilters filters={filters} onFiltersChange={setFilters} onResetFilters={handleResetFilters} />
+            {/* filtros */}
+            <DateFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+              onResetFilters={resetFilters}
+            />
 
-            {/* Summary Cards */}
-            <SummaryCards summary={overallSummary} />
+            {/* tarjetas resumen */}
+            <SummaryCards summary={overall} />
 
-            {/* Chart */}
+            {/* gráfica */}
             <CargoChart reports={dailyReports} />
 
-            {/* Detailed Table */}
+            {/* tabla detallada */}
             <DetailedTable reports={dailyReports} />
           </div>
         </ReportPreview>
 
-        {/* Footer */}
-        <Card className="bg-white shadow-sm">
+        {/* pie de página */}
+        <Card className="bg-white dark:bg-gray-800 shadow-sm">
           <CardContent className="pt-6">
-            <div className="text-center text-sm text-gray-500 space-y-1">
+            <div className="text-center text-sm text-gray-500 dark:text-gray-400 space-y-1">
               <p>
                 <strong>Reporte generado el:</strong>{" "}
                 {new Date().toLocaleDateString("es-ES", {
@@ -128,14 +136,18 @@ export const CargoTypeReport = () => {
                 })}
               </p>
               <p>
-                <strong>Período analizado:</strong> {new Date(filters.startDate).toLocaleDateString("es-ES")} -{" "}
+                <strong>Período analizado:</strong>{" "}
+                {new Date(filters.startDate).toLocaleDateString("es-ES")} –{" "}
                 {new Date(filters.endDate).toLocaleDateString("es-ES")}
               </p>
               <p>
-                <strong>Total de movimientos procesados:</strong> {filteredMovements.length} |{" "}
-                <strong>Días con actividad:</strong> {dailyReports.length}
+                <strong>Total de movimientos procesados:</strong>{" "}
+                {movements.length} | <strong>Días con actividad:</strong>{" "}
+                {dailyReports.length}
               </p>
-              <p className="text-xs mt-2 pt-2 border-t">Sistema de Gestión de Almacén - Supervisor de Almacén</p>
+              <p className="mt-2 border-t pt-2 text-xs">
+                Sistema de Gestión de Almacén – Supervisor de Almacén
+              </p>
             </div>
           </CardContent>
         </Card>

@@ -18,8 +18,6 @@ export const ReportSummary = ({ reports }: ReportSummaryProps) => {
   const totalUnitsOut = reports.reduce((sum, report) => sum + report.totals.totalUnitsOut, 0)
 
   const netMovements = totalEntries - totalExits
-  const netWeight = totalWeightIn - totalWeightOut
-  const netUnits = totalUnitsIn - totalUnitsOut
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -37,7 +37,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCookies } from "react-cookie";
-import LogoDark from "@/icons/logo-dark.svg";
 
 export const AppLayout = () => {
   const navigate = useNavigate();
