@@ -11,6 +11,7 @@ import { NotFound } from "./Not-Found";
 import { WarehouseLocationTracker } from "./Tracker";
 import { CargoRegistration } from "./RegisterCargo";
 import { Dashboard } from "./Dashboard";
+import { Reports } from "./Reports";
 
 export const router = createBrowserRouter([
   {
@@ -56,6 +57,10 @@ export const router = createBrowserRouter([
       {
         path: "register-cargo",
         element: <ProtectedRoute><CargoRegistration /></ProtectedRoute>,
+      },
+      {
+        path: "reportes",
+        element: <ProtectedRoute><Reports /></ProtectedRoute>,
       }
     ],
   },
