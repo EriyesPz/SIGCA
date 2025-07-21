@@ -115,31 +115,27 @@ export const DistributionCargo = () => {
   const [fechaFin, setFechaFin] = useState("01/18/2024");
 
   return (
-    <div className="min-h-screen bg-slate-900 p-6">
+    <div className="min-h-screen bg-background p-6 text-foreground">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <div className="bg-card rounded-lg p-6 border border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-600 rounded-lg">
                 <FileText className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl text-white">
+                <h1 className="text-xl">
                   Reporte de Distribución por Ubicación
                 </h1>
-                <p className="text-slate-400">
+                <p className="text-muted-foreground">
                   Análisis detallado de Rack, Nivel y Columna • 2024-01-16 -
                   2024-01-18
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-slate-300 border-slate-600 hover:bg-slate-700"
-              >
+              <Button variant="outline" size="sm">
                 <Eye className="h-4 w-4 mr-2" />
                 Vista previa
               </Button>
@@ -150,11 +146,7 @@ export const DistributionCargo = () => {
                 <Download className="h-4 w-4 mr-2" />
                 Descargar PDF
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-slate-300 border-slate-600 hover:bg-slate-700"
-              >
+              <Button variant="outline" size="sm">
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
                 Descargar Excel
               </Button>
@@ -163,39 +155,39 @@ export const DistributionCargo = () => {
         </div>
 
         {/* Filtros */}
-        <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <div className="bg-card rounded-lg p-6 border border-border">
           <div className="flex items-center gap-2 mb-4">
-            <Filter className="h-5 w-5 text-slate-400" />
-            <h2 className="text-slate-200">
+            <Filter className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-foreground">
               Filtros de Distribución por Ubicación
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div>
-              <label className="block text-sm text-slate-400 mb-2">
+              <label className="block text-sm text-muted-foreground mb-2">
                 Fecha Inicio
               </label>
               <Input
                 value={fechaInicio}
                 onChange={(e) => setFechaInicio(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white"
               />
             </div>
             <div>
-              <label className="block text-sm text-slate-400 mb-2">
+              <label className="block text-sm text-muted-foreground mb-2">
                 Fecha Fin
               </label>
               <Input
                 value={fechaFin}
                 onChange={(e) => setFechaFin(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white"
               />
             </div>
             <div>
-              <label className="block text-sm text-slate-400 mb-2">Rack</label>
+              <label className="block text-sm text-muted-foreground mb-2">
+                Rack
+              </label>
               <Select>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                <SelectTrigger>
                   <SelectValue placeholder="Buscar por rack..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -207,11 +199,11 @@ export const DistributionCargo = () => {
               </Select>
             </div>
             <div>
-              <label className="block text-sm text-slate-400 mb-2">
+              <label className="block text-sm text-muted-foreground mb-2">
                 Categoría
               </label>
               <Select>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                <SelectTrigger>
                   <SelectValue placeholder="Todas las categorías" />
                 </SelectTrigger>
                 <SelectContent>
@@ -227,11 +219,7 @@ export const DistributionCargo = () => {
           </div>
 
           <div className="flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-slate-300 border-slate-600 hover:bg-slate-700"
-            >
+            <Button variant="outline" size="sm">
               <RotateCcw className="h-4 w-4 mr-2" />
               Limpiar Filtros
             </Button>
@@ -240,57 +228,57 @@ export const DistributionCargo = () => {
 
         {/* Cards de Resumen */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-slate-800 border-slate-700">
+          <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-red-600 rounded-lg">
                   <Package className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-slate-400">Total Ubicaciones</p>
-                  <p className="text-2xl text-white">24</p>
+                  <p className="text-muted-foreground">Total Ubicaciones</p>
+                  <p className="text-2xl">24</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800 border-slate-700">
+          <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-green-600 rounded-lg">
                   <Warehouse className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-slate-400">Ocupadas</p>
-                  <p className="text-2xl text-white">18</p>
+                  <p className="text-muted-foreground">Ocupadas</p>
+                  <p className="text-2xl">18</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800 border-slate-700">
+          <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-blue-600 rounded-lg">
                   <Archive className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-slate-400">Disponibles</p>
-                  <p className="text-2xl text-white">6</p>
+                  <p className="text-muted-foreground">Disponibles</p>
+                  <p className="text-2xl">6</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800 border-slate-700">
+          <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-orange-600 rounded-lg">
                   <TrendingUp className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-slate-400">Utilización Promedio</p>
-                  <p className="text-2xl text-white">76%</p>
+                  <p className="text-muted-foreground">Utilización Promedio</p>
+                  <p className="text-2xl">76%</p>
                 </div>
               </div>
             </CardContent>
@@ -298,9 +286,9 @@ export const DistributionCargo = () => {
         </div>
 
         {/* Tabla de Detalle */}
-        <div className="bg-slate-800 rounded-lg border border-slate-700">
-          <div className="p-4 border-b border-slate-700">
-            <h3 className="text-slate-200">
+        <div className="bg-card rounded-lg border border-border">
+          <div className="p-4 border-b border-border">
+            <h3 className="text-foreground">
               Detalle de Distribución por Ubicación
             </h3>
           </div>
@@ -308,19 +296,19 @@ export const DistributionCargo = () => {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="border-slate-700 hover:bg-slate-700/50">
-                  <TableHead className="text-slate-300">Código</TableHead>
-                  <TableHead className="text-slate-300">Descripción</TableHead>
-                  <TableHead className="text-slate-300">Almacen</TableHead>
-                  <TableHead className="text-slate-300">Rack</TableHead>
-                  <TableHead className="text-slate-300">Nivel</TableHead>
-                  <TableHead className="text-slate-300">Columna</TableHead>
-                  <TableHead className="text-slate-300">Categoría</TableHead>
-                  <TableHead className="text-slate-300">Cantidad</TableHead>
-                  <TableHead className="text-slate-300">Capacidad</TableHead>
-                  <TableHead className="text-slate-300">Utilización</TableHead>
-                  <TableHead className="text-slate-300">Fecha</TableHead>
-                  <TableHead className="text-slate-300">Responsable</TableHead>
+                <TableRow className="border-border hover:bg-muted/50">
+                  <TableHead>Código</TableHead>
+                  <TableHead>Descripción</TableHead>
+                  <TableHead>Almacen</TableHead>
+                  <TableHead>Rack</TableHead>
+                  <TableHead>Nivel</TableHead>
+                  <TableHead>Columna</TableHead>
+                  <TableHead>Categoría</TableHead>
+                  <TableHead>Cantidad</TableHead>
+                  <TableHead>Capacidad</TableHead>
+                  <TableHead>Utilización</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Responsable</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -331,18 +319,14 @@ export const DistributionCargo = () => {
                   return (
                     <TableRow
                       key={index}
-                      className="border-slate-700 hover:bg-slate-700/50"
+                      className="border-border hover:bg-muted/50"
                     >
-                      <TableCell className="text-slate-300">
-                        {item.codigo}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {item.descripcion}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
+                      <TableCell>{item.codigo}</TableCell>
+                      <TableCell>{item.descripcion}</TableCell>
+                      <TableCell>
                         <Badge
                           variant="outline"
-                          className="text-yellow-400 border-yellow-400"
+                          className="text-yellow-600 border-yellow-600 dark:text-yellow-400 dark:border-yellow-400"
                         >
                           {item.almacen}
                         </Badge>
@@ -350,7 +334,7 @@ export const DistributionCargo = () => {
                       <TableCell>
                         <Badge
                           variant="outline"
-                          className="text-blue-400 border-blue-400"
+                          className="text-blue-600 border-blue-600 dark:text-blue-400 dark:border-blue-400"
                         >
                           {item.rack}
                         </Badge>
@@ -358,7 +342,7 @@ export const DistributionCargo = () => {
                       <TableCell>
                         <Badge
                           variant="outline"
-                          className="text-green-400 border-green-400"
+                          className="text-green-600 border-green-600 dark:text-green-400 dark:border-green-400"
                         >
                           {item.nivel}
                         </Badge>
@@ -366,31 +350,21 @@ export const DistributionCargo = () => {
                       <TableCell>
                         <Badge
                           variant="outline"
-                          className="text-purple-400 border-purple-400"
+                          className="text-purple-600 border-purple-600 dark:text-purple-400 dark:border-purple-400"
                         >
                           {item.columna}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-slate-300">
-                        {item.categoria}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {item.cantidad}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {item.capacidad}
-                      </TableCell>
+                      <TableCell>{item.categoria}</TableCell>
+                      <TableCell>{item.cantidad}</TableCell>
+                      <TableCell>{item.capacidad}</TableCell>
                       <TableCell>
                         <Badge variant={utilizacionBadge.variant}>
                           {item.utilizacion}% - {utilizacionBadge.text}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-slate-300">
-                        {item.fechaActualizacion}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {item.responsable}
-                      </TableCell>
+                      <TableCell>{item.fechaActualizacion}</TableCell>
+                      <TableCell>{item.responsable}</TableCell>
                     </TableRow>
                   );
                 })}

@@ -270,7 +270,7 @@ export const Reports = () => {
   if (currentView !== "overview") {
     return (
       <div className="min-h-screen">
-        <div className="border-b px-6 py-4">
+        <div className="border-b px-6 py-1">
           <Button
             variant="ghost"
             onClick={() => setCurrentView("overview")}
