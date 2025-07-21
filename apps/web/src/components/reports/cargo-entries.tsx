@@ -21,8 +21,9 @@ import {
 import { ReportFiltersComponent } from "./report-filter";
 import { ReportPreview } from "./report-preview";
 import { mockCargoEntries } from "@/data/reports-data";
-import { generatePDFReport, generateExcelReport } from "@/utils/pdf-generator";
 import type { CargoEntryFilters as ReportFiltersType } from "./types";
+import { generatePDF } from "@/utils/pdfExport";
+import { generateExcelReport } from "@/utils/excelExport";
 
 export const CargoEntriesReport = () => {
   const [filters, setFilters] = useState<ReportFiltersType>({
@@ -90,36 +91,72 @@ export const CargoEntriesReport = () => {
       cargoType: "all",
     });
 
-  const exportPDF = async () => {
-    await generatePDFReport("cargo-entries-content", {
-      title: "Reporte de Cargas Ingresadas",
-      subtitle: "Lista completa de cargas registradas con documentos adjuntos",
-      dateRange: `${filters.startDate} - ${filters.endDate}`,
-      data: filteredEntries,
-      summary,
-      footer: "Sistema de Gestión de Almacén",
-    }).catch((e) => {
-      console.error(e);
-      alert("Error al generar el PDF. Intenta de nuevo.");
-    });
-  };
+const exportPDF = () => {
+  generatePDF(
+    "Reporte de Cargas Ingresadas",
+    [
+      { header: "Código", accessor: "trackingCode" },
+      { header: "Descripción", accessor: "description" },
+      { header: "Categoría", accessor: "category" },
+      {
+        header: "Peso (kg)",
+        accessor: "weightKg",
+        render: (v) => `${v.toFixed(1)} kg`,
+      },
+      { header: "Cantidad", accessor: "quantity" },
+      {
+        header: "Fecha Ingreso",
+        accessor: "entryDate",
+        render: (v) =>
+          new Date(v).toLocaleDateString("es-ES", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          }),
+      },
+      {
+        header: "Estado",
+        accessor: "status",
+        render: (v) => v.replace("_", " "),
+      },
+      {
+        header: "Ubicación",
+        accessor: "location",
+        render: (_v, row) =>
+          `${row.location.rack}-${row.location.level}-${row.location.column}`,
+      },
+      {
+        header: "Documentos",
+        accessor: "documents",
+        render: (docs) => `${docs.length} doc(s)`,
+      },
+      { header: "Creado Por", accessor: "createdBy" },
+    ],
+    filteredEntries,
+    `Total cargas: ${summary.totalCargas}\nPeso total: ${summary.pesoTotal}\nUnidades: ${summary.totalUnidades}\nCargas con documentos: ${summary.conDocumentos}`,
+    "• Verifica los documentos adjuntos.\n• Asegura que todas las cargas estén correctamente ubicadas.\n• Reporta inconsistencias con el responsable del almacén.",
+    `${filters.startDate} - ${filters.endDate}`
+  );
+};
 
-  const exportExcel = () => {
-    const excelData = filteredEntries.map((e) => ({
-      Código: e.trackingCode,
-      Descripción: e.description,
-      Categoría: e.category,
-      "Peso (kg)": e.weightKg,
-      Cantidad: e.quantity,
-      "Fecha Ingreso": e.entryDate,
-      Estado: e.status,
-      Almacén: e.warehouse,
-      Ubicación: `${e.location.rack}-${e.location.level}-${e.location.column}`,
-      "Creado Por": e.createdBy,
-      Documentos: e.documents.length,
-    }));
-    generateExcelReport(excelData, "reporte_cargas_ingresadas");
-  };
+
+const exportExcel = () => {
+  const excelData = filteredEntries.map((e) => ({
+    Código: e.trackingCode,
+    Descripción: e.description,
+    Categoría: e.category,
+    "Peso (kg)": e.weightKg,
+    Cantidad: e.quantity,
+    "Fecha Ingreso": e.entryDate,
+    Estado: e.status.replace("_", " "),
+    Almacén: e.warehouse,
+    Ubicación: `${e.location.rack}-${e.location.level}-${e.location.column}`,
+    "Creado Por": e.createdBy,
+    "Documentos Adjuntos": e.documents.length,
+  }));
+  generateExcelReport(excelData, "reporte_cargas_ingresadas");
+};
+
 
   const statusColors = {
     almacenado:

@@ -112,9 +112,29 @@ const getUtilizacionBadge = (utilizacion: number) => {
   return { variant: "secondary" as const, text: "Baja" };
 };
 
+const columnsDistribution = [
+  { header: "Código", accessor: "codigo" },
+  { header: "Descripción", accessor: "descripcion" },
+  { header: "Almacén", accessor: "almacen" },
+  { header: "Rack", accessor: "rack" },
+  { header: "Nivel", accessor: "nivel" },
+  { header: "Columna", accessor: "columna" },
+  { header: "Categoría", accessor: "categoria" },
+  { header: "Cantidad", accessor: "cantidad" },
+  { header: "Capacidad", accessor: "capacidad" },
+  {
+    header: "Utilización",
+    accessor: "utilizacion",
+    render: (val: number) => `${val}%`,
+  },
+  { header: "Fecha", accessor: "fechaActualizacion" },
+  { header: "Responsable", accessor: "responsable" },
+];
+
 export const DistributionCargo = () => {
   const [fechaInicio, setFechaInicio] = useState("01/16/2024");
   const [fechaFin, setFechaFin] = useState("01/18/2024");
+  const [showPDF, setShowPDF] = useState(false);
 
   return (
     <div className="min-h-screen bg-background p-6 text-foreground">
@@ -137,17 +157,28 @@ export const DistributionCargo = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => setShowPDF(true)}>
                 <Eye className="h-4 w-4 mr-2" />
                 Vista previa
               </Button>
               <Button
                 size="sm"
                 className="bg-red-600 hover:bg-red-700 text-white"
+                onClick={() =>
+                  generatePDF(
+                    "Distribución por Ubicación",
+                    columnsDistribution,
+                    mockData,
+                    `Total ubicaciones: 24\nOcupadas: 18\nDisponibles: 6\nUtilización Promedio: 76%`,
+                    `• Reubicar exceso en Rack R-01\n• Verificar niveles N-01 y N-03 por sobrecarga\n• Considerar redistribución en columnas poco usadas`,
+                    `${fechaInicio} - ${fechaFin}`
+                  )
+                }
               >
                 <Download className="h-4 w-4 mr-2" />
                 Descargar PDF
               </Button>
+
               <Button variant="outline" size="sm">
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
                 Descargar Excel
