@@ -384,6 +384,18 @@ export const CargoAverage = () => {
     }
   };
 
+  const categoryColorMap: Record<string, string> = {
+    Textiles: "var(--chart-1)", // morado vibrante
+    Electrónicos: "var(--chart-2)", // verde azulado
+    Alimentos: "var(--chart-3)", // naranja cálido
+    Maquinaria: "var(--chart-4)", // violeta
+    Farmacéuticos: "var(--chart-5)", // rojo claro
+
+    Autopartes: "#f59e0b", // amarillo anaranjado
+    Químicos: "#3b82f6", // azul fuerte
+    Cosméticos: "#ec4899", // rosa intenso
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-6 mb-6 border border-border">
@@ -633,28 +645,36 @@ export const CargoAverage = () => {
                   <XAxis
                     dataKey="categoria"
                     stroke="hsl(var(--muted-foreground))"
+                    tick={{ fill: "#fff" }}
                     fontSize={12}
                     angle={-45}
                     textAnchor="end"
                     height={80}
                   />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+
+                  <YAxis
+                    stroke="hsl(var(--muted-foreground))"
+                    tick={{ fill: "#fff" }}
+                    fontSize={12}
+                    color="hsl(var(--muted-foreground))"
+                  />
 
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "hsl(var(--popover))",
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
-                      color: "hsl(var(--popover-foreground))",
                     }}
+                    labelStyle={{ color: "hsl(var(--popover-foreground))" }}
+                    itemStyle={{ color: "hsl(var(--popover-foreground))" }}
+                    cursor={{ fill: "hsl(var(--border) / 0.2)" }}
                   />
 
-                  {/* Cada <Cell> asigna un color distinto a su barra */}
                   <Bar dataKey="promedioDias" name="Promedio Días">
-                    {chartDataCategoria.map((_, index) => (
+                    {chartDataCategoria.map((item, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
+                        fill={categoryColorMap[item.categoria] || "#999"}
                       />
                     ))}
                   </Bar>
@@ -695,7 +715,7 @@ export const CargoAverage = () => {
                       backgroundColor: "hsl(var(--popover))",
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
-                      color: "hsl(var(--popover-foreground))",
+                      color: "#fff",
                     }}
                   />
                 </RechartsPieChart>
@@ -722,8 +742,9 @@ export const CargoAverage = () => {
                   dataKey="dia"
                   stroke="hsl(var(--muted-foreground))"
                   fontSize={12}
+                  tick={{ fill: "#fff" }}
                 />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tick={{ fill: "#fff" }} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--popover))",
