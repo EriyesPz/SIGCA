@@ -521,108 +521,107 @@ export const IlegalCargo = () => {
         return "default";
     }
   };
-
   return (
-    <div>
-      <div className="bg-gradient-to-r  rounded-lg p-6 mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <Shield className="h-8 w-8 text-red-400" />
-          <h1 className="text-3xl">Reporte de Cargas Ilegales</h1>
-        </div>
-        <p className="text-gray-300">
-          Análisis completo de cargas ilegales o no autorizadas detectadas en el
-          sistema
-        </p>
+    <div className="bg-gray-50 dark:bg-slate-900 min-h-screen transition-colors">
+      <div className="bg-gradient-to-r rounded-lg p-6 mb-6 transition-colors">
+      <div className="flex items-center gap-3 mb-2">
+        <Shield className="h-8 w-8 text-red-500 dark:text-red-400" />
+        <h1 className="text-3xl text-gray-900 dark:text-gray-100">Reporte de Cargas Ilegales</h1>
       </div>
-      <div className="bg-slate-800 rounded-lg p-4 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-red-400" />
-            <div>
-              <h3>Reporte de Cargas Ilegales</h3>
-              <p className="text-sm text-gray-400">
-                {totalCargas} casos detectados • {filtroFechaInicio} -{" "}
-                {filtroFechaFin}
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className=" dark:text-gray-300 border-gray-600"
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Vista previa
-            </Button>
-            <Button variant="destructive" size="sm">
-              Generar reporte
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-gray-300 border-gray-600"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Descargar Excel
-            </Button>
-          </div>
+      <p className="text-gray-600 dark:text-gray-300">
+        Análisis completo de cargas ilegales o no autorizadas detectadas en el sistema
+      </p>
+      </div>
+      <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-4 mb-6 transition-colors">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+        <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
+        <div>
+          <h3 className="text-gray-900 dark:text-gray-100">Reporte de Cargas Ilegales</h3>
+          <p className="text-sm text-gray-400 dark:text-gray-400">
+          {totalCargas} casos detectados • {filtroFechaInicio} - {filtroFechaFin}
+          </p>
+        </div>
+        </div>
+        <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+        >
+          <Eye className="h-4 w-4 mr-2" />
+          Vista previa
+        </Button>
+        <Button variant="destructive" size="sm">
+          Generar reporte
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Descargar Excel
+        </Button>
         </div>
       </div>
-      <div className="bg-slate-800 rounded-lg p-6 mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Filter className="h-5 w-5 text-blue-400" />
-          <h3>Filtros de Cargas Ilegales</h3>
+      </div>
+      <div className="bg-white dark:bg-slate-800 rounded-lg p-6 mb-6 transition-colors">
+      <div className="flex items-center gap-3 mb-4">
+        <Filter className="h-5 w-5 text-blue-500 dark:text-blue-400" />
+        <h3 className="text-gray-900 dark:text-gray-100">Filtros de Cargas Ilegales</h3>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-4">
+        <div>
+        <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">Fecha Inicio</label>
+        <div className="relative">
+          <Input
+          type="text"
+          value={filtroFechaInicio}
+          onChange={(e) => setFiltroFechaInicio(e.target.value)}
+          className="bg-gray-100 dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white pl-8"
+          />
+          <Calendar className="h-4 w-4 absolute left-2 top-3 text-gray-400" />
+        </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-4">
-          <div>
-            <label className="block text-sm mb-1">Fecha Inicio</label>
-            <div className="relative">
-              <Input
-                type="text"
-                value={filtroFechaInicio}
-                onChange={(e) => setFiltroFechaInicio(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white pl-8"
-              />
-              <Calendar className="h-4 w-4 absolute left-2 top-3 text-gray-400" />
-            </div>
-          </div>
+        <div>
+        <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">Fecha Fin</label>
+        <div className="relative">
+          <Input
+          type="text"
+          value={filtroFechaFin}
+          onChange={(e) => setFiltroFechaFin(e.target.value)}
+          className="bg-gray-100 dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white pl-8"
+          />
+          <Calendar className="h-4 w-4 absolute left-2 top-3 text-gray-400" />
+        </div>
+        </div>
 
-          <div>
-            <label className="block text-sm mb-1">Fecha Fin</label>
-            <div className="relative">
-              <Input
-                type="text"
-                value={filtroFechaFin}
-                onChange={(e) => setFiltroFechaFin(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white pl-8"
-              />
-              <Calendar className="h-4 w-4 absolute left-2 top-3 text-gray-400" />
-            </div>
-          </div>
+        <div>
+        <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">Código de Caso</label>
+        <div className="relative">
+          <Input
+          type="text"
+          placeholder="Buscar por código..."
+          value={filtroCodigo}
+          onChange={(e) => setFiltroCodigo(e.target.value)}
+          className="bg-gray-100 dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white pl-8"
+          />
+          <Search className="h-4 w-4 absolute left-2 top-3 text-gray-400" />
+        </div>
+        </div>
 
-          <div>
-            <label className="block text-sm mb-1">Código de Caso</label>
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="Buscar por código..."
-                value={filtroCodigo}
-                onChange={(e) => setFiltroCodigo(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white pl-8"
-              />
-              <Search className="h-4 w-4 absolute left-2 top-3 text-gray-400" />
-            </div>
-          </div>
-
-          <div>
+        <div>
+        <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">Categoría</label>
+        <Select value={filtroCategoria} onValueChange={setFiltroCategoria}></Select>
             <label className="block text-sm mb-1">Categoría</label>
             <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
-              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+              <SelectTrigger className="dark:bg-slate-700 border-slate-600 text-white">
                 <SelectValue placeholder="Todas las categorías" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-700 border-slate-600">
+              <SelectContent className="dark:bg-slate-700 border-slate-600">
                 <SelectItem value="todos">Todas las categorías</SelectItem>
                 <SelectItem value="farmaceuticos">
                   Farmacéuticos Controlados
@@ -649,10 +648,10 @@ export const IlegalCargo = () => {
               value={filtroNivelRiesgo}
               onValueChange={setFiltroNivelRiesgo}
             >
-              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+              <SelectTrigger className="dark:bg-slate-700 border-slate-600 text-white">
                 <SelectValue placeholder="Todos los niveles" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-700 border-slate-600">
+              <SelectContent className="dark:bg-slate-700 border-slate-600">
                 <SelectItem value="todos">Todos los niveles</SelectItem>
                 <SelectItem value="bajo">Bajo</SelectItem>
                 <SelectItem value="medio">Medio</SelectItem>
@@ -668,10 +667,10 @@ export const IlegalCargo = () => {
               value={filtroEstadoLegal}
               onValueChange={setFiltroEstadoLegal}
             >
-              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+              <SelectTrigger className="dark:bg-slate-700 border-slate-600 text-white">
                 <SelectValue placeholder="Todos los estados" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-700 border-slate-600">
+              <SelectContent className="dark:bg-slate-700 border-slate-600">
                 <SelectItem value="todos">Todos los estados</SelectItem>
                 <SelectItem value="pendiente">Pendiente</SelectItem>
                 <SelectItem value="proceso">En Proceso Legal</SelectItem>
@@ -691,10 +690,10 @@ export const IlegalCargo = () => {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="dark:bg-slate-800 border-slate-700">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-900/30 rounded-lg">
+              <div className="p-2 dark:bg-red-900/30 rounded-lg">
                 <Shield className="h-6 w-6 text-red-400" />
               </div>
               <div>
@@ -705,10 +704,10 @@ export const IlegalCargo = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="dark:bg-slate-800 border-slate-700">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-900/30 rounded-lg">
+              <div className="p-2 dark:bg-green-900/30 rounded-lg">
                 <DollarSign className="h-6 w-6 text-green-400" />
               </div>
               <div>
@@ -721,10 +720,10 @@ export const IlegalCargo = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="dark:bg-slate-800 border-slate-700">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-900/30 rounded-lg">
+              <div className="p-2 dark:bg-orange-900/30 rounded-lg">
                 <Scale className="h-6 w-6 text-orange-400" />
               </div>
               <div>
@@ -735,10 +734,10 @@ export const IlegalCargo = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="dark:bg-slate-800 border-slate-700">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-900/30 rounded-lg">
+              <div className="p-2 dark:bg-blue-900/30 rounded-lg">
                 <Clock className="h-6 w-6 text-blue-400" />
               </div>
               <div>
@@ -751,7 +750,7 @@ export const IlegalCargo = () => {
       </div>
 
       {/* Analytics Charts Section */}
-      <div className="bg-slate-800 rounded-lg p-6 mb-6">
+      <div className="dark:bg-slate-800 rounded-lg p-6 mb-6">
         <div className="flex items-center gap-3 mb-6">
           <BarChart3 className="h-5 w-5 text-purple-400" />
           <h3>Análisis Gráfico de Cargas Ilegales</h3>
@@ -759,7 +758,7 @@ export const IlegalCargo = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Gráfico de Casos por Categoría */}
-          <Card className="bg-slate-700 border-slate-600">
+          <Card className="dark:dark:bg-slate-700 border-slate-600">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-blue-400" />
@@ -794,7 +793,7 @@ export const IlegalCargo = () => {
           </Card>
 
           {/* Gráfico de Pie - Niveles de Riesgo */}
-          <Card className="bg-slate-700 border-slate-600">
+          <Card className="dark:bg-slate-700 border-slate-600">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <PieChart className="h-5 w-5 text-green-400" />
@@ -836,7 +835,7 @@ export const IlegalCargo = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Gráfico de Línea Temporal */}
-          <Card className="bg-slate-700 border-slate-600">
+          <Card className="dark:bg-slate-700 border-slate-600">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-yellow-400" />
@@ -870,7 +869,7 @@ export const IlegalCargo = () => {
           </Card>
 
           {/* Gráfico de Agencias Detectoras */}
-          <Card className="bg-slate-700 border-slate-600">
+          <Card className="dark:bg-slate-700 border-slate-600">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Shield className="h-5 w-5 text-purple-400" />
@@ -905,7 +904,7 @@ export const IlegalCargo = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Gráfico de Área - Valores Incautados */}
-          <Card className="bg-slate-700 border-slate-600">
+          <Card className="dark:bg-slate-700 border-slate-600">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <DollarSign className="h-5 w-5 text-green-400" />
@@ -953,7 +952,7 @@ export const IlegalCargo = () => {
           </Card>
 
           {/* Gráfico de Barras Apiladas - Estados */}
-          <Card className="bg-slate-700 border-slate-600">
+          <Card className="dark:bg-slate-700 border-slate-600">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Activity className="h-5 w-5 text-orange-400" />
@@ -995,7 +994,7 @@ export const IlegalCargo = () => {
       </div>
 
       {/* Details Table */}
-      <div className="bg-slate-800 rounded-lg overflow-hidden">
+      <div className="dark:bg-slate-800 rounded-lg overflow-hidden">
         <div className="p-4 border-b border-slate-700">
           <h3>Detalle de Cargas Ilegales Detectadas</h3>
         </div>
@@ -1095,7 +1094,7 @@ export const IlegalCargo = () => {
                     {carga.agenciaDetectora}
                   </TableCell>
                   <TableCell className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-xs">
+                    <div className="w-6 h-6 dark:bg-blue-600 rounded-full flex items-center justify-center text-xs">
                       {carga.responsableDeteccion
                         .split(" ")
                         .map((n) => n[0])
@@ -1138,7 +1137,7 @@ export const IlegalCargo = () => {
                         .map((accion, index) => (
                           <span
                             key={index}
-                            className="text-xs bg-slate-700 px-2 py-1 rounded"
+                            className="text-xs dark:bg-slate-700 px-2 py-1 rounded"
                           >
                             {accion}
                           </span>
