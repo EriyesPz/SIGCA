@@ -29,6 +29,8 @@ import {
   Archive,
   TrendingUp,
 } from "lucide-react";
+import { PDFPreview } from "@/components/pdf";
+import { generatePDF } from "@/utils/pdfExport";
 
 const mockData = [
   {

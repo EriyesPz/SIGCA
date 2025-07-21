@@ -20,8 +20,9 @@ import {
   Badge,
 } from "@/components/ui";
 import { FileText, Download, Eye, Filter, RotateCcw } from "lucide-react";
+import { PDFPreview } from "@/components/pdf";
+import { generatePDF } from "@/utils/pdfExport";
 
-// Mock data para demostración
 const cargasData = [
   {
     codigo: "CLM-2024-001",
@@ -139,6 +140,27 @@ export const SituationLegal = () => {
   const [fechaFin, setFechaFin] = useState("01/18/2024");
   const [tipoSituacion, setTipoSituacion] = useState("todas");
   const [ubicacion, setUbicacion] = useState("todas");
+  const [showPDF, setShowPDF] = useState(false);
+
+  const pdfColumns = [
+    { header: "Código", accessor: "codigo" },
+    { header: "Descripción", accessor: "descripcion" },
+    { header: "Situación", accessor: "tipoSituacion" },
+    { header: "Subtipo", accessor: "subTipo" },
+    { header: "Antigüedad", accessor: "antiguedad" },
+    { header: "Ubicación", accessor: "ubicacion" },
+    { header: "Cantidad", accessor: "cantidad" },
+    {
+      header: "Demora",
+      accessor: "demora",
+      render: (v: number) => `${v} días`,
+    },
+    {
+      header: "Costo",
+      accessor: "costoAlmacenaje",
+      render: (v: number) => `$${v.toLocaleString()}`,
+    },
+  ];
 
   // Cálculos para los indicadores
   const totalCargas = cargasData.length;
@@ -157,6 +179,72 @@ export const SituationLegal = () => {
   const costoTotalAlmacenaje = cargasData.reduce(
     (acc, c) => acc + c.costoAlmacenaje,
     0
+  );
+
+  const summarySection = (
+    <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="text-center p-4 bg-red-50 border border-red-200 rounded">
+        <div className="text-2xl font-bold text-red-600">{totalCargas}</div>
+        <div className="text-sm text-gray-600">Total Cargas</div>
+      </div>
+      <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded">
+        <div className="text-2xl font-bold text-yellow-600">
+          {cargasPendientes}
+        </div>
+        <div className="text-sm text-gray-600">Pendientes</div>
+      </div>
+      <div className="text-center p-4 bg-blue-50 border border-blue-200 rounded">
+        <div className="text-2xl font-bold text-blue-600">
+          {porcentajePendientes}%
+        </div>
+        <div className="text-sm text-gray-600">% Pendiente</div>
+      </div>
+      <div className="text-center p-4 bg-orange-50 border border-orange-200 rounded">
+        <div className="text-2xl font-bold text-orange-600">
+          {demoraPromedio}
+        </div>
+        <div className="text-sm text-gray-600">Días Promedio</div>
+      </div>
+    </div>
+  );
+
+  const analysisSection = (
+    <div className="grid grid-cols-2 gap-6">
+      <div>
+        <h4 className="font-semibold text-gray-900 mb-2">
+          Indicadores Operacionales
+        </h4>
+        <ul className="text-sm space-y-1">
+          <li>• Demora promedio: {demoraPromedio} días</li>
+          <li>
+            • Costo total almacenaje: ${costoTotalAlmacenaje.toLocaleString()}
+          </li>
+          <li>
+            • Cargas críticas (&gt;30 días):{" "}
+            {cargasData.filter((c) => c.antiguedad === ">30 días").length}
+          </li>
+          <li>
+            • Productos perecederos afectados:{" "}
+            {
+              cargasData.filter(
+                (c) =>
+                  c.descripcion.includes("Perecederos") ||
+                  c.descripcion.includes("alimenticios")
+              ).length
+            }
+          </li>
+        </ul>
+      </div>
+      <div>
+        <h4 className="font-semibold text-gray-900 mb-2">Recomendaciones</h4>
+        <ul className="text-sm space-y-1">
+          <li>• Priorizar cargas perecederos</li>
+          <li>• Revisar documentación sanitaria</li>
+          <li>• Gestionar retenciones judiciales</li>
+          <li>• Implementar alertas automáticas</li>
+        </ul>
+      </div>
+    </div>
   );
 
   return (
@@ -183,6 +271,7 @@ export const SituationLegal = () => {
                 variant="outline"
                 size="sm"
                 className="text-slate-300 border-slate-600 hover:bg-slate-700"
+                onClick={() => setShowPDF(true)}
               >
                 <Eye className="w-4 h-4 mr-2" />
                 Vista previa
@@ -190,6 +279,15 @@ export const SituationLegal = () => {
               <Button
                 className="bg-red-600 hover:bg-red-700 text-white"
                 size="sm"
+                onClick={() =>
+                  generatePDF(
+                    "Situación Legal de Cargas",
+                    pdfColumns,
+                    cargasData,
+                    `Total cargas: ${totalCargas}\nPendientes: ${cargasPendientes}\n% Pendiente: ${porcentajePendientes}%\nDemora promedio: ${demoraPromedio} días`,
+                    `• Priorizar cargas perecederas\n• Revisar documentación sanitaria\n• Gestionar retenciones judiciales\n• Implementar alertas automáticas`
+                  )
+                }
               >
                 <Download className="w-4 h-4 mr-2" />
                 Descargar PDF
@@ -532,6 +630,25 @@ export const SituationLegal = () => {
           </Card>
         </div>
       </div>
+      <PDFPreview
+        isOpen={showPDF}
+        onClose={() => setShowPDF(false)}
+        title="Situación Legal de Cargas"
+        columns={pdfColumns}
+        data={cargasData}
+        summarySection={summarySection}
+        analysisSection={analysisSection}
+        footerNote="Reporte generado automáticamente por el sistema SAN-EHISA"
+        onExport={() =>
+          generatePDF(
+            "Situación Legal de Cargas",
+            pdfColumns,
+            cargasData,
+            `Total cargas: ${totalCargas}\nPendientes: ${cargasPendientes}\n% Pendiente: ${porcentajePendientes}%\nDemora promedio: ${demoraPromedio} días`,
+            `• Priorizar cargas perecederas\n• Revisar documentación sanitaria\n• Gestionar retenciones judiciales\n• Implementar alertas automáticas`
+          )
+        }
+      />
     </div>
   );
 };
