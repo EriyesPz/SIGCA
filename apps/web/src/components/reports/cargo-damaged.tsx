@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState } from "react";
 import {
   Filter,
   Download,
@@ -11,7 +11,7 @@ import {
   Weight,
   Hash,
   FileCheck,
-} from "lucide-react"
+} from "lucide-react";
 import {
   Button,
   Input,
@@ -29,23 +29,23 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui"
+} from "@/components/ui";
 import { generatePDF } from "@/utils/pdfExport";
 import { generateExcelReport } from "@/utils/excelExport";
 
 interface CargoDamaged {
-  codigo: string
-  descripcion: string
-  categoria: string
-  peso: number
-  cantidad: number
-  fechaIngreso: string
-  ubicacion: string
-  motivoDaño: string
-  documentos: string[]
-  creadoPor: string
-  fechaDaño: string
-  nivelDaño: "Leve" | "Moderado" | "Severo" | "Total"
+  codigo: string;
+  descripcion: string;
+  categoria: string;
+  peso: number;
+  cantidad: number;
+  fechaIngreso: string;
+  ubicacion: string;
+  motivoDaño: string;
+  documentos: string[];
+  creadoPor: string;
+  fechaDaño: string;
+  nivelDaño: "Leve" | "Moderado" | "Severo" | "Total";
 }
 
 const cargasDañadas: CargoDamaged[] = [
@@ -109,14 +109,14 @@ const cargasDañadas: CargoDamaged[] = [
     fechaDaño: "22/1/2024",
     nivelDaño: "Leve",
   },
-]
+];
 
 export const CargoDamaged = () => {
-  const [filtroFechaInicio, setFiltroFechaInicio] = useState("01/15/2024")
-  const [filtroFechaFin, setFiltroFechaFin] = useState("01/25/2024")
-  const [filtroCodigo, setFiltroCodigo] = useState("")
-  const [filtroCategoria, setFiltroCategoria] = useState("todos")
-  const [filtroNivelDaño, setFiltroNivelDaño] = useState("todos")
+  const [filtroFechaInicio, setFiltroFechaInicio] = useState("01/15/2024");
+  const [filtroFechaFin, setFiltroFechaFin] = useState("01/25/2024");
+  const [filtroCodigo, setFiltroCodigo] = useState("");
+  const [filtroCategoria, setFiltroCategoria] = useState("todos");
+  const [filtroNivelDaño, setFiltroNivelDaño] = useState("todos");
 
   const cargasFiltradas = cargasDañadas.filter((carga) => {
     return (
@@ -126,32 +126,82 @@ export const CargoDamaged = () => {
         carga.categoria.toLowerCase() === filtroCategoria) &&
       (filtroNivelDaño === "todos" ||
         carga.nivelDaño.toLowerCase() === filtroNivelDaño)
-    )
-  })
+    );
+  });
 
-  const totalCargas = cargasFiltradas.length
-  const pesoTotal = cargasFiltradas.reduce((sum, carga) => sum + carga.peso, 0)
+  const exportarPDF = () => {
+    generatePDF(
+      "Cargas Dañadas",
+      [
+        { header: "Código", accessor: "codigo" },
+        { header: "Descripción", accessor: "descripcion" },
+        { header: "Categoría", accessor: "categoria" },
+        { header: "Peso (kg)", accessor: "peso" },
+        { header: "Cantidad", accessor: "cantidad" },
+        { header: "Fecha Ingreso", accessor: "fechaIngreso" },
+        { header: "Fecha Daño", accessor: "fechaDaño" },
+        { header: "Nivel Daño", accessor: "nivelDaño" },
+        { header: "Ubicación", accessor: "ubicacion" },
+        { header: "Motivo", accessor: "motivoDaño" },
+        {
+          header: "Documentos",
+          accessor: "documentos",
+          render: (v) => v.join(", "),
+        },
+        { header: "Creado Por", accessor: "creadoPor" },
+      ],
+      cargasFiltradas,
+      `Total cargas: ${totalCargas}\nPeso total: ${pesoTotal.toFixed(
+        1
+      )} kg\nUnidades afectadas: ${totalUnidades}\nCon documentación: ${conDocumentos}`,
+      `• Priorizar revisión de refrigeración\n• Verificar manipulación adecuada\n• Mejorar almacenamiento impermeable\n• Asegurar documentación de soporte`,
+      `${filtroFechaInicio} - ${filtroFechaFin}`
+    );
+  };
+
+  const exportarExcel = () => {
+    generateExcelReport(
+      cargasFiltradas.map((c) => ({
+        Código: c.codigo,
+        Descripción: c.descripcion,
+        Categoría: c.categoria,
+        "Peso (kg)": c.peso,
+        Cantidad: c.cantidad,
+        "Fecha Ingreso": c.fechaIngreso,
+        "Fecha Daño": c.fechaDaño,
+        "Nivel Daño": c.nivelDaño,
+        Ubicación: c.ubicacion,
+        "Motivo Daño": c.motivoDaño,
+        Documentos: c.documentos.join(", "),
+        "Creado Por": c.creadoPor,
+      })),
+      "reporte_cargas_dañadas"
+    );
+  };
+
+  const totalCargas = cargasFiltradas.length;
+  const pesoTotal = cargasFiltradas.reduce((sum, carga) => sum + carga.peso, 0);
   const totalUnidades = cargasFiltradas.reduce(
     (sum, carga) => sum + carga.cantidad,
-    0,
-  )
+    0
+  );
   const conDocumentos = cargasFiltradas.filter(
-    (carga) => carga.documentos.length > 0,
-  ).length
+    (carga) => carga.documentos.length > 0
+  ).length;
 
   const getBadgeVariant = (nivel: string) => {
     switch (nivel) {
       case "Leve":
-        return "secondary"
+        return "secondary";
       case "Moderado":
-        return "default"
+        return "default";
       case "Severo":
       case "Total":
-        return "destructive"
+        return "destructive";
       default:
-        return "default"
+        return "default";
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-gray-100 p-6">
@@ -182,10 +232,10 @@ export const CargoDamaged = () => {
             <Button variant="outline" size="sm">
               Vista previa
             </Button>
-            <Button variant="destructive" size="sm">
-              Generar reporte
+            <Button variant="destructive" size="sm" onClick={exportarPDF}>
+              Generar reporte PDF
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={exportarExcel}>
               <Download className="h-4 w-4 mr-2" />
               Descargar Excel
             </Button>
@@ -274,11 +324,14 @@ export const CargoDamaged = () => {
           </div>
 
           <div className="flex items-end">
-            <Button variant="outline" onClick={() => {
-              setFiltroCodigo("")
-              setFiltroCategoria("todos")
-              setFiltroNivelDaño("todos")
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFiltroCodigo("");
+                setFiltroCategoria("todos");
+                setFiltroNivelDaño("todos");
+              }}
+            >
               Limpiar Filtros
             </Button>
           </div>
@@ -376,7 +429,10 @@ export const CargoDamaged = () => {
                   "Documentos",
                   "Creado Por",
                 ].map((h) => (
-                  <TableHead key={h} className="text-gray-600 dark:text-gray-300">
+                  <TableHead
+                    key={h}
+                    className="text-gray-600 dark:text-gray-300"
+                  >
                     {h}
                   </TableHead>
                 ))}
@@ -384,13 +440,19 @@ export const CargoDamaged = () => {
             </TableHeader>
             <TableBody>
               {cargasFiltradas.map((carga) => (
-                <TableRow key={carga.codigo} className="border-gray-200 dark:border-slate-700">
+                <TableRow
+                  key={carga.codigo}
+                  className="border-gray-200 dark:border-slate-700"
+                >
                   <TableCell className="text-blue-600 dark:text-blue-400">
                     {carga.codigo}
                   </TableCell>
                   <TableCell>{carga.descripcion}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600">
+                    <Badge
+                      variant="outline"
+                      className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                    >
                       {carga.categoria}
                     </Badge>
                   </TableCell>
@@ -441,9 +503,11 @@ export const CargoDamaged = () => {
 
         <div className="p-4 border-t border-gray-200 dark:border-slate-700 text-center text-sm text-gray-600 dark:text-gray-400">
           <p>Reporte generado el 21 de julio de 2025, 09:20</p>
-          <p>Sistema de Gestión de Almacén - {totalCargas} registros encontrados</p>
+          <p>
+            Sistema de Gestión de Almacén - {totalCargas} registros encontrados
+          </p>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
