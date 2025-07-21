@@ -349,7 +349,7 @@ export const Reports = () => {
                         <span>{report.stats.lastGenerated}</span>
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 cursor-pointer">
                         <Button
                           size="sm"
                           onClick={() => setCurrentView(report.id)}

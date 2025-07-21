@@ -681,9 +681,7 @@ export const IlegalCargo = () => {
           </div>
 
           <div>
-            <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">
-              Categoría
-            </label>
+
             <Select
               value={filtroCategoria}
               onValueChange={setFiltroCategoria}
