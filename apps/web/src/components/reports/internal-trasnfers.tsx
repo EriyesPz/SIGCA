@@ -1,13 +1,20 @@
 /* eslint-disable react-hooks/rules-of-hooks */
-"use client"
+"use client";
 
-import type React from "react"
-import { useMemo, useState } from "react"
+import type React from "react";
+import { useMemo, useState } from "react";
 
-import { ArrowRightLeft, Calendar, MapPin, MoveRight, User, FileText } from "lucide-react"
+import {
+  ArrowRightLeft,
+  Calendar,
+  MapPin,
+  MoveRight,
+  User,
+  FileText,
+} from "lucide-react";
 
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -15,14 +22,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-
-import { ReportFiltersComponent } from "./report-filter"
-import { ReportPreview } from "./report-preview"
-
-import { mockInternalTransfers } from "@/data/reports-data"
-import { generateExcelReport, generatePDFReport } from "@/utils/pdf-generator"
-import type { CargoEntryFilters as ReportFiltersType } from "./types"
+} from "@/components/ui/table";
+import { ReportFiltersComponent } from "./report-filter";
+import { ReportPreview } from "./report-preview";
+import { mockInternalTransfers } from "@/data/reports-data";
+import type { CargoEntryFilters as ReportFiltersType } from "./types";
+import { generatePDF } from "@/utils/pdfExport";
+import { generateExcelReport } from "@/utils/excelExport";
 
 /* ░░░ COMPONENTE PRINCIPAL ░░░ */
 export const InternalTransfersReport = () => {
@@ -35,37 +41,40 @@ export const InternalTransfersReport = () => {
     user: "all",
     warehouse: "all",
     cargoType: "all",
-  })
+  });
 
   /* ---------- data ---------- */
   const filteredTransfers = useMemo(() => {
     return mockInternalTransfers.filter((t) => {
-      const d = new Date(t.transferDate)
-      const start = new Date(filters.startDate)
-      const end = new Date(filters.endDate)
+      const d = new Date(t.transferDate);
+      const start = new Date(filters.startDate);
+      const end = new Date(filters.endDate);
 
-      const inRange = d >= start && d <= end
+      const inRange = d >= start && d <= end;
       const codeOk =
         !filters.trackingCode ||
-        t.trackingCode.toLowerCase().includes(filters.trackingCode.toLowerCase())
-      const userOk = filters.user === "all" || t.transferredBy === filters.user
+        t.trackingCode
+          .toLowerCase()
+          .includes(filters.trackingCode.toLowerCase());
+      const userOk = filters.user === "all" || t.transferredBy === filters.user;
 
-      return inRange && codeOk && userOk
-    })
-  }, [filters])
+      return inRange && codeOk && userOk;
+    });
+  }, [filters]);
 
   const summary = useMemo(
     () => ({
       totalTraslados: filteredTransfers.length,
-      usuariosActivos: new Set(filteredTransfers.map((t) => t.transferredBy)).size,
+      usuariosActivos: new Set(filteredTransfers.map((t) => t.transferredBy))
+        .size,
       cargasUnicas: new Set(filteredTransfers.map((t) => t.trackingCode)).size,
       almacenesInvolucrados: new Set([
         ...filteredTransfers.map((t) => t.previousLocation.warehouse),
         ...filteredTransfers.map((t) => t.newLocation.warehouse),
       ]).size,
     }),
-    [filteredTransfers],
-  )
+    [filteredTransfers]
+  );
 
   /* ---------- handlers ---------- */
   const resetFilters = () =>
@@ -77,17 +86,50 @@ export const InternalTransfersReport = () => {
       user: "all",
       warehouse: "all",
       cargoType: "all",
-    })
+    });
 
-  const exportPDF = () =>
-    generatePDFReport("internal-transfers-content", {
-      title: "Reporte de Traslados Internos",
-      subtitle: "Movimientos de ubicación de cargas dentro del almacén",
-      dateRange: `${filters.startDate} - ${filters.endDate}`,
-      data: filteredTransfers,
-      summary,
-      footer: "Sistema de Gestión de Almacén",
-    })
+  const exportPDF = () => {
+    generatePDF(
+      "Reporte de Traslados Internos",
+      [
+        { header: "Código de Carga", accessor: "trackingCode" },
+        { header: "Descripción", accessor: "cargoDescription" },
+        {
+          header: "Fecha Traslado",
+          accessor: "transferDate",
+          render: (v) =>
+            new Date(v).toLocaleDateString("es-ES", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            }),
+        },
+        {
+          header: "Ubicación Anterior",
+          accessor: "previousLocation",
+          render: (_v, row) =>
+            `${row.previousLocation.warehouse} - ${row.previousLocation.rack}-${row.previousLocation.level}-${row.previousLocation.column}`,
+        },
+        {
+          header: "Nueva Ubicación",
+          accessor: "newLocation",
+          render: (_v, row) =>
+            `${row.newLocation.warehouse} - ${row.newLocation.rack}-${row.newLocation.level}-${row.newLocation.column}`,
+        },
+        { header: "Trasladado Por", accessor: "transferredBy" },
+        { header: "Motivo", accessor: "reason" },
+        {
+          header: "Notas",
+          accessor: "notes",
+          render: (v) => v || "—",
+        },
+      ],
+      filteredTransfers,
+      `Total traslados: ${summary.totalTraslados}\nUsuarios activos: ${summary.usuariosActivos}\nCargas únicas: ${summary.cargasUnicas}\nAlmacenes involucrados: ${summary.almacenesInvolucrados}`,
+      "• Verifica el motivo de cada traslado.\n• Confirma que la ubicación destino esté habilitada.\n• Revisa notas manuales para seguimiento operativo.",
+      `${filters.startDate} - ${filters.endDate}`
+    );
+  };
 
   const exportExcel = () =>
     generateExcelReport(
@@ -101,8 +143,8 @@ export const InternalTransfersReport = () => {
         Motivo: t.reason,
         Notas: t.notes || "",
       })),
-      "reporte_traslados_internos",
-    )
+      "reporte_traslados_internos"
+    );
 
   /* ---------- ui ---------- */
   return (
@@ -151,10 +193,14 @@ export const InternalTransfersReport = () => {
                 value={filteredTransfers.length}
               />
               <SummaryCard
-                icon={<User className="h-6 w-6 text-green-600 dark:text-green-400" />}
+                icon={
+                  <User className="h-6 w-6 text-green-600 dark:text-green-400" />
+                }
                 bg="green"
                 label="Usuarios Activos"
-                value={new Set(filteredTransfers.map((t) => t.transferredBy)).size}
+                value={
+                  new Set(filteredTransfers.map((t) => t.transferredBy)).size
+                }
               />
               <SummaryCard
                 icon={
@@ -162,7 +208,9 @@ export const InternalTransfersReport = () => {
                 }
                 bg="purple"
                 label="Cargas Únicas"
-                value={new Set(filteredTransfers.map((t) => t.trackingCode)).size}
+                value={
+                  new Set(filteredTransfers.map((t) => t.trackingCode)).size
+                }
               />
               <SummaryCard
                 icon={
@@ -172,7 +220,9 @@ export const InternalTransfersReport = () => {
                 label="Almacenes"
                 value={
                   new Set([
-                    ...filteredTransfers.map((t) => t.previousLocation.warehouse),
+                    ...filteredTransfers.map(
+                      (t) => t.previousLocation.warehouse
+                    ),
                     ...filteredTransfers.map((t) => t.newLocation.warehouse),
                   ]).size
                 }
@@ -207,7 +257,9 @@ export const InternalTransfersReport = () => {
                         key={t.id}
                         className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
                       >
-                        <TableCell className="font-mono text-sm">{t.trackingCode}</TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {t.trackingCode}
+                        </TableCell>
                         <TableCell className="max-w-xs">
                           <div className="truncate" title={t.cargoDescription}>
                             {t.cargoDescription}
@@ -216,7 +268,9 @@ export const InternalTransfersReport = () => {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
-                            {new Date(t.transferDate).toLocaleDateString("es-ES")}
+                            {new Date(t.transferDate).toLocaleDateString(
+                              "es-ES"
+                            )}
                           </div>
                         </TableCell>
 
@@ -290,16 +344,16 @@ export const InternalTransfersReport = () => {
                 })}
               </p>
               <p className="mt-1">
-                Sistema de Gestión de Almacén – {filteredTransfers.length} traslados
-                registrados
+                Sistema de Gestión de Almacén – {filteredTransfers.length}{" "}
+                traslados registrados
               </p>
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
-  )
-}
+  );
+};
 
 /* ░░░ COMPONENTES AUXILIARES ░░░ */
 const SummaryCard = ({
@@ -308,12 +362,12 @@ const SummaryCard = ({
   label,
   value,
 }: {
-  icon: React.ReactNode
-  bg: "blue" | "green" | "purple" | "orange"
-  label: string
-  value: number
+  icon: React.ReactNode;
+  bg: "blue" | "green" | "purple" | "orange";
+  label: string;
+  value: number;
 }) => {
-  const bgLight = `bg-${bg}-100`
+  const bgLight = `bg-${bg}-100`;
   return (
     <Card className="bg-white dark:bg-gray-800">
       <CardContent className="p-6">
@@ -333,19 +387,19 @@ const SummaryCard = ({
         </div>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
 const LocationTag = ({
   color,
   warehouse,
   rack,
 }: {
-  color: "red" | "green"
-  warehouse: string
-  rack: { rack: string; level: number; column: number }
+  color: "red" | "green";
+  warehouse: string;
+  rack: { rack: string; level: number; column: number };
 }) => {
-  const pinColor = color === "red" ? "text-red-500" : "text-green-500"
+  const pinColor = color === "red" ? "text-red-500" : "text-green-500";
   return (
     <div className="flex items-center gap-2">
       <MapPin className={`h-4 w-4 ${pinColor}`} />
@@ -356,5 +410,5 @@ const LocationTag = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

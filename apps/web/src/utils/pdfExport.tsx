@@ -26,7 +26,7 @@ export function generatePDF(
 
   // Header
   doc.setFontSize(16);
-  doc.text("SAN-EHISA - Terminal La Mesa", 45, 20);
+  doc.text("SAN-EHISA", 45, 20);
   doc.setFontSize(12);
   doc.text(`Reporte: ${title}`, 45, 30);
   doc.text(`Fecha de reporte: ${currentDate}`, 45, 36);

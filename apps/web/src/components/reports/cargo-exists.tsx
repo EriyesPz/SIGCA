@@ -24,12 +24,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
 import { ReportFiltersComponent } from "./report-filter";
 import { ReportPreview } from "./report-preview";
-import { generateExcelReport, generatePDFReport } from "@/utils/pdf-generator";
 import { mockCargoExits } from "@/data/reports-data";
 import type { CargoEntryFilters as Filters } from "./types";
+import { generatePDF } from "@/utils/pdfExport";
+import { generateExcelReport } from "@/utils/excelExport";
 
 /* ---------- helpers ---------- */
 const colorForExit = (t: string): string =>
@@ -113,15 +113,40 @@ export const CargoExitsReport = () => {
       cargoType: "all",
     });
 
-  const exportPDF = async () =>
-    generatePDFReport("cargo-exits-content", {
-      title: "Reporte de Salidas de Carga",
-      subtitle: "Lista completa de cargas que han salido del almacén",
-      dateRange: `${filters.startDate} - ${filters.endDate}`,
-      data: rows,
-      summary,
-      footer: "Sistema de Gestión de Almacén",
-    });
+  const exportPDF = () => {
+    generatePDF(
+      "Reporte de Salidas de Carga",
+      [
+        { header: "Código de Carga", accessor: "trackingCode" },
+        { header: "Descripción", accessor: "cargoDescription" },
+        {
+          header: "Fecha Salida",
+          accessor: "exitDate",
+          render: (v) =>
+            new Date(v).toLocaleDateString("es-ES", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            }),
+        },
+        { header: "Receptor", accessor: "receiver" },
+        { header: "Destino", accessor: "destination" },
+        { header: "Tipo Salida", accessor: "exitType" },
+        { header: "Verificado Por", accessor: "verifiedBy" },
+        { header: "Responsable Entrega", accessor: "deliveryResponsible" },
+        { header: "Transporte", accessor: "transportMethod" },
+        {
+          header: "Notas",
+          accessor: "notes",
+          render: (v) => v || "—",
+        },
+      ],
+      rows,
+      `Total salidas: ${summary.total}\nEntregas: ${summary.entregas}\nTransferencias: ${summary.transferencias}\nDevoluciones: ${summary.devoluciones}`,
+      "• Verifica las salidas por tipo.\n• Confirma las entregas y transferencias programadas.\n• Asegura trazabilidad del transporte y destino.",
+      `${filters.startDate} - ${filters.endDate}`
+    );
+  };
 
   const exportExcel = () =>
     generateExcelReport(

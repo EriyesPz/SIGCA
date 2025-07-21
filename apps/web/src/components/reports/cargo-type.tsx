@@ -1,63 +1,89 @@
-import { useMemo, useState } from "react"
-import { FileText } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { ReportPreview } from "@/components/reports/report-preview"
-import { DateFilters } from "@/components/cargo-report/date-filters"
-import { SummaryCards } from "@/components/cargo-report/summary-card"
-import { CargoChart } from "@/components/cargo-report/cargo-chart"
-import { DetailedTable } from "@/components/cargo-report/detailed-table"
-
-import { mockCargoData } from "@/data/cargo-report"
+import { useMemo, useState } from "react";
+import { FileText } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { ReportPreview } from "@/components/reports/report-preview";
+import { DateFilters } from "@/components/cargo-report/date-filters";
+import { SummaryCards } from "@/components/cargo-report/summary-card";
+import { CargoChart } from "@/components/cargo-report/cargo-chart";
+import { DetailedTable } from "@/components/cargo-report/detailed-table";
+import { mockCargoData } from "@/data/cargo-report";
 import {
   generateDailyCargoReports,
   calculateOverallSummary,
-} from "@/utils/cargo-report"
-import { generateExcelReport, generatePDFReport } from "@/utils/pdf-generator"
+} from "@/utils/cargo-report";
+import type { ReportFilters } from "@/components/cargo-report/types";
+import { generatePDF } from "@/utils/pdfExport";
+import { generateExcelReport } from "@/utils/excelExport";
 
-import type { ReportFilters } from "@/components/cargo-report/types"
-
-/* ---------- componente ---------- */
 export const CargoTypeReport = () => {
   const [filters, setFilters] = useState<ReportFilters>({
     startDate: "2024-01-15",
     endDate: "2024-01-19",
-  })
+  });
 
-  /* ---------- datos filtrados ---------- */
   const movements = useMemo(() => {
     return mockCargoData.filter((m) => {
-      const d = new Date(m.date)
-      return d >= new Date(filters.startDate) && d <= new Date(filters.endDate)
-    })
-  }, [filters])
+      const d = new Date(m.date);
+      return d >= new Date(filters.startDate) && d <= new Date(filters.endDate);
+    });
+  }, [filters]);
 
   const dailyReports = useMemo(
     () => generateDailyCargoReports(movements),
-    [movements],
-  )
+    [movements]
+  );
 
   const overall = useMemo(
     () => calculateOverallSummary(dailyReports),
-    [dailyReports],
-  )
+    [dailyReports]
+  );
 
-  /* ---------- handlers ---------- */
   const resetFilters = () =>
     setFilters({
       startDate: "2024-01-15",
       endDate: "2024-01-19",
-    })
+    });
 
-  const exportPDF = () =>
-    generatePDFReport("cargo-report-content", {
-      title: "Reporte diario – Carga por tipo",
-      subtitle:
-        "Análisis detallado de movimientos de carga clasificados por tipo de operación",
-      dateRange: `${filters.startDate} - ${filters.endDate}`,
-      data: movements,
-      summary: overall,
-      footer: "Sistema de Gestión de Almacén",
-    })
+  const resumen = `Recibidas: ${overall.totalReceived} | Despachadas: ${overall.totalDispatched} | Dañadas: ${overall.totalDamaged} | Devueltas: ${overall.totalReturned} | Unidades: ${overall.totalUnits} | Peso total: ${overall.totalWeight} kg`;
+
+  const exportPDF = () => {
+    generatePDF(
+      "Reporte diario – Carga por tipo",
+      [
+        { header: "Código de Seguimiento", accessor: "trackingCode" },
+        {
+          header: "Fecha",
+          accessor: "date",
+          render: (v) =>
+            new Date(v).toLocaleDateString("es-ES", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            }),
+        },
+        { header: "Tipo", accessor: "type" },
+        { header: "Categoría", accessor: "cargoCategory" },
+        { header: "Descripción", accessor: "description" },
+        { header: "Peso (kg)", accessor: "weightKg" },
+        { header: "Cantidad", accessor: "quantity" },
+        { header: "Almacén", accessor: "warehouse" },
+        {
+          header: "Fecha Creación",
+          accessor: "createdAt",
+          render: (v) =>
+            new Date(v).toLocaleDateString("es-ES", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            }),
+        },
+      ],
+      movements,
+      resumen,
+      "• Monitorear balance de carga por tipo de operación.\n• Identificar días con actividad anómala.\n• Validar movimientos por categoría y cantidad.",
+      `${filters.startDate} - ${filters.endDate}`
+    );
+  };
 
   const exportExcel = () =>
     generateExcelReport(
@@ -72,8 +98,8 @@ export const CargoTypeReport = () => {
         Almacén: m.warehouse,
         "Fecha Creación": m.createdAt,
       })),
-      "reporte_carga_por_tipo",
-    )
+      "reporte_carga_por_tipo"
+    );
 
   /* ---------- UI ---------- */
   return (
@@ -153,5 +179,5 @@ export const CargoTypeReport = () => {
         </Card>
       </div>
     </div>
-  )
-}
+  );
+};

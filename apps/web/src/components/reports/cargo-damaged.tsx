@@ -30,8 +30,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui"
+import { generatePDF } from "@/utils/pdfExport";
+import { generateExcelReport } from "@/utils/excelExport";
 
-interface CargaDañada {
+interface CargoDamaged {
   codigo: string
   descripcion: string
   categoria: string
@@ -46,7 +48,7 @@ interface CargaDañada {
   nivelDaño: "Leve" | "Moderado" | "Severo" | "Total"
 }
 
-const cargasDañadas: CargaDañada[] = [
+const cargasDañadas: CargoDamaged[] = [
   {
     codigo: "TRK-2024-002",
     descripcion: "Camisetas polo algodón - Lote 50 unidades",

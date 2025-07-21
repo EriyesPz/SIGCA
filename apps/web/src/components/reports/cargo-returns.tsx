@@ -1,9 +1,5 @@
-/* eslint-disable react-hooks/rules-of-hooks */
-"use client"
-
-import type React from "react"
-import { useMemo, useState } from "react"
-
+import type React from "react";
+import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   Calendar,
@@ -11,10 +7,9 @@ import {
   RefreshCw,
   RotateCcw,
   User,
-} from "lucide-react"
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -22,17 +17,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-
-import { ReportFiltersComponent } from "./report-filter"
-import { ReportPreview } from "./report-preview"
-import { generateExcelReport, generatePDFReport } from "@/utils/pdf-generator"
-import { mockCargoReturns } from "@/data/reports-data"
-import type { CargoEntryFilters as Filters } from "./types"
+} from "@/components/ui/table";
+import { ReportFiltersComponent } from "./report-filter";
+import { ReportPreview } from "./report-preview";
+import { mockCargoReturns } from "@/data/reports-data";
+import type { CargoEntryFilters as Filters } from "./types";
+import { generatePDF } from "@/utils/pdfExport";
+import { generateExcelReport } from "@/utils/excelExport";
 
 /* ---------- helpers ---------- */
 const colorForType = (t: string): string =>
-  (
+  ((
     {
       devolucion:
         "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border-red-200 dark:border-red-600",
@@ -44,17 +39,17 @@ const colorForType = (t: string): string =>
         "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-200 dark:border-yellow-600",
     } as const
   )[t as keyof typeof colorMap] ??
-  "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-600"
+  "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-600");
 
 const iconForType = (t: string): React.ReactNode =>
-  (
+  ((
     {
       devolucion: <RotateCcw className="h-4 w-4" />,
       reingreso: <RefreshCw className="h-4 w-4" />,
       rechazo: <AlertTriangle className="h-4 w-4" />,
       correccion: <FileText className="h-4 w-4" />,
     } as const
-  )[t as keyof typeof iconMap] ?? <FileText className="h-4 w-4" />
+  )[t as keyof typeof iconMap] ?? <FileText className="h-4 w-4" />);
 
 /* ---------- component ---------- */
 export const CargoReturnsReport = () => {
@@ -66,37 +61,39 @@ export const CargoReturnsReport = () => {
     user: "all",
     warehouse: "all",
     cargoType: "all",
-  })
+  });
 
   /* ---------- data ---------- */
   const rows = useMemo(() => {
     return mockCargoReturns.filter((r) => {
-      const d = new Date(r.changeDate)
-      const start = new Date(filters.startDate)
-      const end = new Date(filters.endDate)
+      const d = new Date(r.changeDate);
+      const start = new Date(filters.startDate);
+      const end = new Date(filters.endDate);
 
-      const inRange = d >= start && d <= end
+      const inRange = d >= start && d <= end;
       const codeOk =
         !filters.trackingCode ||
-        r.trackingCode.toLowerCase().includes(filters.trackingCode.toLowerCase())
-      const userOk = filters.user === "all" || r.performedBy === filters.user
-      return inRange && codeOk && userOk
-    })
-  }, [filters])
+        r.trackingCode
+          .toLowerCase()
+          .includes(filters.trackingCode.toLowerCase());
+      const userOk = filters.user === "all" || r.performedBy === filters.user;
+      return inRange && codeOk && userOk;
+    });
+  }, [filters]);
 
   const byType = useMemo(() => {
     return rows.reduce<Record<string, number>>((acc, r) => {
-      acc[r.changeType] = (acc[r.changeType] || 0) + 1
-      return acc
-    }, {})
-  }, [rows])
+      acc[r.changeType] = (acc[r.changeType] || 0) + 1;
+      return acc;
+    }, {});
+  }, [rows]);
 
   const summary = {
     total: rows.length,
     devoluciones: byType.devolucion ?? 0,
     reingresos: byType.reingreso ?? 0,
     rechazos: byType.rechazo ?? 0,
-  }
+  };
 
   /* ---------- export ---------- */
   const resetFilters = () =>
@@ -108,17 +105,41 @@ export const CargoReturnsReport = () => {
       user: "all",
       warehouse: "all",
       cargoType: "all",
-    })
+    });
 
-  const exportPDF = async () =>
-    generatePDFReport("cargo-returns-content", {
-      title: "Reporte de Cargas Devueltas/Reingresadas",
-      subtitle: "Casos de cargas rechazadas, devueltas o reingresadas al sistema",
-      dateRange: `${filters.startDate} - ${filters.endDate}`,
-      data: rows,
-      summary,
-      footer: "Sistema de Gestión de Almacén",
-    })
+  const exportPDF = () => {
+    generatePDF(
+      "Reporte de Cargas Devueltas/Reingresadas",
+      [
+        { header: "Código de Carga", accessor: "trackingCode" },
+        { header: "Descripción", accessor: "cargoDescription" },
+        { header: "Estado Anterior", accessor: "previousStatus" },
+        { header: "Nuevo Estado", accessor: "newStatus" },
+        { header: "Tipo de Cambio", accessor: "changeType" },
+        {
+          header: "Fecha Cambio",
+          accessor: "changeDate",
+          render: (v) =>
+            new Date(v).toLocaleDateString("es-ES", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            }),
+        },
+        { header: "Realizado Por", accessor: "performedBy" },
+        { header: "Motivo", accessor: "reason" },
+        {
+          header: "Notas",
+          accessor: "notes",
+          render: (v) => v || "—",
+        },
+      ],
+      rows,
+      `Total casos: ${summary.total}\nDevoluciones: ${summary.devoluciones}\nReingresos: ${summary.reingresos}\nRechazos: ${summary.rechazos}`,
+      "• Revisa los motivos de rechazo.\n• Confirma si las devoluciones requieren reingreso.\n• Verifica responsables y documentación asociada.",
+      `${filters.startDate} - ${filters.endDate}`
+    );
+  };
 
   const exportExcel = () =>
     generateExcelReport(
@@ -133,8 +154,8 @@ export const CargoReturnsReport = () => {
         Motivo: r.reason,
         Notas: r.notes ?? "",
       })),
-      "reporte_cargas_devueltas",
-    )
+      "reporte_cargas_devueltas"
+    );
 
   /* ---------- ui ---------- */
   return (
@@ -322,8 +343,8 @@ export const CargoReturnsReport = () => {
         </Card>
       </div>
     </div>
-  )
-}
+  );
+};
 
 /* ---------- small reusable pieces ---------- */
 const SummaryCard = ({
@@ -333,18 +354,16 @@ const SummaryCard = ({
   label,
   value,
 }: {
-  icon: React.ReactNode
-  bgLight: string
-  bgDark: string
-  label: string
-  value: number
+  icon: React.ReactNode;
+  bgLight: string;
+  bgDark: string;
+  label: string;
+  value: number;
 }) => (
   <Card className="bg-white dark:bg-gray-800">
     <CardContent className="p-6">
       <div className="flex items-center gap-4">
-        <div className={`rounded-lg p-3 ${bgLight} dark:${bgDark}`}>
-          {icon}
-        </div>
+        <div className={`rounded-lg p-3 ${bgLight} dark:${bgDark}`}>{icon}</div>
         <div>
           <p className="text-sm text-muted-foreground">{label}</p>
           <p className="text-2xl font-bold">{value}</p>
@@ -352,7 +371,7 @@ const SummaryCard = ({
       </div>
     </CardContent>
   </Card>
-)
+);
 
 /* ---------- internal maps (kept after component to satisfy TS) ---------- */
 const colorMap = {
@@ -360,11 +379,11 @@ const colorMap = {
   reingreso: "",
   rechazo: "",
   correccion: "",
-} as const
+} as const;
 
 const iconMap = {
   devolucion: null,
   reingreso: null,
   rechazo: null,
   correccion: null,
-} as const
+} as const;
