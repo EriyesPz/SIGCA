@@ -349,10 +349,11 @@ export const CargoAverage = () => {
   );
 
   const COLORS = [
-    "hsl(var(--chart-1))",
-    "hsl(var(--chart-2))",
-    "hsl(var(--chart-3))",
-    "hsl(var(--chart-4))",
+    "var(--chart-1)",
+    "var(--chart-2)",
+    "var(--chart-3)",
+    "var(--chart-4)",
+    "var(--chart-5)",
   ];
 
   const getEstadoBadge = (estado: string) => {
@@ -628,6 +629,7 @@ export const CargoAverage = () => {
                     strokeDasharray="3 3"
                     stroke="hsl(var(--border))"
                   />
+
                   <XAxis
                     dataKey="categoria"
                     stroke="hsl(var(--muted-foreground))"
@@ -637,6 +639,7 @@ export const CargoAverage = () => {
                     height={80}
                   />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "hsl(var(--popover))",
@@ -645,11 +648,16 @@ export const CargoAverage = () => {
                       color: "hsl(var(--popover-foreground))",
                     }}
                   />
-                  <Bar
-                    dataKey="promedioDias"
-                    fill="hsl(var(--primary))"
-                    name="Promedio Días"
-                  />
+
+                  {/* Cada <Cell> asigna un color distinto a su barra */}
+                  <Bar dataKey="promedioDias" name="Promedio Días">
+                    {chartDataCategoria.map((_, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
