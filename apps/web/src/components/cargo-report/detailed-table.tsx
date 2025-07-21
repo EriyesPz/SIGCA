@@ -26,7 +26,7 @@ import {
   formatNumber,
   getTypeColor,
   getTypeIcon,
-  getTypeLabel, // 🆕 etiqueta en ES
+  getTypeLabel,
 } from "@/utils/cargo-report";
 import type { DailyCargoSummary } from "./types";
 import React from "react";
