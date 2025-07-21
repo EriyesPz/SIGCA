@@ -53,6 +53,8 @@ import {
   Area,
   AreaChart,
 } from "recharts";
+import { generatePDF } from "@/utils/pdfExport";
+import { generateExcelReport } from "@/utils/excelExport";
 
 interface CargaIlegal {
   codigo: string;
@@ -521,101 +523,171 @@ export const IlegalCargo = () => {
         return "default";
     }
   };
+
+  const exportColumns = [
+    { header: "Código", accessor: "codigo" },
+    { header: "Descripción", accessor: "descripcion" },
+    { header: "Categoría", accessor: "categoria" },
+    { header: "Peso (kg)", accessor: "peso" },
+    { header: "Cantidad", accessor: "cantidad" },
+    { header: "Fecha Detección", accessor: "fechaDeteccion" },
+    { header: "Origen", accessor: "origen" },
+    { header: "Destino", accessor: "destino" },
+    { header: "Manifiesto", accessor: "numeroManifiesto" },
+    { header: "Tipo Infracción", accessor: "tipoInfraccion" },
+    { header: "Riesgo", accessor: "nivelRiesgo" },
+    { header: "Valor Estimado", accessor: "valorEstimado" },
+    { header: "Multa", accessor: "multa" },
+    { header: "Estado Legal", accessor: "estadoLegal" },
+    { header: "Investigación", accessor: "estadoInvestigacion" },
+  ];
+
+  const handleExportPDF = () => {
+    generatePDF(
+      "Cargas Ilegales Detectadas",
+      exportColumns,
+      cargasFiltradas,
+      `Total casos: ${totalCargas}\nValor Total: S/ ${valorTotalIncautado.toLocaleString()}\nMultas: S/ ${multasTotales.toLocaleString()}`,
+      `• Verificar licencias sanitarias\n• Alertar sobre cargas de alto riesgo\n• Coordinar con fiscalía en casos críticos`
+    );
+  };
+
+  const handleExportExcel = () => {
+    const excelData = cargasFiltradas.map((carga) => ({
+      Código: carga.codigo,
+      Descripción: carga.descripcion,
+      Categoría: carga.categoria,
+      "Peso (kg)": carga.peso,
+      Cantidad: carga.cantidad,
+      "Fecha Detección": carga.fechaDeteccion,
+      Origen: carga.origen,
+      Destino: carga.destino,
+      Manifiesto: carga.numeroManifiesto,
+      "Tipo Infracción": carga.tipoInfraccion,
+      Riesgo: carga.nivelRiesgo,
+      "Valor Estimado": carga.valorEstimado,
+      Multa: carga.multa,
+      "Estado Legal": carga.estadoLegal,
+      Investigación: carga.estadoInvestigacion,
+    }));
+    generateExcelReport(excelData, "Cargas_Ilegales");
+  };
+
   return (
     <div className="bg-gray-50 dark:bg-slate-900 min-h-screen transition-colors">
       <div className="bg-gradient-to-r rounded-lg p-6 mb-6 transition-colors">
-      <div className="flex items-center gap-3 mb-2">
-        <Shield className="h-8 w-8 text-red-500 dark:text-red-400" />
-        <h1 className="text-3xl text-gray-900 dark:text-gray-100">Reporte de Cargas Ilegales</h1>
-      </div>
-      <p className="text-gray-600 dark:text-gray-300">
-        Análisis completo de cargas ilegales o no autorizadas detectadas en el sistema
-      </p>
+        <div className="flex items-center gap-3 mb-2">
+          <Shield className="h-8 w-8 text-red-500 dark:text-red-400" />
+          <h1 className="text-3xl text-gray-900 dark:text-gray-100">
+            Reporte de Cargas Ilegales
+          </h1>
+        </div>
+        <p className="text-gray-600 dark:text-gray-300">
+          Análisis completo de cargas ilegales o no autorizadas detectadas en el
+          sistema
+        </p>
       </div>
       <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-4 mb-6 transition-colors">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-        <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
-        <div>
-          <h3 className="text-gray-900 dark:text-gray-100">Reporte de Cargas Ilegales</h3>
-          <p className="text-sm text-gray-400 dark:text-gray-400">
-          {totalCargas} casos detectados • {filtroFechaInicio} - {filtroFechaFin}
-          </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
+            <div>
+              <h3 className="text-gray-900 dark:text-gray-100">
+                Reporte de Cargas Ilegales
+              </h3>
+              <p className="text-sm text-gray-400 dark:text-gray-400">
+                {totalCargas} casos detectados • {filtroFechaInicio} -{" "}
+                {filtroFechaFin}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Vista previa
+            </Button>
+            <Button variant="destructive" size="sm" onClick={handleExportPDF}>
+              Generar reporte PDF
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+              onClick={handleExportExcel}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Descargar Excel
+            </Button>
+          </div>
         </div>
-        </div>
-        <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
-        >
-          <Eye className="h-4 w-4 mr-2" />
-          Vista previa
-        </Button>
-        <Button variant="destructive" size="sm">
-          Generar reporte
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
-        >
-          <Download className="h-4 w-4 mr-2" />
-          Descargar Excel
-        </Button>
-        </div>
-      </div>
       </div>
       <div className="bg-white dark:bg-slate-800 rounded-lg p-6 mb-6 transition-colors">
-      <div className="flex items-center gap-3 mb-4">
-        <Filter className="h-5 w-5 text-blue-500 dark:text-blue-400" />
-        <h3 className="text-gray-900 dark:text-gray-100">Filtros de Cargas Ilegales</h3>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-4">
-        <div>
-        <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">Fecha Inicio</label>
-        <div className="relative">
-          <Input
-          type="text"
-          value={filtroFechaInicio}
-          onChange={(e) => setFiltroFechaInicio(e.target.value)}
-          className="bg-gray-100 dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white pl-8"
-          />
-          <Calendar className="h-4 w-4 absolute left-2 top-3 text-gray-400" />
-        </div>
+        <div className="flex items-center gap-3 mb-4">
+          <Filter className="h-5 w-5 text-blue-500 dark:text-blue-400" />
+          <h3 className="text-gray-900 dark:text-gray-100">
+            Filtros de Cargas Ilegales
+          </h3>
         </div>
 
-        <div>
-        <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">Fecha Fin</label>
-        <div className="relative">
-          <Input
-          type="text"
-          value={filtroFechaFin}
-          onChange={(e) => setFiltroFechaFin(e.target.value)}
-          className="bg-gray-100 dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white pl-8"
-          />
-          <Calendar className="h-4 w-4 absolute left-2 top-3 text-gray-400" />
-        </div>
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-4">
+          <div>
+            <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">
+              Fecha Inicio
+            </label>
+            <div className="relative">
+              <Input
+                type="text"
+                value={filtroFechaInicio}
+                onChange={(e) => setFiltroFechaInicio(e.target.value)}
+                className="bg-gray-100 dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white pl-8"
+              />
+              <Calendar className="h-4 w-4 absolute left-2 top-3 text-gray-400" />
+            </div>
+          </div>
 
-        <div>
-        <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">Código de Caso</label>
-        <div className="relative">
-          <Input
-          type="text"
-          placeholder="Buscar por código..."
-          value={filtroCodigo}
-          onChange={(e) => setFiltroCodigo(e.target.value)}
-          className="bg-gray-100 dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white pl-8"
-          />
-          <Search className="h-4 w-4 absolute left-2 top-3 text-gray-400" />
-        </div>
-        </div>
+          <div>
+            <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">
+              Fecha Fin
+            </label>
+            <div className="relative">
+              <Input
+                type="text"
+                value={filtroFechaFin}
+                onChange={(e) => setFiltroFechaFin(e.target.value)}
+                className="bg-gray-100 dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white pl-8"
+              />
+              <Calendar className="h-4 w-4 absolute left-2 top-3 text-gray-400" />
+            </div>
+          </div>
 
-        <div>
-        <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">Categoría</label>
-        <Select value={filtroCategoria} onValueChange={setFiltroCategoria}></Select>
+          <div>
+            <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">
+              Código de Caso
+            </label>
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Buscar por código..."
+                value={filtroCodigo}
+                onChange={(e) => setFiltroCodigo(e.target.value)}
+                className="bg-gray-100 dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white pl-8"
+              />
+              <Search className="h-4 w-4 absolute left-2 top-3 text-gray-400" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm mb-1 text-gray-700 dark:text-gray-300">
+              Categoría
+            </label>
+            <Select
+              value={filtroCategoria}
+              onValueChange={setFiltroCategoria}
+            ></Select>
             <label className="block text-sm mb-1">Categoría</label>
             <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
               <SelectTrigger className="dark:bg-slate-700 border-slate-600 text-white">

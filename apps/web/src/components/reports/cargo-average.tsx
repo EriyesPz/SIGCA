@@ -46,6 +46,8 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { generatePDF } from "@/utils/pdfExport";
+import { generateExcelReport } from "@/utils/excelExport";
 
 interface CargaPermanencia {
   codigo: string;
@@ -264,6 +266,57 @@ export const CargoAverage = () => {
     );
   });
 
+  const handleDownloadPDF = () => {
+    const columns = [
+      "Código",
+      "Categoría",
+      "Días en Almacén",
+      "Costo",
+      "Ubicación",
+      "Estado",
+      "Responsable",
+    ];
+
+
+
+    generatePDF(
+      "Reporte de Permanencia en Almacén",
+      columns.map((col) => ({
+        header: col,
+        accessor: col.toLowerCase().replace(/\s+/g, ""),
+      })),
+      cargasFiltradas.map((c) => ({
+        código: c.codigo,
+        categoría: c.categoria,
+        díasenalmacén: `${c.diasEnAlmacen} días`,
+        costo: `S/ ${c.costoAlmacenaje.toFixed(2)}`,
+        ubicación: c.ubicacion,
+        estado: c.estado,
+        responsable: c.responsableAlmacen,
+      })),
+      `Total de cargas analizadas: ${totalCargas}`,
+      undefined,
+      `${filtroFechaInicio} - ${filtroFechaFin}`
+    );
+  };
+
+  const handleDownloadExcel = () => {
+    generateExcelReport(
+      cargasFiltradas.map((c) => ({
+        Código: c.codigo,
+        Categoría: c.categoria,
+        "Fecha Ingreso": c.fechaIngreso,
+        "Fecha Salida": c.fechaSalida || "En almacén",
+        "Días en Almacén": c.diasEnAlmacen,
+        Estado: c.estado,
+        Ubicación: c.ubicacion,
+        "Costo Almacenaje": c.costoAlmacenaje,
+        Responsable: c.responsableAlmacen,
+      })),
+      "reporte-permanencia"
+    );
+  };
+
   const totalCargas = cargasFiltradas.length;
   const promedioEstadia =
     cargasFiltradas.reduce((sum, carga) => sum + carga.diasEnAlmacen, 0) /
@@ -429,10 +482,10 @@ export const CargoAverage = () => {
               <Eye className="h-4 w-4 mr-2" />
               Vista previa
             </Button>
-            <Button variant="default" size="sm">
-              Generar reporte
+            <Button variant="default" size="sm" onClick={handleDownloadPDF}>
+              Generar reporte PDF
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleDownloadExcel}>
               <Download className="h-4 w-4 mr-2" />
               Descargar Excel
             </Button>
@@ -744,7 +797,11 @@ export const CargoAverage = () => {
                   fontSize={12}
                   tick={{ fill: "#fff" }}
                 />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tick={{ fill: "#fff" }} />
+                <YAxis
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tick={{ fill: "#fff" }}
+                />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--popover))",
