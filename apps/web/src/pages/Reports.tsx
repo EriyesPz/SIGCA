@@ -32,6 +32,8 @@ import { CargoExitsReport } from "@/components/reports/cargo-exists";
 import { CargoDamaged } from "@/components/reports/cargo-damaged";
 import { IlegalCargo } from "@/components/reports/cargo-ilegal";
 import { CargoAverage } from "@/components/reports/cargo-average";
+import { DistributionCargo } from "@/components/reports/cargo-distribution";
+import { SituationLegal } from "@/components/reports/cargo-situation-legal";
 
 type ReportType =
   | "overview"
@@ -256,6 +258,10 @@ export const Reports = () => {
         return <IlegalCargo />;
       case "cargo-average":
         return <CargoAverage />;
+      case "cargo-location":
+        return <DistributionCargo />;
+      case "cargo-situation-legal":
+        return <SituationLegal />;
       default:
         return null;
     }
