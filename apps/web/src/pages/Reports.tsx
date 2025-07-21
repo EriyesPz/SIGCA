@@ -30,6 +30,7 @@ import { InternalTransfersReport } from "@/components/reports/internal-trasnfers
 import { CargoReturnsReport } from "@/components/reports/cargo-returns";
 import { CargoExitsReport } from "@/components/reports/cargo-exists";
 import { CargoDamaged } from "@/components/reports/cargo-damaged";
+import { IlegalCargo } from "@/components/reports/cargo-ilegal";
 
 type ReportType =
   | "overview"
@@ -250,6 +251,8 @@ export const Reports = () => {
         return <CargoExitsReport />;
       case "cargo-damaged":
         return <CargoDamaged />;
+      case "cargo-illegal":
+        return <IlegalCargo />;
       default:
         return null;
     }
