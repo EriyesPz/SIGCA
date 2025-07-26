@@ -1,8 +1,8 @@
 import { getApiUrl } from "./client";
 import { useQuery } from "@tanstack/react-query";
 
-const getLocations = async (): Promise<any> => {
-  const response = await fetch(`${getApiUrl()}/locations`);
+const getLocations = async (page = 1, limit = 10): Promise<any> => {
+  const response = await fetch(`${getApiUrl()}/locations?page=${page}&limit=${limit}`);
   if (!response.ok) {
     throw new Error("Error fetching locations");
   }
@@ -41,10 +41,10 @@ export const getLocationsByRack = async (rack: string): Promise<any> => {
   }
 };
 
-export const useLocations = () => {
+export const useLocations = (page = 1, limit = 10) => {
   return useQuery({
-    queryKey: ["locations"],
-    queryFn: getLocations,
+    queryKey: ["locations", page, limit],
+    queryFn: () => getLocations(page, limit),
   });
 };
 

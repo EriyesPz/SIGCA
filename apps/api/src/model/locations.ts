@@ -1,6 +1,8 @@
 import { db } from "./db";
 
-export const getAllLocations = async () => {
+export const getAllLocations = async (page = 1, limit = 10) => {
+  const skip = (page - 1) * limit;
+
   const warehouses = await db.warehouse.findMany({
     include: {
       Racks: {
@@ -29,10 +31,10 @@ export const getAllLocations = async () => {
     },
   });
 
-  const result = warehouses.flatMap((warehouse: (typeof warehouses)[number]) =>
-    warehouse.Racks.flatMap((rack: (typeof warehouse.Racks)[number]) =>
-      rack.RackLevels.flatMap((level: (typeof rack.RackLevels)[number]) =>
-        level.RackColumns.map((column: (typeof level.RackColumns)[number]) => ({
+  const allLocations = warehouses.flatMap((warehouse) =>
+    warehouse.Racks.flatMap((rack) =>
+      rack.RackLevels.flatMap((level) =>
+        level.RackColumns.map((column) => ({
           warehouse: warehouse.Name,
           rack: rack.Name,
           rackCode: rack.Code ?? null,
@@ -47,7 +49,10 @@ export const getAllLocations = async () => {
     )
   );
 
-  return result;
+  const total = allLocations.length;
+  const paginated = allLocations.slice(skip, skip + limit);
+
+  return { data: paginated, total };
 };
 
 export const getLocationsByWarehouse = async (warehouseId: string) => {
@@ -139,7 +144,7 @@ export const getLocationsByRack = async (rackId: string) => {
 
   const result = rack.RackLevels.flatMap((level) =>
     level.RackColumns.map((column) => {
-      const cargo = column.Cargo[0]; 
+      const cargo = column.Cargo[0];
       return {
         rack: rack.Name,
         rackCode: rack.Code ?? null,

@@ -6,17 +6,20 @@ export const getLocations = async (
   res: Response
 ): Promise<void> => {
   try {
-    const locations = await getAllLocations();
-    if (!locations || locations.length === 0) {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    const { data, total } = await getAllLocations(page, limit);
+
+    if (!data || data.length === 0) {
       res.status(404).json({ message: "No locations found" });
       return;
     }
-    res.status(200).json(locations);
-    return;
+
+    res.status(200).json({ data, total, page, limit });
   } catch (error) {
     console.error(`Error al mostrar las ubicaciones ${error}`);
     res.status(500).json({ error: "Internal server error" });
-    return;
   }
 };
 

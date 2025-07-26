@@ -10,16 +10,28 @@ import {
   QuickStats,
   LocationDetailsModal,
   RackLocationsModal,
-  LocationsTable
+  LocationsTable,
 } from "@/components/warehouse";
 import { buildWarehouseTree } from "@/utils/warehouse";
 import type { Location, Rack, Warehouse } from "@/lib/types";
 import { useLocations } from "@/lib/locations";
+import { useWarehouses } from "@/lib/warehouse";
 
 export const WarehouseLocationTracker = () => {
-  const { data = [], isLoading, error } = useLocations();
-  const warehouseLocations = useMemo(() => buildWarehouseTree(data), [data]);
+  const [page, setPage] = useState(1);
+  const limit = 20;
 
+  const {
+    data,
+    isLoading,
+    error,
+  } = useLocations(page, limit);
+
+  const locations = data?.data || [];
+  const totalCount = data?.total || 0;
+
+  const warehouseLocations = useMemo(() => buildWarehouseTree(locations), [locations]);
+  const { data: allWarehouses } = useWarehouses();
   const [viewMode, setViewMode] = useState<"all" | "by_warehouse">("all");
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -79,13 +91,9 @@ export const WarehouseLocationTracker = () => {
           const matchesSearch =
             searchTerm === "" ||
             (location.trackingCode &&
-              location.trackingCode
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase())) ||
+              location.trackingCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (location.description &&
-              location.description
-                .toLowerCase()
-                .includes(searchTerm.toLowerCase()));
+              location.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
           return matchesStatus && matchesSearch;
         });
@@ -120,37 +128,35 @@ export const WarehouseLocationTracker = () => {
             <div className="flex items-center gap-3">
               <Package className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Tracker de Ubicaciones de Almacen 
+                Tracker de Ubicaciones de Almacén
               </h1>
             </div>
 
-            <div className="flex items-center gap-4">
-              <Tabs
-                value={viewMode}
-                onValueChange={(value) =>
-                  setViewMode(value as "all" | "by_warehouse")
-                }
-              >
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="all" className="text-xs">
-                    Todas las Ubicaciones
-                  </TabsTrigger>
-                  <TabsTrigger value="by_warehouse" className="text-xs">
-                    Ubicaciones por Almacen
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
+            <Tabs
+              value={viewMode}
+              onValueChange={(value) =>
+                setViewMode(value as "all" | "by_warehouse")
+              }
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="all" className="text-xs">
+                  Todas las Ubicaciones
+                </TabsTrigger>
+                <TabsTrigger value="by_warehouse" className="text-xs">
+                  Ubicaciones por Almacén
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
         </div>
       </header>
 
-      {isLoading && <div className="p-6 text-sm">Loading warehouse data…</div>}
-      {error && <div className="p-6 text-red-600">Error loading locations</div>}
+      {isLoading && <div className="p-6 text-sm">Cargando ubicaciones…</div>}
+      {error && <div className="p-6 text-red-600">Error al cargar datos</div>}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Filter Panel - Only show for by_warehouse view */}
+          {/* Filtros solo en vista por almacén */}
           {viewMode === "by_warehouse" && (
             <div className="lg:w-80 space-y-6">
               <FilterPanel
@@ -165,12 +171,11 @@ export const WarehouseLocationTracker = () => {
               />
 
               <StatusLegend />
-
               <QuickStats filteredData={filteredData} />
             </div>
           )}
 
-          {/* Main Content Area */}
+          {/* Contenido principal */}
           <div className="flex-1">
             <div className="space-y-8">
               {viewMode === "all" ? (
@@ -178,18 +183,21 @@ export const WarehouseLocationTracker = () => {
                   <div className="flex items-center gap-3">
                     <Grid3X3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     <div>
-                      <h2 className="text-2xl font-bold">
-                        Ubicaciones
-                      </h2>
-                        <p className="text-muted-foreground">
-                        Lista completa de todas las ubicaciones en todos los almacenes
-                        </p>
+                      <h2 className="text-2xl font-bold">Ubicaciones</h2>
+                      <p className="text-muted-foreground">
+                        Lista completa de todas las ubicaciones
+                      </p>
                     </div>
                   </div>
 
                   <LocationsTable
                     warehouseLocations={warehouseLocations}
+                    allWarehouses={allWarehouses || []}
                     onLocationClick={handleLocationClick}
+                    page={page}
+                    limit={limit}
+                    totalCount={totalCount}
+                    onPageChange={setPage}
                   />
                 </div>
               ) : (
@@ -225,7 +233,7 @@ export const WarehouseLocationTracker = () => {
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Modales */}
       <LocationDetailsModal
         isOpen={isDetailOpen}
         onClose={setIsDetailOpen}

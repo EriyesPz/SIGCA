@@ -18,26 +18,45 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Eye, Search, ArrowUpDown, Building2, Package } from "lucide-react";
+import {
+  Eye,
+  Search,
+  ArrowUpDown,
+  Building2,
+  Package,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { statusConfig } from "@/components/common/status-config";
 import type { Location, Rack, Warehouse } from "@/lib/types";
 
 interface LocationsTableProps {
-  warehouseLocations: any;
+  warehouseLocations: Record<string, Warehouse>;
+  allWarehouses: { Id: string; Name: string }[]; // <- nuevo
   onLocationClick: (
     location: Location,
     rack: Rack,
     warehouse: Warehouse
   ) => void;
+  page: number;
+  limit: number;
+  totalCount: number;
+  onPageChange: (newPage: number) => void;
 }
 
 export const LocationsTable = ({
   warehouseLocations,
+  allWarehouses,
   onLocationClick,
+  page,
+  limit,
+  totalCount,
+  onPageChange,
 }: LocationsTableProps) => {
   const [sortField, setSortField] = useState<string>("id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
   const allLocations = Object.entries(warehouseLocations).flatMap(
@@ -55,7 +74,6 @@ export const LocationsTable = ({
       )
   );
 
-  // Filter locations
   const filteredLocations = allLocations.filter((location) => {
     const matchesStatus =
       filterStatus === "all" || location.status === filterStatus;
@@ -70,16 +88,16 @@ export const LocationsTable = ({
           .includes(searchTerm.toLowerCase())) ||
       (location.description &&
         location.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesWarehouse =
+      selectedWarehouse === "all" || location.warehouseId === selectedWarehouse;
 
-    return matchesStatus && matchesSearch;
+    return matchesStatus && matchesSearch && matchesWarehouse;
   });
 
-  // Sort locations
   const sortedLocations = [...filteredLocations].sort((a, b) => {
     let aValue = a[sortField];
     let bValue = b[sortField];
 
-    // Handle special cases
     if (sortField === "position") {
       aValue = `L${a.level}C${a.column}`;
       bValue = `L${b.level}C${b.column}`;
@@ -93,12 +111,16 @@ export const LocationsTable = ({
       bValue = bValue.toLowerCase();
     }
 
-    if (sortDirection === "asc") {
-      return aValue > bValue ? 1 : -1;
-    } else {
-      return aValue < bValue ? 1 : -1;
-    }
+    return sortDirection === "asc"
+      ? aValue > bValue
+        ? 1
+        : -1
+      : aValue < bValue
+      ? 1
+      : -1;
   });
+
+  const totalPages = Math.ceil(totalCount / limit);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -137,8 +159,7 @@ export const LocationsTable = ({
         <div className="flex items-center gap-2">
           <Package className="w-5 h-5 text-blue-600" />
           <span className="font-medium">
-            {sortedLocations.length} Ubicacion
-            {sortedLocations.length !== 1 ? "s" : ""}
+            {totalCount} Ubicación{totalCount !== 1 ? "es" : ""}
           </span>
         </div>
 
@@ -153,27 +174,35 @@ export const LocationsTable = ({
             />
           </div>
 
+<Select
+  value={selectedWarehouse}
+  onValueChange={setSelectedWarehouse}
+>
+  <SelectTrigger className="w-full sm:w-40">
+    <SelectValue placeholder="Almacén" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="all">Todos los almacenes</SelectItem>
+    {allWarehouses.map((warehouse) => (
+      <SelectItem key={warehouse.Id} value={warehouse.Id}>
+        {warehouse.Name}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+
+
           <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder="Filter by status" />
+              <SelectValue placeholder="Estados" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Estados</SelectItem>
+              <SelectItem value="all">Todos los estados</SelectItem>
               {Object.entries(statusConfig).map(([key, config]) => (
                 <SelectItem key={key} value={key}>
                   <div className="flex items-center gap-2">
                     <div className={`w-3 h-3 rounded-full ${config.color}`} />
-                    {key === "disponible"
-                      ? "Disponible"
-                      : key === "almacenado"
-                      ? "Almacenado"
-                      : key === "reservado"
-                      ? "Reservado"
-                      : key === "en_transito"
-                      ? "En tránsito"
-                      : key === "mantenimiento"
-                      ? "En mantenimiento"
-                      : config.label}
+                    {config.label}
                   </div>
                 </SelectItem>
               ))}
@@ -193,9 +222,7 @@ export const LocationsTable = ({
                 <SortableHeader field="rackName">Rack</SortableHeader>
                 <SortableHeader field="position">Posicion</SortableHeader>
                 <SortableHeader field="status">Estado</SortableHeader>
-                <SortableHeader field="trackingCode">
-                  Code de Tracking
-                </SortableHeader>
+                <SortableHeader field="trackingCode">Tracking</SortableHeader>
                 <SortableHeader field="description">Descripcion</SortableHeader>
                 <TableHead className="w-20">Acciones</TableHead>
               </TableRow>
@@ -207,7 +234,7 @@ export const LocationsTable = ({
                     colSpan={8}
                     className="text-center py-8 text-muted-foreground"
                   >
-                    No locations found matching your criteria
+                    No se encontraron ubicaciones
                   </TableCell>
                 </TableRow>
               ) : (
@@ -245,15 +272,12 @@ export const LocationsTable = ({
                       </TableCell>
                       <TableCell>
                         <span className="font-mono text-sm">
-                          L{location.level}C{location.column}
+                          {location.level}-{location.column}
                         </span>
                       </TableCell>
                       <TableCell>
                         <Badge
-                          className={`
-                            ${status.bgColor} ${status.textColor} ${status.borderColor}
-                            border text-xs
-                          `}
+                          className={`${status.bgColor} ${status.textColor} ${status.borderColor} border text-xs`}
                         >
                           {status.label}
                         </Badge>
@@ -305,61 +329,30 @@ export const LocationsTable = ({
         </div>
       </div>
 
-      {/* Table Summary */}
-      {sortedLocations.length > 0 && (
-        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground bg-muted/30 rounded-lg p-3">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-green-500" />
-            <span>
-              Disponible:{" "}
-              {
-                sortedLocations.filter((loc) => loc.status === "disponible")
-                  .length
-              }
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500" />
-            <span>
-              Almacenado:{" "}
-              {
-                sortedLocations.filter((loc) => loc.status === "almacenado")
-                  .length
-              }
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-yellow-500" />
-            <span>
-              Reservado:{" "}
-              {
-                sortedLocations.filter((loc) => loc.status === "reservado")
-                  .length
-              }
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-blue-500" />
-            <span>
-              En transito:{" "}
-              {
-                sortedLocations.filter((loc) => loc.status === "en_transito")
-                  .length
-              }
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-gray-500" />
-            <span>
-              Mantenimiento:{" "}
-              {
-                sortedLocations.filter((loc) => loc.status === "mantenimiento")
-                  .length
-              }
-            </span>
-          </div>
+      {/* Pagination Controls */}
+      <div className="flex justify-end items-center gap-4 pt-2">
+        <span className="text-sm text-muted-foreground">
+          Página {page} de {totalPages}
+        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(page - 1)}
+            disabled={page === 1}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(page + 1)}
+            disabled={page === totalPages}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 };
