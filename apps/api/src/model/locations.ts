@@ -87,6 +87,7 @@ export const getLocationsByWarehouse = async (warehouseId: string) => {
   const result = warehouse.Racks.flatMap((rack) =>
     rack.RackLevels.flatMap((level) =>
       level.RackColumns.map((column) => ({
+        warehouseId: warehouse.Id,
         warehouse: warehouse.Name,
         rack: rack.Name,
         rackCode: rack.Code ?? null,

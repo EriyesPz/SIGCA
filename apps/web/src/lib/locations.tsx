@@ -1,67 +1,56 @@
 import { getApiUrl } from "./client";
 import { useQuery } from "@tanstack/react-query";
 
-const getLocations = async (page = 1, limit = 10): Promise<any> => {
-  const response = await fetch(`${getApiUrl()}/locations?page=${page}&limit=${limit}`);
-  if (!response.ok) {
-    throw new Error("Error fetching locations");
-  }
-  return response.json();
+const getLocations = async (page = 1, limit = 10) => {
+  const r = await fetch(`${getApiUrl()}/locations?page=${page}&limit=${limit}`);
+  if (!r.ok) throw new Error("Error fetching locations");
+  return r.json(); // ← { data, total, ... }
 };
 
-const getLocationsByWarehouse = async (warehouse: string) => {
-  try {
-    const response = await fetch(`${getApiUrl()}/locations/${warehouse}`);
-    if (!response.ok) {
-      throw new Error(`Error fetching locations for warehouse ${warehouse}`);
-    }
-    if (response.status === 204) {
-      return [];
-    }
-    return response.json();
-  } catch (error) {
-    console.error("Error fetching locations by warehouse:", error);
-    throw error;
-  }
+/* -------------- SÓLO añadimos las claves que faltan -------------- */
+const getLocationsByWarehouse = async (warehouseId: string) => {
+  const r = await fetch(`${getApiUrl()}/locations/${warehouseId}`);
+  if (!r.ok)
+    throw new Error(`Error fetching locations for warehouse ${warehouseId}`);
+  if (r.status === 204) return [];
+
+  const raw: any[] = await r.json();
+  return raw.map((loc, idx) => ({
+    ...loc,
+    warehouseId, // <- para que el filtro funcione
+    warehouseName: loc.warehouse, // <- para mostrar en la tabla
+    rackId: loc.rackCode ?? `rack-${idx}`,
+    rackName: loc.rack ?? "Rack Desconocido",
+  }));
+};
+/* ------------------------------------------------------------------ */
+
+const getLocationsByRack = async (rack: string) => {
+  const r = await fetch(`${getApiUrl()}/locations-rack/${rack}`);
+  if (!r.ok) throw new Error(`Error fetching locations for rack ${rack}`);
+  if (r.status === 204) return [];
+  return r.json();
 };
 
-export const getLocationsByRack = async (rack: string): Promise<any> => {
-  try {
-    const response = await fetch(`${getApiUrl()}/locations-rack/${rack}`);
-    if (!response.ok) {
-      throw new Error(`Error fetching locations for rack ${rack}`);
-    }
-    if (response.status === 204) {
-      return [];
-    }
-    return response.json();
-  } catch (error) {
-    console.error("Error fetching locations by rack:", error);
-    throw error;
-  }
-};
-
-export const useLocations = (page = 1, limit = 10) => {
-  return useQuery({
+/* hooks ----------------------------------------------------------- */
+export const useLocations = (page = 1, limit = 10) =>
+  useQuery({
     queryKey: ["locations", page, limit],
     queryFn: () => getLocations(page, limit),
   });
-};
 
-export const useLocationsByWarehouse = (warehouse: string) => {
-  return useQuery({
+export const useLocationsByWarehouse = (warehouse: string) =>
+  useQuery({
     queryKey: ["locations", warehouse],
     queryFn: () => getLocationsByWarehouse(warehouse),
-    enabled: !!warehouse,
+    enabled: !!warehouse && warehouse !== "all",
     refetchOnWindowFocus: false,
   });
-};
 
-export const useLocationsByRack = (rack: string) => {
-  return useQuery({
+export const useLocationsByRack = (rack: string) =>
+  useQuery({
     queryKey: ["locations", "rack", rack],
     queryFn: () => getLocationsByRack(rack),
     enabled: !!rack,
     refetchOnWindowFocus: false,
   });
-};

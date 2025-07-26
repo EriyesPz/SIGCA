@@ -7,7 +7,7 @@ export const buildWarehouseTree = (rows: any[]): WarehouseData => {
     const wId = row.warehouse
     const rId = row.rackCode
 
-    tree[wId] ??= { name: row.warehouse, racks: {} }
+    tree[wId] ??= { name: row.warehouseName ?? row.warehouse, racks: {} }
     tree[wId].racks[rId] ??= {
       id: rId,
       name: row.rack,

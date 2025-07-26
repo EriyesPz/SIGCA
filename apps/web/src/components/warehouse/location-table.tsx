@@ -1,23 +1,21 @@
 import type React from "react";
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import {
+  Badge,
+  Button,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import {
+  Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui";
 import {
   Eye,
   Search,
@@ -32,7 +30,7 @@ import type { Location, Rack, Warehouse } from "@/lib/types";
 
 interface LocationsTableProps {
   warehouseLocations: Record<string, Warehouse>;
-  allWarehouses: { Id: string; Name: string }[]; // <- nuevo
+  allWarehouses: { Id: string; Name: string }[];
   onLocationClick: (
     location: Location,
     rack: Rack,
@@ -42,6 +40,9 @@ interface LocationsTableProps {
   limit: number;
   totalCount: number;
   onPageChange: (newPage: number) => void;
+  viewMode?: "all" | "by_warehouse";
+  selectedWarehouse?: string;
+  setSelectedWarehouse?: (id: string) => void;
 }
 
 export const LocationsTable = ({
@@ -52,12 +53,19 @@ export const LocationsTable = ({
   limit,
   totalCount,
   onPageChange,
+  viewMode = "all",
+  selectedWarehouse = "all",
+  setSelectedWarehouse,
 }: LocationsTableProps) => {
   const [sortField, setSortField] = useState<string>("id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    // reset page when filtering
+    onPageChange(1);
+  }, [filterStatus, selectedWarehouse, searchTerm]);
 
   const allLocations = Object.entries(warehouseLocations).flatMap(
     ([warehouseId, warehouse]: [string, any]) =>
@@ -79,17 +87,19 @@ export const LocationsTable = ({
       filterStatus === "all" || location.status === filterStatus;
     const matchesSearch =
       searchTerm === "" ||
-      location.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      location.warehouseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      location.rackName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (location.trackingCode &&
-        location.trackingCode
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase())) ||
-      (location.description &&
-        location.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      location.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      location.warehouseName
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      location.rackName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      location.trackingCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      location.description?.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesWarehouse =
-      selectedWarehouse === "all" || location.warehouseId === selectedWarehouse;
+      viewMode === "all"
+        ? selectedWarehouse === "all" ||
+          location.warehouseId === selectedWarehouse
+        : true;
 
     return matchesStatus && matchesSearch && matchesWarehouse;
   });
@@ -120,7 +130,11 @@ export const LocationsTable = ({
       : -1;
   });
 
-  const totalPages = Math.ceil(totalCount / limit);
+  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+  const currentPageLocations = sortedLocations.slice(
+    (page - 1) * limit,
+    page * limit
+  );
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -154,12 +168,12 @@ export const LocationsTable = ({
 
   return (
     <div className="space-y-4">
-      {/* Table Controls */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex items-center gap-2">
           <Package className="w-5 h-5 text-blue-600" />
           <span className="font-medium">
-            {totalCount} Ubicación{totalCount !== 1 ? "es" : ""}
+            {filteredLocations.length} Ubicación
+            {filteredLocations.length !== 1 ? "es" : ""}
           </span>
         </div>
 
@@ -174,23 +188,24 @@ export const LocationsTable = ({
             />
           </div>
 
-<Select
-  value={selectedWarehouse}
-  onValueChange={setSelectedWarehouse}
->
-  <SelectTrigger className="w-full sm:w-40">
-    <SelectValue placeholder="Almacén" />
-  </SelectTrigger>
-  <SelectContent>
-    <SelectItem value="all">Todos los almacenes</SelectItem>
-    {allWarehouses.map((warehouse) => (
-      <SelectItem key={warehouse.Id} value={warehouse.Id}>
-        {warehouse.Name}
-      </SelectItem>
-    ))}
-  </SelectContent>
-</Select>
-
+          {viewMode === "all" && setSelectedWarehouse && (
+            <Select
+              value={selectedWarehouse}
+              onValueChange={setSelectedWarehouse}
+            >
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Almacén" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los almacenes</SelectItem>
+                {allWarehouses.map((warehouse) => (
+                  <SelectItem key={warehouse.Id} value={warehouse.Id}>
+                    {warehouse.Name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
 
           <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger className="w-full sm:w-40">
@@ -211,24 +226,24 @@ export const LocationsTable = ({
         </div>
       </div>
 
-      {/* Table */}
+      {/* Tabla */}
       <div className="border rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <SortableHeader field="id">ID Ubicacion</SortableHeader>
-                <SortableHeader field="warehouseName">Almacen</SortableHeader>
+                <SortableHeader field="id">ID Ubicación</SortableHeader>
+                <SortableHeader field="warehouseName">Almacén</SortableHeader>
                 <SortableHeader field="rackName">Rack</SortableHeader>
-                <SortableHeader field="position">Posicion</SortableHeader>
+                <SortableHeader field="position">Posición</SortableHeader>
                 <SortableHeader field="status">Estado</SortableHeader>
                 <SortableHeader field="trackingCode">Tracking</SortableHeader>
-                <SortableHeader field="description">Descripcion</SortableHeader>
+                <SortableHeader field="description">Descripción</SortableHeader>
                 <TableHead className="w-20">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedLocations.length === 0 ? (
+              {currentPageLocations.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={8}
@@ -238,7 +253,7 @@ export const LocationsTable = ({
                   </TableCell>
                 </TableRow>
               ) : (
-                sortedLocations.map((location) => {
+                currentPageLocations.map((location) => {
                   const status = statusConfig[
                     location.status as keyof typeof statusConfig
                   ] ?? {
@@ -329,7 +344,7 @@ export const LocationsTable = ({
         </div>
       </div>
 
-      {/* Pagination Controls */}
+      {/* Pagination */}
       <div className="flex justify-end items-center gap-4 pt-2">
         <span className="text-sm text-muted-foreground">
           Página {page} de {totalPages}
