@@ -15,12 +15,14 @@ export const WarehouseLocationTracker = () => {
   const limit = 20;
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
 
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(
-    null
-  );
+  type SelectedLocation = Location & { rack: Rack; warehouse: Warehouse };
+
+  const [selectedLocation, setSelectedLocation] =
+    useState<SelectedLocation | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  const [selectedRack, setSelectedRack] = useState<Rack | null>(null);
+  type SelectedRack = Rack & { warehouse: Warehouse };
+  const [selectedRack] = useState<SelectedRack | null>(null);
   const [isRackModalOpen, setIsRackModalOpen] = useState(false);
 
   const {
@@ -50,7 +52,6 @@ export const WarehouseLocationTracker = () => {
       }));
     }
 
-    /* paginación global */
     const rows = (pagedData?.data || []).map((loc: any, idx: number) => ({
       ...loc,
       warehouseId: loc.warehouseId ?? loc.warehouse,
@@ -62,7 +63,7 @@ export const WarehouseLocationTracker = () => {
     console.log("[Tracker] Datos crudos paginados", rows);
     return rows;
   }, [isFilteringByWarehouse, warehouseData, pagedData, selectedWarehouse]);
-  
+
   const rowsForTree = useMemo(() => {
     return enrichedLocations.map((loc: any) => ({
       warehouse: loc.warehouseId,
@@ -104,11 +105,6 @@ export const WarehouseLocationTracker = () => {
   ) => {
     setSelectedLocation({ ...location, rack, warehouse });
     setIsDetailOpen(true);
-  };
-
-  const handleRackClick = (rack: Rack, warehouse: Warehouse) => {
-    setSelectedRack({ ...rack, warehouse });
-    setIsRackModalOpen(true);
   };
 
   return (
@@ -162,7 +158,6 @@ export const WarehouseLocationTracker = () => {
         onClose={setIsRackModalOpen}
         selectedRack={selectedRack}
         onLocationClick={handleLocationClick}
-        onRackClick={handleRackClick}
       />
     </div>
   );

@@ -9,6 +9,7 @@ import {
   getLocations,
   getLocationsWarehouse,
   getLocationsRack,
+  getLocationStatus
 } from "./controllers/locations";
 import { getWarehouses } from "./controllers/warehouse";
 import { getRacksByWarehouse } from "./controllers/rack";
@@ -22,6 +23,7 @@ router.post("/forgot-password/send-otp", sendPasswordResetOtp);
 router.post("/forgot-password/reset", resetPasswordWithOtp);
 router.get("/locations", getLocations);
 router.get("/locations/:warehouse", getLocationsWarehouse);
+router.get("/locations/status/:status", getLocationStatus);
 router.get("/warehouses", getWarehouses);
 router.get("/racks/:warehouse", getRacksByWarehouse);
 router.get("/locations-rack/:rack", getLocationsRack);

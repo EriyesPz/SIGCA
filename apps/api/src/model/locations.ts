@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { LocationStatus } from "../types/locations";
 
 export const getAllLocations = async (page = 1, limit = 10) => {
   const skip = (page - 1) * limit;
@@ -42,7 +43,10 @@ export const getAllLocations = async (page = 1, limit = 10) => {
           column: column.ColumnCode ?? null,
           isOccupied: column.Cargo.length > 0,
           trackingCode: column.Cargo[0]?.TrackingCode ?? null,
-          status: column.Cargo[0]?.Status ?? null,
+          status:
+            column.Cargo.length > 0
+              ? LocationStatus.ALMACENADO
+              : LocationStatus.DISPONIBLE,
           description: column.Cargo[0]?.Description ?? null,
         }))
       )
@@ -162,4 +166,71 @@ export const getLocationsByRack = async (rackId: string) => {
   );
 
   return result;
+};
+
+export const getLocationByStatus = async (
+  status: LocationStatus,
+  page = 1,
+  limit = 10
+) => {
+  const skip = (page - 1) * limit;
+
+  const warehouses = await db.warehouse.findMany({
+    include: {
+      Racks: {
+        include: {
+          RackLevels: {
+            include: {
+              RackColumns: {
+                include: {
+                  Cargo: {
+                    select: {
+                      Id: true,
+                      TrackingCode: true,
+                      Status: true,
+                      Description: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      Name: "asc",
+    },
+  });
+
+  const allLocations = warehouses.flatMap((warehouse) =>
+    warehouse.Racks.flatMap((rack) =>
+      rack.RackLevels.flatMap((level) =>
+        level.RackColumns.map((column) => {
+          const isOccupied = column.Cargo.length > 0;
+          const locationStatus = isOccupied
+            ? LocationStatus.ALMACENADO
+            : LocationStatus.DISPONIBLE;
+
+          return {
+            warehouse: warehouse.Name,
+            rack: rack.Name,
+            rackCode: rack.Code ?? null,
+            level: level.LevelNumber,
+            column: column.ColumnCode ?? null,
+            isOccupied,
+            trackingCode: column.Cargo[0]?.TrackingCode ?? null,
+            status: locationStatus,
+            description: column.Cargo[0]?.Description ?? null,
+          };
+        })
+      )
+    )
+  );
+
+  const filtered = allLocations.filter((loc) => loc.status === status);
+  const total = filtered.length;
+  const paginated = filtered.slice(skip, skip + limit);
+
+  return { data: paginated, total };
 };

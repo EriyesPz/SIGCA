@@ -22,19 +22,53 @@ model Alerts {
 
 model Cargo {
   Id                   String                 @id
-  TrackingCode         String                 @unique
+  TrackingCode         String?                 @unique
+  QRCode               String?                // Contenido base para generar el QR (ej. TrackingCode)
   Description          String?
   Status               String
   WeightKg             Float
+  VolumeM3             Float?
+  DimensionsCm         Json?                  // { Length, Width, Height }
   Quantity             Int
   EntryDate            DateTime               @default(now())
   ExitDate             DateTime?
   IsPerishable         Boolean                @default(false)
+  IsHazardousMaterial  Boolean                @default(false)
+  IsHighValue          Boolean                @default(false)
+  DeclaredValueUSD     Float?
+  TemperatureRequirement String?
+  HandlingInstructions String?
+
+  AirWaybillNumber         String?
+  HouseAirWaybillNumber    String?
+  MasterAirWaybillNumber   String?
+  ManifestNumber           String?
+  FlightNumber             String?
+  FlightDate               DateTime?
+  OriginAirport            String?
+  DestinationAirport       String?
+  CustomsStatus            String?
+  CustomsDeclarationNumber String?
+  InsurancePolicyNumber    String?
+  ArrivalDate              DateTime?
+  DepartureDate            DateTime?
+  SealNumber               String?
+  InternalReference        String?
+  LastInspectionDate       DateTime?
+  DamageReported           Boolean              @default(false)
+  DamageDescription        String?
+  CargoType                String?
+  ContainerNumber          String?
+  ULDNumber                String?
+  Shipper   Json? // { Name, Company, Contact, Phone, Email, Address }
+  Consignee Json? // { Name, Company, Contact, Phone, Email, Address }
+
   WarehouseId          String
   RackId               String
   LevelId              String
   ColumnId             String
   CreatedBy            String?
+
   Alerts               Alerts[]
   RackColumns          RackColumns            @relation(fields: [ColumnId], references: [Id])
   Users                Users?                 @relation(fields: [CreatedBy], references: [Id])
