@@ -21,69 +21,67 @@ model Alerts {
 }
 
 model Cargo {
-  Id                   String                 @id
-  TrackingCode         String?                 @unique
-  QRCode               String?                // Contenido base para generar el QR (ej. TrackingCode)
-  Description          String?
-  Status               String
-  WeightKg             Float
-  VolumeM3             Float?
-  DimensionsCm         Json?                  // { Length, Width, Height }
-  Quantity             Int
-  EntryDate            DateTime               @default(now())
-  ExitDate             DateTime?
-  IsPerishable         Boolean                @default(false)
-  IsHazardousMaterial  Boolean                @default(false)
-  IsHighValue          Boolean                @default(false)
-  DeclaredValueUSD     Float?
-  TemperatureRequirement String?
-  HandlingInstructions String?
+  Id                        String                 @id @default(uuid())
+  TrackingCode              String?
+  Description               String?
+  Status                    String
+  WeightKg                  Float
+  Quantity                  Int
+  EntryDate                 DateTime               @default(now())
+  ExitDate                  DateTime?
+  IsPerishable              Boolean                @default(false)
+  WarehouseId               String?
+  RackId                    String?
+  LevelId                   String?
+  ColumnId                  String?
+  CreatedBy                 String?
+  AirWaybillNumber          String?
+  ArrivalDate               DateTime?
+  CargoType                 String?
+  Consignee                 Json?
+  ContainerNumber           String?
+  CustomsDeclarationNumber  String?
+  CustomsStatus             String?
+  DamageDescription         String?
+  DamageReported            Boolean                @default(false)
+  DeclaredValueUSD          Float?
+  DepartureDate             DateTime?
+  DestinationAirport        String?
+  DimensionsCm              Json?
+  FlightDate                DateTime?
+  FlightNumber              String?
+  HandlingInstructions      String?
+  HouseAirWaybillNumber     String?
+  InsurancePolicyNumber     String?
+  InternalReference         String?
+  IsHazardousMaterial       Boolean                @default(false)
+  IsHighValue               Boolean                @default(false)
+  LastInspectionDate        DateTime?
+  ManifestNumber            String?
+  MasterAirWaybillNumber    String?
+  OriginAirport             String?
+  QRCode                    String?
+  SealNumber                String?
+  Shipper                   Json?
+  TemperatureRequirement    String?
+  ULDNumber                 String?
+  VolumeM3                  Float?
 
-  AirWaybillNumber         String?
-  HouseAirWaybillNumber    String?
-  MasterAirWaybillNumber   String?
-  ManifestNumber           String?
-  FlightNumber             String?
-  FlightDate               DateTime?
-  OriginAirport            String?
-  DestinationAirport       String?
-  CustomsStatus            String?
-  CustomsDeclarationNumber String?
-  InsurancePolicyNumber    String?
-  ArrivalDate              DateTime?
-  DepartureDate            DateTime?
-  SealNumber               String?
-  InternalReference        String?
-  LastInspectionDate       DateTime?
-  DamageReported           Boolean              @default(false)
-  DamageDescription        String?
-  CargoType                String?
-  ContainerNumber          String?
-  ULDNumber                String?
-  Shipper   Json? // { Name, Company, Contact, Phone, Email, Address }
-  Consignee Json? // { Name, Company, Contact, Phone, Email, Address }
-
-  WarehouseId          String
-  RackId               String
-  LevelId              String
-  ColumnId             String
-  CreatedBy            String?
-
-  Alerts               Alerts[]
-  RackColumns          RackColumns            @relation(fields: [ColumnId], references: [Id])
-  Users                Users?                 @relation(fields: [CreatedBy], references: [Id])
-  RackLevels           RackLevels             @relation(fields: [LevelId], references: [Id])
-  Racks                Racks                  @relation(fields: [RackId], references: [Id])
-  Warehouse            Warehouse              @relation(fields: [WarehouseId], references: [Id], onDelete: Cascade)
-  CargoDocuments       CargoDocuments[]
-  CargoLocationHistory CargoLocationHistory[]
-  CargoStatusHistory   CargoStatusHistory[]
-  Deliveries           Deliveries[]
-  Transfers            Transfers[]
+  // Relaciones
+  Alerts                    Alerts[]
+  Users                     Users?                 @relation(fields: [CreatedBy], references: [Id])
+  Warehouse                 Warehouse?             @relation(fields: [WarehouseId], references: [Id], onDelete: Cascade)
+  CargoDocuments            CargoDocuments[]
+  CargoLocationHistory      CargoLocationHistory[]
+  CargoStatusHistory        CargoStatusHistory[]
+  Deliveries                Deliveries[]
+  Transfers                 Transfers[]
+  RackColumn                RackColumns?           @relation(fields: [ColumnId], references: [Id], onDelete: Cascade)
 }
 
+
 model CargoDocuments {
-  Id        String   @id
+  Id String @id @default(uuid())
   CargoId   String
   FileUrl   String
   Type      String
@@ -95,7 +93,7 @@ model CargoDocuments {
 }
 
 model CargoLocationHistory {
-  Id           String   @id
+  Id String @id @default(uuid())
   CargoId      String
   FromRackId   String?
   FromLevelId  String?
@@ -110,7 +108,7 @@ model CargoLocationHistory {
 }
 
 model CargoStatusHistory {
-  Id             String   @id
+  Id String @id @default(uuid())
   CargoId        String
   PreviousStatus String?
   NewStatus      String
@@ -161,15 +159,14 @@ model RackColumns {
   Id         String     @id
   LevelId    String
   ColumnCode String     @db.VarChar(3)
-  Cargo      Cargo[]
   RackLevels RackLevels @relation(fields: [LevelId], references: [Id], onDelete: Cascade)
+  Cargos     Cargo[]
 }
 
 model RackLevels {
   Id          String        @id
   RackId      String
   LevelNumber Int
-  Cargo       Cargo[]
   RackColumns RackColumns[]
   Racks       Racks         @relation(fields: [RackId], references: [Id], onDelete: Cascade)
 }
@@ -182,7 +179,6 @@ model Racks {
   CreatedAt   DateTime     @default(now())
   CreatedBy   String?
   Code        String?      @db.VarChar(5)
-  Cargo       Cargo[]
   RackLevels  RackLevels[]
   Users       Users?       @relation(fields: [CreatedBy], references: [Id])
   Warehouse   Warehouse    @relation(fields: [WarehouseId], references: [Id], onDelete: Cascade)

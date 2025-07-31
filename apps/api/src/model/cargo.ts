@@ -1,70 +1,75 @@
 import { db } from "./db";
-import { v4 as uuidv4 } from "uuid";
-
-export interface RegisterCargoInput {
-  trackingCode: string;
-  description: string;
-  status: string;
-  weightKg: number;
-  quantity: number;
-  entryDate: Date;
-  isPerishable: boolean;
-  warehouseId: string;
-  rackId: string;
-  levelId: string;
-  columnId: string;
-  createdBy: string;
-  exitDate?: Date | null;
-}
+import { RegisterCargo } from "../types/cargo";
 
 export const registerCargo = async (
-  input: RegisterCargoInput
-): Promise<{ cargoId: string }> => {
-  const cargoId = uuidv4();
-  console.log("[DEBUG] Iniciando transacción para crear cargo");
-
+  input: RegisterCargo
+): Promise<{ cargoId: string; trackingCode: string }> => {
   try {
-    await db.$transaction(async (tx) => {
-      console.log("[DEBUG] Insertando en tabla Cargo");
-      await tx.cargo.create({
+    const createdCargo = await db.$transaction(async (tx) => {
+      const cargo = await tx.cargo.create({
         data: {
-          Id: cargoId,
-          TrackingCode: input.trackingCode,
-          Description: input.description,
+          QRCode: input.qrcode ?? null,
+          Description: input.description ?? null,
           Status: input.status,
           WeightKg: input.weightKg,
+          VolumeM3: input.volumenm3 ?? null,
+          DimensionsCm: input.dimensions
+            ? JSON.parse(JSON.stringify(input.dimensions))
+            : null,
           Quantity: input.quantity,
           EntryDate: input.entryDate,
-          IsPerishable: input.isPerishable,
-          WarehouseId: input.warehouseId,
-          RackId: input.rackId,
-          LevelId: input.levelId,
-          ColumnId: input.columnId,
-          CreatedBy: input.createdBy,
           ExitDate: input.exitDate ?? null,
+          IsPerishable: input.isPerishable,
+          IsHazardousMaterial: input.isHazardous ?? false,
+          IsHighValue: input.isHighValue ?? false,
+          DeclaredValueUSD: input.declaredValue ?? null,
+          TemperatureRequirement: input.temperatureRequirement ?? null,
+          HandlingInstructions: input.handlingInstructions ?? null,
+
+          AirWaybillNumber: input.airWaybillNumber ?? null,
+          HouseAirWaybillNumber: input.houseAirWaybillNumber ?? null,
+          MasterAirWaybillNumber: input.masterAirWaybillNumber ?? null,
+          ManifestNumber: input.manifestNumber ?? null,
+          FlightNumber: input.flightNumber ?? null,
+          FlightDate: input.flightDate ?? null,
+          OriginAirport: input.originAirport ?? null,
+          DestinationAirport: input.destinationAirport ?? null,
+          CustomsStatus: input.customsStatus ?? null,
+          CustomsDeclarationNumber: input.customsDeclarationNumber ?? null,
+          InsurancePolicyNumber: input.insurancePolicyNumber ?? null,
+          ArrivalDate: input.arrivalDate ?? null,
+          DepartureDate: input.departureDate ?? null,
+          SealNumber: input.sealNumber ?? null,
+          InternalReference: input.internalReference ?? null,
+          LastInspectionDate: input.lastInspectionDate ?? null,
+          DamageReported: input.damageReported ?? false,
+          DamageDescription: input.damageDescription ?? null,
+          CargoType: input.cargoType ?? null,
+          ContainerNumber: input.containerNumber ?? null,
+          ULDNumber: input.uldNumber ?? null,
+          Shipper: input.shipper
+            ? JSON.parse(JSON.stringify(input.shipper))
+            : null,
+          Consignee: input.consignee
+            ? JSON.parse(JSON.stringify(input.consignee))
+            : null,
+
+          // 👇 Aquí corregido
+          WarehouseId: input.warehouseId ?? undefined,
+
+          RackId: input.rackId ?? undefined,
+          LevelId: input.levelId ?? undefined,
+          ColumnId: input.columnId ?? undefined,
+
+          CreatedBy: input.createdBy,
         },
       });
 
-      console.log("[DEBUG] Insertando historial de ubicación");
-      await tx.cargoLocationHistory.create({
-        data: {
-          Id: uuidv4(),
-          CargoId: cargoId,
-          FromRackId: null,
-          FromLevelId: null,
-          FromColumnId: null,
-          ToRackId: input.rackId,
-          ToLevelId: input.levelId,
-          ToColumnId: input.columnId,
-          MovedAt: new Date(),
-          MovedBy: input.createdBy,
-        },
-      });
+      const cargoId = cargo.Id;
 
-      console.log("[DEBUG] Insertando historial de estado");
+      // Historial de estado
       await tx.cargoStatusHistory.create({
         data: {
-          Id: uuidv4(),
           CargoId: cargoId,
           PreviousStatus: null,
           NewStatus: input.status,
@@ -72,12 +77,43 @@ export const registerCargo = async (
           ChangedBy: input.createdBy,
         },
       });
+
+      // Historial de ubicación
+      await tx.cargoLocationHistory.create({
+        data: {
+          CargoId: cargoId,
+          FromRackId: null,
+          FromLevelId: null,
+          FromColumnId: null,
+          ToRackId: input.rackId ?? null,
+          ToLevelId: input.levelId ?? null,
+          ToColumnId: input.columnId ?? undefined,
+          MovedAt: new Date(),
+          MovedBy: input.createdBy,
+        },
+      });
+
+      // Documentos asociados
+      for (const doc of input.documents) {
+        if (!doc.fileUrl || !doc.type) continue;
+        await tx.cargoDocuments.create({
+          data: {
+            CargoId: cargoId,
+            FileUrl: doc.fileUrl,
+            Type: doc.type,
+            Metadata: doc.metadata !== undefined ? doc.metadata : undefined,
+            CreatedAt: new Date(),
+            CreatedBy: input.createdBy,
+          },
+        });
+      }
+
+      return cargo;
     });
 
-    console.log("[DEBUG] Transacción completada correctamente");
-    return { cargoId };
+    return { cargoId: createdCargo.Id, trackingCode: createdCargo.TrackingCode ?? "" };
   } catch (error) {
-    console.error("Error al registrar carga:", error);
-    throw new Error("Error al registrar carga");
+    console.error("[ERROR] Error al registrar carga completa:", error);
+    throw new Error("No se pudo registrar la carga.");
   }
 };

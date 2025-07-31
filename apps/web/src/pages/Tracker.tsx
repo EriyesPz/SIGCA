@@ -7,16 +7,21 @@ import {
 } from "@/components/warehouse";
 import { buildWarehouseTree } from "@/utils/warehouse";
 import type { Location, Rack, Warehouse } from "@/lib/types";
-import { useLocations, useLocationsByWarehouse } from "@/lib/locations";
+import {
+  useLocations,
+  useLocationsByWarehouse,
+} from "@/lib/locations";
 import { useWarehouses } from "@/lib/warehouse";
+import { LocationStatus } from "@/components/common/locations";
 
 export const WarehouseLocationTracker = () => {
   const [page, setPage] = useState(1);
   const limit = 20;
+
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
   type SelectedLocation = Location & { rack: Rack; warehouse: Warehouse };
-
   const [selectedLocation, setSelectedLocation] =
     useState<SelectedLocation | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -29,7 +34,7 @@ export const WarehouseLocationTracker = () => {
     data: pagedData,
     isLoading: isPagedLoading,
     error: pagedError,
-  } = useLocations(page, limit);
+  } = useLocations(page, limit, filterStatus as "all" | LocationStatus | undefined);
 
   const {
     data: warehouseData,
@@ -42,27 +47,19 @@ export const WarehouseLocationTracker = () => {
   const isFilteringByWarehouse = selectedWarehouse !== "all";
 
   const enrichedLocations = useMemo(() => {
-    if (isFilteringByWarehouse && warehouseData) {
-      console.log("[Tracker] Datos crudos por almacén", warehouseData);
+    const raw =
+      isFilteringByWarehouse && warehouseData
+        ? warehouseData
+        : pagedData?.data || [];
 
-      return warehouseData.map((loc: any, idx: number) => ({
-        ...loc,
-        rackId: loc.rackId ?? loc.rackCode ?? `rack-${idx}`,
-        rackName: loc.rackName ?? loc.rack ?? "Rack Desconocido",
-      }));
-    }
-
-    const rows = (pagedData?.data || []).map((loc: any, idx: number) => ({
+    return raw.map((loc: any, idx: number) => ({
       ...loc,
       warehouseId: loc.warehouseId ?? loc.warehouse,
       warehouseName: loc.warehouse,
       rackId: loc.rackId ?? loc.rackCode ?? `rack-${idx}`,
       rackName: loc.rackName ?? loc.rack ?? "Rack Desconocido",
     }));
-
-    console.log("[Tracker] Datos crudos paginados", rows);
-    return rows;
-  }, [isFilteringByWarehouse, warehouseData, pagedData, selectedWarehouse]);
+  }, [isFilteringByWarehouse, warehouseData, pagedData]);
 
   const rowsForTree = useMemo(() => {
     return enrichedLocations.map((loc: any) => ({
@@ -80,9 +77,7 @@ export const WarehouseLocationTracker = () => {
   }, [enrichedLocations]);
 
   const warehouseLocations = useMemo(() => {
-    const tree = buildWarehouseTree(rowsForTree);
-    console.log("[Tracker] warehouseLocations tree", tree);
-    return tree;
+    return buildWarehouseTree(rowsForTree);
   }, [rowsForTree]);
 
   const totalCount = isFilteringByWarehouse
@@ -92,11 +87,12 @@ export const WarehouseLocationTracker = () => {
   const isLoading = isFilteringByWarehouse
     ? isWarehouseLoading
     : isPagedLoading;
+
   const error = isFilteringByWarehouse ? warehouseError : pagedError;
 
   useEffect(() => {
-    setPage(1);
-  }, [selectedWarehouse]);
+    setPage(1); // Resetear a página 1 si cambia el filtro
+  }, [selectedWarehouse, filterStatus]);
 
   const handleLocationClick = (
     location: Location,
@@ -107,9 +103,13 @@ export const WarehouseLocationTracker = () => {
     setIsDetailOpen(true);
   };
 
+  const flatLocations = isFilteringByWarehouse
+  ? warehouseData || []
+  : pagedData?.data || [];
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      {/* ──────────────── header fijo ──────────────── */}
+      {/* Header */}
       <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3">
           <Package className="w-8 h-8 text-blue-600 dark:text-blue-400" />
@@ -119,6 +119,7 @@ export const WarehouseLocationTracker = () => {
         </div>
       </header>
 
+      {/* Body */}
       {isLoading && <div className="p-6 text-sm">Cargando ubicaciones…</div>}
       {error && <div className="p-6 text-red-600">Error al cargar datos</div>}
 
@@ -142,11 +143,14 @@ export const WarehouseLocationTracker = () => {
           onPageChange={setPage}
           selectedWarehouse={selectedWarehouse}
           setSelectedWarehouse={setSelectedWarehouse}
+          filterStatus={filterStatus}
+          setFilterStatus={setFilterStatus}
           viewMode="all"
           onLocationClick={handleLocationClick}
         />
       </div>
 
+      {/* Modales */}
       <LocationDetailsModal
         isOpen={isDetailOpen}
         onClose={setIsDetailOpen}

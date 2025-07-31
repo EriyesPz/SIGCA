@@ -1,13 +1,24 @@
 import { getApiUrl } from "./client";
 import { useQuery } from "@tanstack/react-query";
+import { LocationStatus } from "@/components/common/locations";
 
-const getLocations = async (page = 1, limit = 10) => {
-  const r = await fetch(`${getApiUrl()}/locations?page=${page}&limit=${limit}`);
+const getLocations = async (
+  page: number = 1,
+  limit: number = 10,
+  status: LocationStatus | "all" = "all"
+) => {
+  const url = new URL(`${getApiUrl()}/locations`);
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("limit", String(limit));
+  if (status !== "all") {
+    url.searchParams.set("status", status);
+  }
+
+  const r = await fetch(url.toString());
   if (!r.ok) throw new Error("Error fetching locations");
-  return r.json(); // ← { data, total, ... }
+  return r.json();
 };
 
-/* -------------- SÓLO añadimos las claves que faltan -------------- */
 const getLocationsByWarehouse = async (warehouseId: string) => {
   const r = await fetch(`${getApiUrl()}/locations/${warehouseId}`);
   if (!r.ok)
@@ -17,13 +28,12 @@ const getLocationsByWarehouse = async (warehouseId: string) => {
   const raw: any[] = await r.json();
   return raw.map((loc, idx) => ({
     ...loc,
-    warehouseId, // <- para que el filtro funcione
-    warehouseName: loc.warehouse, // <- para mostrar en la tabla
+    warehouseId,
+    warehouseName: loc.warehouse,
     rackId: loc.rackCode ?? `rack-${idx}`,
     rackName: loc.rack ?? "Rack Desconocido",
   }));
 };
-/* ------------------------------------------------------------------ */
 
 const getLocationsByRack = async (rack: string) => {
   const r = await fetch(`${getApiUrl()}/locations-rack/${rack}`);
@@ -32,11 +42,20 @@ const getLocationsByRack = async (rack: string) => {
   return r.json();
 };
 
-/* hooks ----------------------------------------------------------- */
-export const useLocations = (page = 1, limit = 10) =>
+const getLocationsByStatus = async (status: LocationStatus) => {
+  const r = await fetch(`${getApiUrl()}/locations/status/${status}`);
+  if (!r.ok) throw new Error(`Error fetching locations with status: ${status}`);
+  return r.json();
+};
+
+export const useLocations = (
+  page: number = 1,
+  limit: number = 10,
+  status: LocationStatus | "all" = "all"
+) =>
   useQuery({
-    queryKey: ["locations", page, limit],
-    queryFn: () => getLocations(page, limit),
+    queryKey: ["locations", page, limit, status],
+    queryFn: () => getLocations(page, limit, status),
   });
 
 export const useLocationsByWarehouse = (warehouse: string) =>
@@ -52,5 +71,13 @@ export const useLocationsByRack = (rack: string) =>
     queryKey: ["locations", "rack", rack],
     queryFn: () => getLocationsByRack(rack),
     enabled: !!rack,
+    refetchOnWindowFocus: false,
+  });
+
+export const useLocationsByStatus = (status?: LocationStatus) =>
+  useQuery({
+    queryKey: ["locations", "status", status],
+    queryFn: () => getLocationsByStatus(status!),
+    enabled: !!status,
     refetchOnWindowFocus: false,
   });

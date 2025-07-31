@@ -76,13 +76,6 @@ export interface CargoFormData {
   createdAt?: string
 }
 
-export interface DocumentUpload {
-  id: string
-  file: File
-  type: "invoice" | "certificate" | "photo" | "other"
-  metadata: Record<string, string>
-  preview?: string
-}
 
 export interface WarehouseLocation {
   id: string
@@ -126,4 +119,12 @@ export interface RegisterCargoInput {
   createdBy: string;
   exitDate?: Date | null;
   documents?: DocumentUpload[]
+}
+
+export interface DocumentUpload {
+  id: string
+  file: File
+  type: "invoice" | "certificate" | "photo" | "other"
+  metadata: Record<string, string>
+  preview?: string
 }

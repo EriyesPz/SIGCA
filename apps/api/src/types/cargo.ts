@@ -17,3 +17,93 @@ export enum CargoStatus {
   EN_AUDITORIA = "en_auditoria",
   NO_CONFORME = "no_conforme",
 }
+
+export interface DimensionCargo {
+  length: number;
+  width: number;
+  height: number;
+}
+
+export interface ShipperCargo {
+  name: string;
+  email: string;
+  phone: string;
+  address?: string;
+  company?: string;
+  contact?: string;
+}
+
+export interface ConsigneeCargo {
+  name: string;
+  email: string;
+  phone: string;
+  address?: string;
+  company?: string;
+  contact?: string;
+}
+
+export interface DocumentsCargo {
+  
+    fileUrl: string;
+    type: string;
+    metadata?: {};
+}
+
+export interface RegisterCargo {
+  id?: string;
+  trackingCode?: string;
+  qrcode?: string;
+  description?: string;
+  status: CargoStatus;
+  weightKg: number;
+  volumenm3?: number;
+  quantity: number;
+  entryDate: Date;
+  exitDate?: Date | null;
+  dimensions?: DimensionCargo;
+  isPerishable: boolean;
+  isHazardous?: boolean;
+  isHighValue?: boolean;
+  declaredValue?: number;
+  temperatureRequirement?: string;
+  handlingInstructions?: string;
+
+  // Logística
+  airWaybillNumber?: string;
+  houseAirWaybillNumber?: string;
+  masterAirWaybillNumber?: string;
+  manifestNumber?: string;
+  flightNumber?: string;
+  flightDate?: Date;
+  originAirport?: string;
+  destinationAirport?: string;
+  customsStatus?: string;
+  customsDeclarationNumber?: string;
+  insurancePolicyNumber?: string;
+  arrivalDate?: Date;
+  departureDate?: Date;
+  sealNumber?: string;
+  internalReference?: string;
+  lastInspectionDate?: Date;
+  damageReported?: boolean;
+  damageDescription?: string;
+  cargoType?: string;
+  containerNumber?: string;
+  uldNumber?: string;
+
+  // JSON
+  shipper?: ShipperCargo;
+  consignee?: ConsigneeCargo;
+
+  // Ubicación
+  warehouseId?: string | null;
+  rackId?: string | null;
+  levelId?: string | null;
+  columnId?: string | null;
+
+  // Meta
+  createdBy: string;
+
+  // Documentos
+  documents: DocumentsCargo[];
+}

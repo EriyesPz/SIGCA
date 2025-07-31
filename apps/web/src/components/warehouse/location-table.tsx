@@ -40,9 +40,11 @@ interface LocationsTableProps {
   limit: number;
   totalCount: number;
   onPageChange: (newPage: number) => void;
-  viewMode?: "all" | "by_warehouse";
+  viewMode?: "all";
   selectedWarehouse?: string;
   setSelectedWarehouse?: (id: string) => void;
+  filterStatus: string;
+  setFilterStatus: (status: string) => void;
 }
 
 export const LocationsTable = ({
@@ -56,16 +58,16 @@ export const LocationsTable = ({
   viewMode = "all",
   selectedWarehouse = "all",
   setSelectedWarehouse,
+  filterStatus,
+  setFilterStatus,
 }: LocationsTableProps) => {
   const [sortField, setSortField] = useState<string>("id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    // reset page when filtering
     onPageChange(1);
-  }, [filterStatus, selectedWarehouse, searchTerm]);
+  }, [selectedWarehouse, searchTerm, filterStatus]);
 
   const allLocations = Object.entries(warehouseLocations).flatMap(
     ([warehouseId, warehouse]: [string, any]) =>
@@ -85,6 +87,7 @@ export const LocationsTable = ({
   const filteredLocations = allLocations.filter((location) => {
     const matchesStatus =
       filterStatus === "all" || location.status === filterStatus;
+
     const matchesSearch =
       searchTerm === "" ||
       location.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -113,13 +116,11 @@ export const LocationsTable = ({
       bValue = `L${b.level}C${b.column}`;
     }
 
-    if (aValue === null || aValue === undefined) aValue = "";
-    if (bValue === null || bValue === undefined) bValue = "";
+    if (aValue == null) aValue = "";
+    if (bValue == null) bValue = "";
 
-    if (typeof aValue === "string" && typeof bValue === "string") {
-      aValue = aValue.toLowerCase();
-      bValue = bValue.toLowerCase();
-    }
+    if (typeof aValue === "string") aValue = aValue.toLowerCase();
+    if (typeof bValue === "string") bValue = bValue.toLowerCase();
 
     return sortDirection === "asc"
       ? aValue > bValue
@@ -130,11 +131,8 @@ export const LocationsTable = ({
       : -1;
   });
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
-  const currentPageLocations = sortedLocations.slice(
-    (page - 1) * limit,
-    page * limit
-  );
+  const currentPageLocations = sortedLocations;
+
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -165,6 +163,8 @@ export const LocationsTable = ({
       </Button>
     </TableHead>
   );
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
 
   return (
     <div className="space-y-4">
@@ -362,7 +362,7 @@ export const LocationsTable = ({
             variant="outline"
             size="sm"
             onClick={() => onPageChange(page + 1)}
-            disabled={page === totalPages}
+            disabled={page >= totalPages}
           >
             <ChevronRight className="w-4 h-4" />
           </Button>

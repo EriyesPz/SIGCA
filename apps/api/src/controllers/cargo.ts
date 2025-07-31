@@ -1,4 +1,5 @@
-import { registerCargo, RegisterCargoInput } from "../model/cargo";
+import { registerCargo } from "../model/cargo";
+import { registerCargoSchema } from "./schema";
 import { Request, Response } from "express";
 
 export const createCargo = async (
@@ -6,51 +7,21 @@ export const createCargo = async (
   res: Response
 ): Promise<void> => {
   try {
-    const input: RegisterCargoInput = req.body;
-    console.log("[DEBUG] Payload recibido en controller:", input);
+    const parse = registerCargoSchema.safeParse(req.body);
 
-    if (
-      !input.trackingCode?.trim() ||
-      !input.description?.trim() ||
-      !input.status?.trim() ||
-      !input.warehouseId?.trim() ||
-      !input.rackId?.trim() ||
-      !input.levelId?.trim() ||
-      !input.columnId?.trim()
-    ) {
-      console.warn("[DEBUG] Campos requeridos faltantes");
-      res
-        .status(400)
-        .json({ success: false, message: "Missing required fields" });
-      return;
-    }
-
-    if (input.weightKg <= 0 || input.quantity <= 0) {
-      console.warn("[DEBUG] Peso o cantidad inválidos:", {
-        weightKg: input.weightKg,
-        quantity: input.quantity,
-      });
+    if (!parse.success) {
+      console.warn("[ZOD] Payload inválido:", parse.error.flatten());
       res.status(400).json({
         success: false,
-        message: "Weight and quantity must be greater than zero",
+        message: "Invalid input",
+        errors: parse.error.flatten().fieldErrors,
       });
       return;
     }
 
-    if (input.entryDate && isNaN(new Date(input.entryDate).getTime())) {
-      console.warn("[DEBUG] Fecha de entrada inválida:", input.entryDate);
-      res.status(400).json({ success: false, message: "Invalid entry date" });
-      return;
-    }
+    const input = parse.data;
 
-    if (
-      input.exitDate &&
-      new Date(input.exitDate) < new Date(input.entryDate)
-    ) {
-      console.warn("[DEBUG] Fecha de salida antes de entrada:", {
-        entry: input.entryDate,
-        exit: input.exitDate,
-      });
+    if (input.exitDate && input.exitDate < input.entryDate) {
       res.status(400).json({
         success: false,
         message: "Exit date must be after entry date",
@@ -58,13 +29,12 @@ export const createCargo = async (
       return;
     }
 
-    const result = await registerCargo(input);
-    console.log("[DEBUG] Cargo creado con ID:", result.cargoId);
-    res.status(201).json({ cargoId: result.cargoId });
+    const result = await registerCargo(input as any); // usamos `as any` porque sabemos que Zod lo validó correctamente
+    res.status(201).json({ success: true, cargoId: result.cargoId });
     return;
   } catch (error) {
     console.error("[ERROR] Error creando cargo:", error);
-    res.status(500).json({ message: "Error creating cargo" });
+    res.status(500).json({ success: false, message: "Error creating cargo" });
     return;
   }
 };

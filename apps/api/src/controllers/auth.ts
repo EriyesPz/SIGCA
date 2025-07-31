@@ -84,7 +84,7 @@ export async function login(req: Request, res: Response): Promise<void> {
     sameSite: "lax",
     maxAge: 3600 * 1000,
   });
-  
+
   res.json({
     message: "Inicio de sesión exitoso",
     userId: user.Id,

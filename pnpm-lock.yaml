@@ -56,6 +56,9 @@ importers:
       uuid:
         specifier: ^11.1.0
         version: 11.1.0
+      zod:
+        specifier: ^3.25.43
+        version: 3.25.43
     devDependencies:
       '@types/bcrypt':
         specifier: ^5.0.2

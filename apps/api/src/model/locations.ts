@@ -12,13 +12,17 @@ export const getAllLocations = async (page = 1, limit = 10) => {
             include: {
               RackColumns: {
                 include: {
-                  Cargo: {
+                  Cargos: {
                     select: {
                       Id: true,
                       TrackingCode: true,
                       Status: true,
                       Description: true,
                     },
+                    orderBy: {
+                      EntryDate: "asc",
+                    },
+                    take: 1,
                   },
                 },
               },
@@ -32,23 +36,23 @@ export const getAllLocations = async (page = 1, limit = 10) => {
     },
   });
 
-  const allLocations = warehouses.flatMap((warehouse) =>
-    warehouse.Racks.flatMap((rack) =>
-      rack.RackLevels.flatMap((level) =>
-        level.RackColumns.map((column) => ({
-          warehouse: warehouse.Name,
-          rack: rack.Name,
-          rackCode: rack.Code ?? null,
-          level: level.LevelNumber,
-          column: column.ColumnCode ?? null,
-          isOccupied: column.Cargo.length > 0,
-          trackingCode: column.Cargo[0]?.TrackingCode ?? null,
-          status:
-            column.Cargo.length > 0
-              ? LocationStatus.ALMACENADO
-              : LocationStatus.DISPONIBLE,
-          description: column.Cargo[0]?.Description ?? null,
-        }))
+  const allLocations = warehouses.flatMap((warehouse: any) =>
+    warehouse.Racks.flatMap((rack: any) =>
+      rack.RackLevels.flatMap((level: any) =>
+        level.RackColumns.map((column: any) => {
+          const cargo = column.Cargos[0];
+          return {
+            warehouse: warehouse.Name,
+            rack: rack.Name,
+            rackCode: rack.Code ?? null,
+            level: level.LevelNumber,
+            column: column.ColumnCode ?? null,
+            isOccupied: !!cargo,
+            trackingCode: cargo?.TrackingCode ?? null,
+            status: cargo ? LocationStatus.ALMACENADO : LocationStatus.DISPONIBLE,
+            description: cargo?.Description ?? null,
+          };
+        })
       )
     )
   );
@@ -69,13 +73,17 @@ export const getLocationsByWarehouse = async (warehouseId: string) => {
             include: {
               RackColumns: {
                 include: {
-                  Cargo: {
+                  Cargos: {
                     select: {
                       Id: true,
                       TrackingCode: true,
                       Status: true,
                       Description: true,
                     },
+                    orderBy: {
+                      EntryDate: "asc",
+                    },
+                    take: 1,
                   },
                 },
               },
@@ -88,22 +96,25 @@ export const getLocationsByWarehouse = async (warehouseId: string) => {
 
   if (!warehouse) return [];
 
-  const result = warehouse.Racks.flatMap((rack) =>
-    rack.RackLevels.flatMap((level) =>
-      level.RackColumns.map((column) => ({
-        warehouseId: warehouse.Id,
-        warehouse: warehouse.Name,
-        rack: rack.Name,
-        rackCode: rack.Code ?? null,
-        levelId: level.Id,
-        level: level.LevelNumber,
-        columnId: column.Id,
-        column: column.ColumnCode ?? null,
-        isOccupied: column.Cargo.length > 0,
-        trackingCode: column.Cargo[0]?.TrackingCode ?? null,
-        status: column.Cargo[0]?.Status ?? null,
-        description: column.Cargo[0]?.Description ?? null,
-      }))
+  const result = warehouse.Racks.flatMap((rack: any) =>
+    rack.RackLevels.flatMap((level: any) =>
+      level.RackColumns.map((column: any) => {
+        const cargo = column.Cargos[0];
+        return {
+          warehouseId: warehouse.Id,
+          warehouse: warehouse.Name,
+          rack: rack.Name,
+          rackCode: rack.Code ?? null,
+          levelId: level.Id,
+          level: level.LevelNumber,
+          columnId: column.Id,
+          column: column.ColumnCode ?? null,
+          isOccupied: !!cargo,
+          trackingCode: cargo?.TrackingCode ?? null,
+          status: cargo ? LocationStatus.ALMACENADO : LocationStatus.DISPONIBLE,
+          description: cargo?.Description ?? null,
+        };
+      })
     )
   );
 
@@ -125,7 +136,7 @@ export const getLocationsByRack = async (rackId: string) => {
             select: {
               Id: true,
               ColumnCode: true,
-              Cargo: {
+              Cargos: {
                 select: {
                   Id: true,
                   TrackingCode: true,
@@ -147,9 +158,9 @@ export const getLocationsByRack = async (rackId: string) => {
 
   if (!rack) return [];
 
-  const result = rack.RackLevels.flatMap((level) =>
-    level.RackColumns.map((column) => {
-      const cargo = column.Cargo[0];
+  const result = rack.RackLevels.flatMap((level: any) =>
+    level.RackColumns.map((column: any) => {
+      const cargo = column.Cargos[0];
       return {
         rack: rack.Name,
         rackCode: rack.Code ?? null,
@@ -183,13 +194,17 @@ export const getLocationByStatus = async (
             include: {
               RackColumns: {
                 include: {
-                  Cargo: {
+                  Cargos: {
                     select: {
                       Id: true,
                       TrackingCode: true,
                       Status: true,
                       Description: true,
                     },
+                    orderBy: {
+                      EntryDate: "asc",
+                    },
+                    take: 1,
                   },
                 },
               },
@@ -203,25 +218,28 @@ export const getLocationByStatus = async (
     },
   });
 
-  const allLocations = warehouses.flatMap((warehouse) =>
-    warehouse.Racks.flatMap((rack) =>
-      rack.RackLevels.flatMap((level) =>
-        level.RackColumns.map((column) => {
-          const isOccupied = column.Cargo.length > 0;
-          const locationStatus = isOccupied
+  const allLocations = warehouses.flatMap((warehouse: any) =>
+    warehouse.Racks.flatMap((rack: any) =>
+      rack.RackLevels.flatMap((level: any) =>
+        level.RackColumns.map((column: any) => {
+          const cargo = column.Cargos[0];
+          const locationStatus = cargo
             ? LocationStatus.ALMACENADO
             : LocationStatus.DISPONIBLE;
 
           return {
+            warehouseId: warehouse.Id,
             warehouse: warehouse.Name,
             rack: rack.Name,
             rackCode: rack.Code ?? null,
+            levelId: level.Id,
             level: level.LevelNumber,
+            columnId: column.Id,
             column: column.ColumnCode ?? null,
-            isOccupied,
-            trackingCode: column.Cargo[0]?.TrackingCode ?? null,
+            isOccupied: !!cargo,
+            trackingCode: cargo?.TrackingCode ?? null,
             status: locationStatus,
-            description: column.Cargo[0]?.Description ?? null,
+            description: cargo?.Description ?? null,
           };
         })
       )
