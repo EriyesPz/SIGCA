@@ -107,3 +107,19 @@ export interface RegisterCargo {
   // Documentos
   documents: DocumentsCargo[];
 }
+
+export interface CargoIdentifier {
+  id?: string;
+  trackingCode?: string;
+  qrcode?: string;
+  airWaybillNumber?: string;
+  houseAirWaybillNumber?: string;
+}
+
+export type AssignLocation = CargoIdentifier & {
+  warehouseId: string;
+  rackId: string;
+  levelId: string;
+  columnId: string;
+  movedBy: string;
+};

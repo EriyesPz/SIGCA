@@ -5,14 +5,13 @@ import { Home } from "./Home";
 import { Register } from "./Register";
 import { ForgotPasswordSendOtp } from "./Forgot-Password";
 import { ForgotPasswordVerify } from "./ForgotPassVerify";
-import { Warehouse } from "./Warehouse";
 import { ProtectedRoute } from "./Protected";
 import { NotFound } from "./Not-Found";
 import { WarehouseLocationTracker } from "./Tracker";
-import { CargoRegistration } from "./RegisterCargo";
 import { Dashboard } from "./Dashboard";
 import { Reports } from "./Reports";
-import { CargoRegistrationWizard } from "./Blue";
+import { RegisterCargoWarehouse } from "./RegisterWarehouse";
+import { CargoRegistrationWizard } from "./RegisterCargo";
 
 export const router = createBrowserRouter([
   {
@@ -49,7 +48,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "almacen",
-        element: <ProtectedRoute><Warehouse /></ProtectedRoute>,
+        element: <ProtectedRoute><RegisterCargoWarehouse /></ProtectedRoute>,
       },
       {
         path: "tracker",
@@ -57,16 +56,13 @@ export const router = createBrowserRouter([
       },
       {
         path: "register-cargo",
-        element: <ProtectedRoute><CargoRegistration /></ProtectedRoute>,
+        element: <ProtectedRoute><CargoRegistrationWizard /></ProtectedRoute>,
       },
       {
         path: "reportes",
         element: <ProtectedRoute><Reports /></ProtectedRoute>,
       },
-      {
-        path: "blue",
-        element: <ProtectedRoute><CargoRegistrationWizard /></ProtectedRoute>,
-      }
+
     ],
   },
 ]);

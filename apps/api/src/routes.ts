@@ -11,7 +11,7 @@ import {
   getLocationsRack,
   getLocationStatus
 } from "./controllers/locations";
-import { getWarehouses } from "./controllers/warehouse";
+import { getWarehouses, assignLocation } from "./controllers/warehouse";
 import { getRacksByWarehouse } from "./controllers/rack";
 import { createCargo } from "./controllers/cargo";
 
@@ -28,5 +28,6 @@ router.get("/warehouses", getWarehouses);
 router.get("/racks/:warehouse", getRacksByWarehouse);
 router.get("/locations-rack/:rack", getLocationsRack);
 router.post("/cargo", createCargo);
+router.post("/assign-location", assignLocation);
 
 export { router };

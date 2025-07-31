@@ -8,186 +8,200 @@ import {
   Input,
   Label,
   Textarea,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Checkbox,
-  Badge,
   Tabs,
-  TabsContent,
   TabsList,
   TabsTrigger,
+  TabsContent,
 } from "@/components/ui";
 import {
   Package,
   Save,
-  Eye,
-  Code,
   AlertCircle,
-  CheckCircle,
   Calendar,
   Weight,
   Hash,
   FileText,
   Snowflake,
+  DollarSign,
+  MapPin,
+  Building,
+  Clock,
+  Shield,
+  Thermometer,
+  PlaneTakeoff,
+  PlaneLanding,
+  Plane,
+  ShieldCheck,
+  User,
+  Mail,
+  Phone,
+  Eye,
+  Code,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import { LocationSelector } from "@/components/cargo/location-selector";
 import { DocumentUpload } from "@/components/cargo/document-upload";
-import { CargoPreview } from "@/components/cargo/cargo-preview";
-import { statusOptions } from "@/data/warehouse-data";
-import type {
-  CargoFormData,
-  DocumentUpload as DocumentUploadType,
-  RegisterCargoInput,
-} from "@/lib/types";
+import type { DocumentsCargo, RegisterCargo } from "@/types/cargo";
 import { useRegisterCargo } from "@/lib/cargo";
 import { useCookies } from "react-cookie";
-import { z } from "zod";
+import { CargoPreviewExtended } from "@/components/cargo/cargo-preview-extend";
 
-const cargoSchema = z.object({
-  trackingCode: z.string().min(3, "El código debe tener al menos 3 caracteres"),
-  description: z.string().min(1, "La descripción es requerida"),
-  status: z.string(),
-  weightKg: z.number().gt(0, "El peso debe ser mayor a 0"),
-  quantity: z.number().gt(0, "La cantidad debe ser mayor a 0"),
-  entryDate: z.string(),
-  exitDate: z.string().optional().nullable(),
-  isPerishable: z.boolean(),
-  warehouseId: z.string().min(1, "Debe seleccionar una ubicación completa"),
-  rackId: z.string().min(1, "Debe seleccionar una ubicación completa"),
-  level: z.number().gt(0, "Debe seleccionar una ubicación completa"),
-  column: z.string().min(1, "Debe seleccionar una ubicación completa"),
-  documents: z.array(z.any()).optional(),
-});
-
-export const CargoRegistration = () => {
+export const CargoRegistrationWizard = () => {
+  const [isSubmittingCargo, setIsSubmittingCargo] = useState(false);
   const [cookies] = useCookies(["userId"]);
-  const userId = cookies.userId;
-  console.log("[DEBUG] Renderizando CargoRegistration");
-  const [formData, setFormData] = useState<CargoFormData>({
+
+  const [cargoData, setCargoData] = useState<RegisterCargo>({
     trackingCode: "",
     description: "",
-    status: "",
+    status: "en_revision",
     weightKg: 0,
     quantity: 1,
-    entryDate: new Date().toISOString().slice(0, 16),
-    exitDate: "",
+    entryDate: new Date(),
     isPerishable: false,
-    warehouseId: "",
-    rackId: "",
-    level: 0,
-    column: "",
-    levelId: "",
-    columnId: "",
+    isHazardous: false,
+    isHighValue: false,
+    damageReported: false,
+    shipper: {
+      name: "",
+      company: "",
+      contact: "",
+      phone: "",
+      email: "",
+      address: "",
+    },
+    consignee: {
+      name: "",
+      company: "",
+      contact: "",
+      phone: "",
+      email: "",
+      address: "",
+    },
     documents: [],
-    createdBy: userId || "",
+    createdBy: "user_001",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [, setShowPreview] = useState(false);
-  const { mutate} = useRegisterCargo();
+  const mutation = useRegisterCargo();
 
-  const handleSubmit = () => {
-    console.log("[DEBUG] handleSubmit llamado", formData);
-    const parsed = cargoSchema.safeParse(formData);
-    if (!parsed.success) {
-      const zodErrors: Record<string, string> = {};
-      parsed.error.errors.forEach((err) => {
-        if (err.path[0]) {
-          zodErrors[err.path[0] as string] = err.message;
-        }
-      });
-      setErrors(zodErrors);
-      toast({
-        title: "Error de validación",
-        description: "Por favor, corrija los errores en el formulario.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // ✅ Validación adicional de fechas
-    const entry = new Date(formData.entryDate);
-    const exit = formData.exitDate ? new Date(formData.exitDate) : null;
-
-    if (exit && exit < entry) {
-      toast({
-        title: "Error en las fechas",
-        description: "La fecha de salida debe ser posterior a la de entrada.",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-      return;
-    }
-
-    setErrors({});
-    setIsSubmitting(true);
-
-    const input: RegisterCargoInput = {
-      ...formData,
-      entryDate: entry,
-      exitDate: exit,
-      columnId: formData.columnId.toString(),
-      levelId: formData.levelId.toString(),
-      createdBy: userId || "",
-    };
-
-    console.log("[DEBUG] Enviando datos a mutate:", input);
-
-    mutate(input, {
-      onSuccess: () => {
-        console.log("[DEBUG] Registro exitoso");
-        toast({
-          title: "¡Carga registrada exitosamente!",
-          description: `Código de seguimiento: ${formData.trackingCode}`,
-        });
-        setFormData({
-          trackingCode: "",
-          description: "",
-          status: "almacenado",
-          weightKg: 0,
-          quantity: 1,
-          entryDate: new Date().toISOString().slice(0, 16),
-          exitDate: "",
-          isPerishable: false,
-          warehouseId: "",
-          rackId: "",
-          level: 0,
-          column: "",
-          levelId: "",
-          columnId: "",
-          documents: [],
-          createdBy: userId || "",
-        });
-        setShowPreview(false);
-      },
-      onError: (error: any) => {
-        console.error("[DEBUG] Error al registrar carga:", error);
-        toast({
-          title: "Error al registrar carga",
-          description:
-            error?.message || "Hubo un problema al guardar la información",
-          variant: "destructive",
-        });
-      },
-      onSettled: () => {
-        console.log("[DEBUG] onSettled llamado");
-        setIsSubmitting(false);
-      },
-    });
+  const validateCargo = () => {
+    const newErrors: Record<string, string> = {};
+    if (!(cargoData.description ?? "").trim())
+      newErrors.description = "La descripción es requerida";
+    if (cargoData.weightKg <= 0)
+      newErrors.weightKg = "El peso debe ser mayor a 0";
+    if (cargoData.quantity <= 0)
+      newErrors.quantity = "La cantidad debe ser mayor a 0";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const updateFormData = (updates: Partial<CargoFormData>) => {
-    console.log("[DEBUG] updateFormData llamado con:", updates);
-    setFormData((prev) => {
-      const updated = { ...prev, ...updates };
-      console.log("[DEBUG] Nuevo formData:", updated);
-      return updated;
-    });
+  const handleCargoSubmit = async () => {
+    if (!validateCargo()) return;
+    setIsSubmittingCargo(true);
+
+    try {
+      const userId = cookies.userId;
+
+      if (!userId) {
+        toast({
+          title: "Error de sesión",
+          description: "Por favor, inicia sesión para registrar la carga.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const transformedDocuments = cargoData.documents.map((doc) => ({
+        fileUrl: doc.preview || "https://example.com/fallback.pdf",
+        type: doc.type,
+        file: doc.file,
+        metadata: {
+          ...doc.metadata,
+          fileInfo: {
+            fileName: doc.file?.name || "",
+            fileSize: doc.file?.size || 0,
+            fileType: doc.file?.type || "",
+            fileLastModified: doc.file?.lastModified || 0,
+          },
+        },
+      }));
+
+      // Omitimos llaves foráneas
+      const {
+        warehouseId,
+        rackId,
+        levelId,
+        columnId,
+        createdBy,
+        ...cargoToSend
+      } = cargoData;
+
+      const cargoInput = {
+        ...cargoToSend,
+        createdBy: userId,
+        documents: transformedDocuments,
+      };
+
+      await mutation.mutateAsync(cargoInput);
+
+      toast({
+        title: "¡Carga registrada exitosamente!",
+        description: `Código: ${cargoData.trackingCode} ha sido registrado`,
+      });
+
+      setCargoData({
+        flightNumber: "",
+        originAirport: "",
+        destinationAirport: "",
+        customsStatus: "",
+        customsDeclarationNumber: "",
+        insurancePolicyNumber: "",
+        arrivalDate: undefined,
+        departureDate: undefined,
+        sealNumber: "",
+        internalReference: "",
+        trackingCode: "",
+        description: "",
+        status: "en_revision",
+        weightKg: 0,
+        quantity: 1,
+        entryDate: new Date(),
+        isPerishable: false,
+        isHazardous: false,
+        isHighValue: false,
+        damageReported: false,
+        shipper: {
+          name: "",
+          company: "",
+          contact: "",
+          phone: "",
+          email: "",
+          address: "",
+        },
+        consignee: {
+          name: "",
+          company: "",
+          contact: "",
+          phone: "",
+          email: "",
+          address: "",
+        },
+        documents: [],
+      });
+    } catch (error) {
+      toast({
+        title: "Error al registrar carga",
+        description: "Hubo un problema al guardar la información",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingCargo(false);
+    }
+  };
+
+  const updateCargoData = (updates: Partial<RegisterCargo>) => {
+    setCargoData((prev) => ({ ...prev, ...updates }));
     const newErrors = { ...errors };
     Object.keys(updates).forEach((key) => {
       delete newErrors[key];
@@ -195,178 +209,192 @@ export const CargoRegistration = () => {
     setErrors(newErrors);
   };
 
-  const handleLocationChange = (
-    warehouseId: string,
-    rackId: string,
-    level: number,
-    column: string,
-    levelId?: string,
-    columnId?: string
-  ) => {
-    console.log("[DEBUG] handleLocationChange:", {
-      warehouseId,
-      rackId,
-      level,
-      column,
-      levelId,
-      columnId,
-    });
-    updateFormData({
-      warehouseId,
-      rackId,
-      level,
-      column,
-      levelId: levelId || "",
-      columnId: columnId || "",
-    });
-    if (errors.location) {
-      const newErrors = { ...errors };
-      delete newErrors.location;
-      setErrors(newErrors);
-    }
-  };
-
-  const handleDocumentsChange = (documents: DocumentUploadType[]) => {
-    console.log("[DEBUG] handleDocumentsChange:", documents);
-    updateFormData({ documents });
-  };
-
-  const isFormValid = () => {
-    const valid =
-      formData.trackingCode &&
-      formData.description &&
-      formData.weightKg > 0 &&
-      formData.quantity > 0 &&
-      formData.warehouseId &&
-      formData.rackId &&
-      formData.level &&
-      formData.column;
-    console.log("[DEBUG] isFormValid:", valid);
-    return valid;
+  const handleDocumentsChange = (documents: DocumentsCargo[]) => {
+    updateCargoData({ documents });
   };
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen">
+      <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Package className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Registro de Nueva Carga
-            </h1>
-          </div>
-          <p className="text-gray-600">
-            Complete la información para registrar una nueva carga en el almacén
-          </p>
+          <Card className="shadow-lg">
+            <CardContent className="">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center">
+                  <Package className="w-8 h-8 text-blue-700 dark:text-white " />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+                    Sistema de Gestión de Carga
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-400 text-lg">
+                    Registra nuevas cargas y asigna ubicaciones de almacén de
+                    forma independiente
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Form */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Cargo Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  Información de Carga
+            {/* Basic Information */}
+            <Card className="shadow-lg">
+              <CardHeader className="">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <Package className="w-6 h-6 text-blue-600" />
+                  Información Básica de Carga
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Tracking Code */}
-                  <div className="space-y-2">
+              <CardContent className="p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Código de Seguimiento */}
+                  <div className="space-y-1">
                     <Label
-                      htmlFor="trackingCode"
-                      className="flex items-center gap-2"
+                      htmlFor="airWaybillNumber"
+                      className="flex items-center gap-2 text-base font-medium"
                     >
-                      <Hash className="w-4 h-4" />
+                      <Hash className="w-4 h-4 text-blue-600" />
                       Código de Seguimiento *
                     </Label>
                     <Input
-                      id="trackingCode"
-                      value={formData.trackingCode}
-                      onChange={(e) => {
-                        console.log(
-                          "[DEBUG] trackingCode cambiado:",
-                          e.target.value
-                        );
-                        updateFormData({
-                          trackingCode: e.target.value.toUpperCase(),
-                        });
-                      }}
-                      placeholder="TRK-2024-001"
-                      className={errors.trackingCode ? "border-red-500" : ""}
+                      id="airWaybillNumber"
+                      type="text"
+                      value={cargoData.airWaybillNumber}
+                      onChange={(e) =>
+                        updateCargoData({ airWaybillNumber: e.target.value })
+                      }
+                      placeholder="AWB123456"
+                      className={
+                        errors.airWaybillNumber ? "border-red-500" : ""
+                      }
                     />
-                    {errors.trackingCode && (
+                    {errors.airWaybillNumber && (
                       <p className="text-sm text-red-600 flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
-                        {errors.trackingCode}
+                        {errors.airWaybillNumber}
                       </p>
                     )}
                   </div>
 
-                  {/* Status */}
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Estado</Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value) => {
-                        console.log("[DEBUG] status cambiado:", value);
-                        updateFormData({
-                          status: value as CargoFormData["status"],
-                        });
-                      }}
+                  {/* Número de Guía Aérea */}
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="houseAirWaybillNumber"
+                      className="flex items-center gap-2 text-base font-medium"
                     >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {statusOptions.map((status) => (
-                          <SelectItem key={status.value} value={status.value}>
-                            <div className="flex items-center gap-2">
-                              <div
-                                className={`w-3 h-3 rounded-full ${status.color}`}
-                              />
-                              {status.label}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      <Hash className="w-4 h-4 text-blue-600" />
+                      Número de Guía Aérea
+                    </Label>
+                    <Input
+                      id="houseAirWaybillNumber"
+                      type="text"
+                      value={cargoData.houseAirWaybillNumber}
+                      onChange={(e) =>
+                        updateCargoData({
+                          houseAirWaybillNumber: e.target.value,
+                        })
+                      }
+                      placeholder="HWB123456"
+                      className={
+                        errors.houseAirWaybillNumber ? "border-red-500" : ""
+                      }
+                      required
+                    />
+                    {errors.houseAirWaybillNumber && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.houseAirWaybillNumber}
+                      </p>
+                    )}
                   </div>
 
-                  {/* Weight */}
+                  {/* Número de Guía Maestra */}
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="masterAirWaybillNumber"
+                      className="flex items-center gap-2 text-base font-medium"
+                    >
+                      <Hash className="w-4 h-4 text-blue-600" />
+                      Número de Guía Maestra
+                    </Label>
+                    <Input
+                      id="masterAirWaybillNumber"
+                      type="text"
+                      value={cargoData.masterAirWaybillNumber}
+                      onChange={(e) =>
+                        updateCargoData({
+                          masterAirWaybillNumber: e.target.value,
+                        })
+                      }
+                      placeholder="MAWB123456"
+                      className={
+                        errors.masterAirWaybillNumber ? "border-red-500" : ""
+                      }
+                      required
+                    />
+                    {errors.masterAirWaybillNumber && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.masterAirWaybillNumber}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Número de Manifiesto */}
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="manifestNumber"
+                      className="flex items-center gap-2 text-base font-medium"
+                    >
+                      <Hash className="w-4 h-4 text-blue-600" />
+                      Número de Manifiesto
+                    </Label>
+                    <Input
+                      id="manifestNumber"
+                      type="text"
+                      value={cargoData.manifestNumber}
+                      onChange={(e) =>
+                        updateCargoData({ manifestNumber: e.target.value })
+                      }
+                      placeholder="MANIFEST123456"
+                      className={errors.manifestNumber ? "border-red-500" : ""}
+                      required
+                    />
+                    {errors.manifestNumber && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.manifestNumber}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="weight" className="flex items-center gap-2">
-                      <Weight className="w-4 h-4" />
+                    <Label
+                      htmlFor="weight"
+                      className="flex items-center gap-2 text-base font-medium"
+                    >
+                      <Weight className="w-4 h-4 text-blue-600" />
                       Peso (kg) *
                     </Label>
-                    <div className="relative">
-                      <Input
-                        id="weight"
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        value={formData.weightKg || ""}
-                        onChange={(e) => {
-                          console.log(
-                            "[DEBUG] weightKg cambiado:",
-                            e.target.value
-                          );
-                          updateFormData({
-                            weightKg: Number.parseFloat(e.target.value) || 0,
-                          });
-                        }}
-                        placeholder="0.0"
-                        className={`pr-12 ${
-                          errors.weightKg ? "border-red-500" : ""
-                        }`}
-                      />
-                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
-                        kg
-                      </span>
-                    </div>
+                    <Input
+                      id="weight"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={cargoData.weightKg || ""}
+                      onChange={(e) =>
+                        updateCargoData({
+                          weightKg: Number.parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      placeholder="0.0"
+                      className={`${errors.weightKg ? "border-red-500" : ""}`}
+                    />
                     {errors.weightKg && (
                       <p className="text-sm text-red-600 flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
@@ -375,25 +403,22 @@ export const CargoRegistration = () => {
                     )}
                   </div>
 
-                  {/* Quantity */}
                   <div className="space-y-2">
-                    <Label htmlFor="quantity">Cantidad *</Label>
+                    <Label htmlFor="quantity" className="text-base font-medium">
+                      Cantidad *
+                    </Label>
                     <Input
                       id="quantity"
                       type="number"
                       min="1"
-                      value={formData.quantity || ""}
-                      onChange={(e) => {
-                        console.log(
-                          "[DEBUG] quantity cambiado:",
-                          e.target.value
-                        );
-                        updateFormData({
+                      value={cargoData.quantity || ""}
+                      onChange={(e) =>
+                        updateCargoData({
                           quantity: Number.parseInt(e.target.value) || 1,
-                        });
-                      }}
+                        })
+                      }
                       placeholder="1"
-                      className={errors.quantity ? "border-red-500" : ""}
+                      className={`${errors.quantity ? "border-red-500" : ""}`}
                     />
                     {errors.quantity && (
                       <p className="text-sm text-red-600 flex items-center gap-1">
@@ -403,74 +428,119 @@ export const CargoRegistration = () => {
                     )}
                   </div>
 
-                  {/* Entry Date */}
                   <div className="space-y-2">
                     <Label
                       htmlFor="entryDate"
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 text-base font-medium"
                     >
-                      <Calendar className="w-4 h-4" />
+                      <Calendar className="w-4 h-4 text-blue-600" />
                       Fecha de Entrada
                     </Label>
                     <Input
                       id="entryDate"
                       type="datetime-local"
-                      value={formData.entryDate}
-                      onChange={(e) => {
-                        console.log(
-                          "[DEBUG] entryDate cambiado:",
-                          e.target.value
-                        );
-                        updateFormData({ entryDate: e.target.value });
-                      }}
+                      value={
+                        cargoData.entryDate?.toISOString().slice(0, 16) || ""
+                      }
+                      onChange={(e) =>
+                        updateCargoData({
+                          entryDate: new Date(e.target.value),
+                        })
+                      }
                     />
                   </div>
 
-                  {/* Exit Date */}
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="exitDate"
-                      className="flex items-center gap-2"
-                    >
-                      <Calendar className="w-4 h-4" />
-                      Fecha de Salida
+                    <Label htmlFor="volumeM3" className="text-base font-medium">
+                      Volumen (m³)
                     </Label>
                     <Input
-                      id="exitDate"
-                      type="datetime-local"
-                      value={formData.exitDate || ""}
-                      onChange={(e) => {
-                        console.log(
-                          "[DEBUG] exitDate cambiado:",
-                          e.target.value
-                        );
-                        updateFormData({ exitDate: e.target.value });
-                      }}
+                      id="volumeM3"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={cargoData.volumenm3 || ""}
+                      onChange={(e) =>
+                        updateCargoData({
+                          volumenm3:
+                            Number.parseFloat(e.target.value) || undefined,
+                        })
+                      }
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                {/* Dimensiones */}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="length" className="text-base font-medium">
+                      Largo (cm)
+                    </Label>
+                    <Input
+                      id="length"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={cargoData.dimensions?.length || ""}
+                      onChange={(e) =>
+                        updateCargoData({
+                          dimensions: {
+                            ...cargoData.dimensions,
+                            length:
+                              Number.parseFloat(e.target.value) || undefined,
+                          },
+                        })
+                      }
+                      placeholder="0.0"
                     />
                   </div>
 
-                  {/* Is Perishable */}
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="isPerishable"
-                        checked={formData.isPerishable}
-                        onCheckedChange={(checked) => {
-                          console.log(
-                            "[DEBUG] isPerishable cambiado:",
-                            checked
-                          );
-                          updateFormData({ isPerishable: !!checked });
-                        }}
-                      />
-                      <Label
-                        htmlFor="isPerishable"
-                        className="flex items-center gap-2"
-                      >
-                        <Snowflake className="w-4 h-4" />
-                        Producto Perecedero
-                      </Label>
-                    </div>
+                    <Label htmlFor="width" className="text-base font-medium">
+                      Ancho (cm)
+                    </Label>
+                    <Input
+                      id="width"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={cargoData.dimensions?.width || ""}
+                      onChange={(e) =>
+                        updateCargoData({
+                          dimensions: {
+                            ...cargoData.dimensions,
+                            width:
+                              Number.parseFloat(e.target.value) || undefined,
+                          },
+                        })
+                      }
+                      placeholder="0.0"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="height" className="text-base font-medium">
+                      Alto (cm)
+                    </Label>
+                    <Input
+                      id="height"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={cargoData.dimensions?.height || ""}
+                      onChange={(e) =>
+                        updateCargoData({
+                          dimensions: {
+                            ...cargoData.dimensions,
+                            height:
+                              Number.parseFloat(e.target.value) || undefined,
+                          },
+                        })
+                      }
+                      placeholder="0.0"
+                    />
                   </div>
                 </div>
 
@@ -478,23 +548,19 @@ export const CargoRegistration = () => {
                 <div className="space-y-2">
                   <Label
                     htmlFor="description"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 text-base font-medium"
                   >
-                    <FileText className="w-4 h-4" />
+                    <FileText className="w-4 h-4 text-blue-600" />
                     Descripción *
                   </Label>
                   <Textarea
                     id="description"
-                    value={formData.description}
-                    onChange={(e) => {
-                      console.log(
-                        "[DEBUG] description cambiado:",
-                        e.target.value
-                      );
-                      updateFormData({ description: e.target.value });
-                    }}
+                    value={cargoData.description}
+                    onChange={(e) =>
+                      updateCargoData({ description: e.target.value })
+                    }
                     placeholder="Describe el contenido de la carga..."
-                    rows={3}
+                    rows={4}
                     className={errors.description ? "border-red-500" : ""}
                   />
                   {errors.description && (
@@ -504,72 +570,697 @@ export const CargoRegistration = () => {
                     </p>
                   )}
                 </div>
+
+                {/* Checkboxes */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center space-x-3">
+                      <Checkbox
+                        id="isPerishable"
+                        checked={cargoData.isPerishable}
+                        onCheckedChange={(checked) =>
+                          updateCargoData({ isPerishable: !!checked })
+                        }
+                        className="w-5 h-5"
+                      />
+                      <Label
+                        htmlFor="isPerishable"
+                        className="flex items-center gap-2 font-medium"
+                      >
+                        <Snowflake className="w-5 h-5 text-blue-600" />
+                        Perecedero
+                      </Label>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 ml-8">
+                      Requiere refrigeración
+                    </p>
+                  </div>
+
+                  <div className="bg-red-50 dark:bg-red-950 rounded-lg p-4 border border-red-200 dark:border-red-800">
+                    <div className="flex items-center space-x-3">
+                      <Checkbox
+                        id="isHazardousMaterial"
+                        checked={cargoData.isHazardous}
+                        onCheckedChange={(checked) =>
+                          updateCargoData({ isHazardous: !!checked })
+                        }
+                        className="w-5 h-5"
+                      />
+                      <Label
+                        htmlFor="isHazardousMaterial"
+                        className="flex items-center gap-2 font-medium"
+                      >
+                        <Shield className="w-5 h-5 text-red-600" />
+                        Material Peligroso
+                      </Label>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 ml-8">
+                      Manejo especial requerido
+                    </p>
+                  </div>
+
+                  <div className="bg-green-50 dark:bg-green-950 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                    <div className="flex items-center space-x-3">
+                      <Checkbox
+                        id="isHighValue"
+                        checked={cargoData.isHighValue}
+                        onCheckedChange={(checked) =>
+                          updateCargoData({ isHighValue: !!checked })
+                        }
+                        className="w-5 h-5"
+                      />
+                      <Label
+                        htmlFor="isHighValue"
+                        className="flex items-center gap-2 font-medium"
+                      >
+                        <DollarSign className="w-5 h-5 text-green-600" />
+                        Alto Valor
+                      </Label>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 ml-8">
+                      Seguridad adicional
+                    </p>
+                  </div>
+                </div>
+
+                {/* Conditional Fields */}
+                {(cargoData.isHighValue || cargoData.isPerishable) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                    {cargoData.isHighValue && (
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="declaredValueUSD"
+                          className="flex items-center gap-2"
+                        >
+                          <DollarSign className="w-4 h-4 text-green-600" />
+                          Valor Declarado (USD)
+                        </Label>
+                        <Input
+                          id="declaredValueUSD"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={cargoData.declaredValue || ""}
+                          onChange={(e) =>
+                            updateCargoData({
+                              declaredValue:
+                                Number.parseFloat(e.target.value) || undefined,
+                            })
+                          }
+                          placeholder="0.00"
+                          className="h-12"
+                        />
+                      </div>
+                    )}
+
+                    {cargoData.isPerishable && (
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="temperatureRequirement"
+                          className="flex items-center gap-2"
+                        >
+                          <Thermometer className="w-4 h-4 text-blue-600" />
+                          Requerimiento de Temperatura
+                        </Label>
+                        <Input
+                          id="temperatureRequirement"
+                          value={cargoData.temperatureRequirement || ""}
+                          onChange={(e) =>
+                            updateCargoData({
+                              temperatureRequirement: e.target.value,
+                            })
+                          }
+                          placeholder="2-8°C"
+                          className="h-12"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Flight Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Número de Vuelo */}
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="flightNumber"
+                      className="flex items-center gap-2 text-base font-medium"
+                    >
+                      <Plane className="w-4 h-4 text-blue-600" />
+                      Número de Vuelo
+                    </Label>
+                    <Input
+                      id="flightNumber"
+                      type="text"
+                      value={cargoData.flightNumber}
+                      onChange={(e) =>
+                        updateCargoData({ flightNumber: e.target.value })
+                      }
+                      placeholder="HND321"
+                      className={errors.flightNumber ? "border-red-500" : ""}
+                    />
+                    {errors.flightNumber && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.flightNumber}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Fecha de Vuelo */}
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="flightDate"
+                      className="flex items-center gap-2 text-base font-medium"
+                    >
+                      <Calendar className="w-4 h-4 text-blue-600" />
+                      Fecha de Vuelo
+                    </Label>
+                    <Input
+                      id="flightDate"
+                      type="datetime-local"
+                      value={
+                        cargoData.flightDate?.toISOString().slice(0, 16) || ""
+                      }
+                      onChange={(e) =>
+                        updateCargoData({
+                          flightDate: new Date(e.target.value),
+                        })
+                      }
+                    />
+                    {errors.flightDate && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.flightDate}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Aeropuerto de Origen */}
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="originAirport"
+                      className="flex items-center gap-2 text-base font-medium"
+                    >
+                      <PlaneTakeoff className="w-4 h-4 text-blue-600" />
+                      Aeropuerto de Origen
+                    </Label>
+                    <Input
+                      id="originAirport"
+                      type="text"
+                      value={cargoData.originAirport}
+                      onChange={(e) =>
+                        updateCargoData({ originAirport: e.target.value })
+                      }
+                      placeholder="MIA"
+                      className={errors.originAirport ? "border-red-500" : ""}
+                    />
+                    {errors.originAirport && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.originAirport}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Aeropuerto de Destino */}
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="destinationAirport"
+                      className="flex items-center gap-2 text-base font-medium"
+                    >
+                      <PlaneLanding className="w-4 h-4 text-blue-600" />
+                      Aeropuerto de Destino
+                    </Label>
+                    <Input
+                      id="destinationAirport"
+                      type="text"
+                      value={cargoData.destinationAirport}
+                      onChange={(e) =>
+                        updateCargoData({
+                          destinationAirport: e.target.value,
+                        })
+                      }
+                      placeholder="TGU"
+                      className={
+                        errors.destinationAirport ? "border-red-500" : ""
+                      }
+                    />
+                    {errors.destinationAirport && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.destinationAirport}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Estado de Aduanas */}
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="customsStatus"
+                      className="flex items-center gap-2 text-base font-medium"
+                    >
+                      <ShieldCheck className="w-4 h-4 text-blue-600" />
+                      Estado de Aduanas
+                    </Label>
+                    <Input
+                      id="customsStatus"
+                      type="text"
+                      value={cargoData.customsStatus}
+                      onChange={(e) =>
+                        updateCargoData({ customsStatus: e.target.value })
+                      }
+                      placeholder="Pending"
+                      className={errors.customsStatus ? "border-red-500" : ""}
+                    />
+                    {errors.customsStatus && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.customsStatus}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Número de Declaración Aduanera */}
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="customsDeclarationNumber"
+                      className="flex items-center gap-2 text-base font-medium"
+                    >
+                      <FileText className="w-4 h-4 text-blue-600" />
+                      Nº Declaración Aduanera
+                    </Label>
+                    <Input
+                      id="customsDeclarationNumber"
+                      type="text"
+                      value={cargoData.customsDeclarationNumber}
+                      onChange={(e) =>
+                        updateCargoData({
+                          customsDeclarationNumber: e.target.value,
+                        })
+                      }
+                      placeholder="DECL-78910"
+                      className={
+                        errors.customsDeclarationNumber ? "border-red-500" : ""
+                      }
+                    />
+                    {errors.customsDeclarationNumber && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.customsDeclarationNumber}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Número de Póliza de Seguro */}
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="insurancePolicyNumber"
+                      className="flex items-center gap-2 text-base font-medium"
+                    >
+                      <Shield className="w-4 h-4 text-blue-600" />
+                      Nº de Póliza de Seguro
+                    </Label>
+                    <Input
+                      id="insurancePolicyNumber"
+                      type="text"
+                      value={cargoData.insurancePolicyNumber}
+                      onChange={(e) =>
+                        updateCargoData({
+                          insurancePolicyNumber: e.target.value,
+                        })
+                      }
+                      placeholder="INS-456789"
+                      className={
+                        errors.insurancePolicyNumber ? "border-red-500" : ""
+                      }
+                    />
+                    {errors.insurancePolicyNumber && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.insurancePolicyNumber}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Fecha de Salida */}
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="departureDate"
+                      className="flex items-center gap-2 text-base font-medium"
+                    >
+                      <Clock className="w-4 h-4 text-blue-600" />
+                      Fecha de Salida
+                    </Label>
+                    <Input
+                      id="departureDate"
+                      type="datetime-local"
+                      value={
+                        cargoData.departureDate?.toISOString().slice(0, 16) ||
+                        ""
+                      }
+                      onChange={(e) =>
+                        updateCargoData({
+                          departureDate: new Date(e.target.value),
+                        })
+                      }
+                    />
+                    {errors.departureDate && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.departureDate}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Fecha de Llegada */}
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="arrivalDate"
+                      className="flex items-center gap-2 text-base font-medium"
+                    >
+                      <Clock className="w-4 h-4 text-blue-600" />
+                      Fecha de Llegada
+                    </Label>
+                    <Input
+                      id="arrivalDate"
+                      type="datetime-local"
+                      value={
+                        cargoData.arrivalDate?.toISOString().slice(0, 16) || ""
+                      }
+                      onChange={(e) =>
+                        updateCargoData({
+                          arrivalDate: new Date(e.target.value),
+                        })
+                      }
+                    />
+                    {errors.arrivalDate && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.arrivalDate}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {/* Remitente */}
+
+                <div className="space-y-6">
+                  <h2 className="text-xl font-semibold">Remitente</h2>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Nombre */}
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor="shipperName"
+                        className="flex items-center gap-2 font-medium"
+                      >
+                        <User className="w-4 h-4" />
+                        Nombre
+                      </Label>
+                      <Input
+                        id="shipperName"
+                        type="text"
+                        value={cargoData.shipper?.name || ""}
+                        onChange={(e) =>
+                          updateCargoData({
+                            shipper: {
+                              ...cargoData.shipper,
+                              name: e.target.value || undefined,
+                            },
+                          })
+                        }
+                        placeholder="Nombre del remitente"
+                      />
+                    </div>
+
+                    {/* Correo */}
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor="shipperEmail"
+                        className="flex items-center gap-2 font-medium"
+                      >
+                        <Mail className="w-4 h-4 text-blue-600" />
+                        Correo Electrónico
+                      </Label>
+                      <Input
+                        id="shipperEmail"
+                        type="email"
+                        value={cargoData.shipper?.email || ""}
+                        onChange={(e) =>
+                          updateCargoData({
+                            shipper: {
+                              ...cargoData.shipper,
+                              email: e.target.value || undefined,
+                            },
+                          })
+                        }
+                        placeholder="Correo del remitente"
+                      />
+                    </div>
+
+                    {/* Teléfono */}
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor="shipperPhone"
+                        className="flex items-center gap-2 font-medium"
+                      >
+                        <Phone className="w-4 h-4 text-blue-600" />
+                        Teléfono
+                      </Label>
+                      <Input
+                        id="shipperPhone"
+                        type="tel"
+                        value={cargoData.shipper?.phone || ""}
+                        onChange={(e) =>
+                          updateCargoData({
+                            shipper: {
+                              ...cargoData.shipper,
+                              phone: e.target.value || undefined,
+                            },
+                          })
+                        }
+                        placeholder="Teléfono del remitente"
+                      />
+                    </div>
+
+                    {/* Dirección */}
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor="shipperAddress"
+                        className="flex items-center gap-2 font-medium"
+                      >
+                        <MapPin className="w-4 h-4 text-blue-600" />
+                        Dirección
+                      </Label>
+                      <Input
+                        id="shipperAddress"
+                        type="text"
+                        value={cargoData.shipper?.address || ""}
+                        onChange={(e) =>
+                          updateCargoData({
+                            shipper: {
+                              ...cargoData.shipper,
+                              address: e.target.value || undefined,
+                            },
+                          })
+                        }
+                        placeholder="Dirección del remitente"
+                      />
+                    </div>
+
+                    {/* Empresa */}
+                    <div className="space-y-1 md:col-span-2">
+                      <Label
+                        htmlFor="shipperCompany"
+                        className="flex items-center gap-2 font-medium"
+                      >
+                        <Building className="w-4 h-4 text-blue-600" />
+                        Empresa
+                      </Label>
+                      <Input
+                        id="shipperCompany"
+                        type="text"
+                        value={cargoData.shipper?.company || ""}
+                        onChange={(e) =>
+                          updateCargoData({
+                            shipper: {
+                              ...cargoData.shipper,
+                              company: e.target.value || undefined,
+                            },
+                          })
+                        }
+                        placeholder="Empresa del remitente"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <h2 className="text-xl font-semibold">Destinatario</h2>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Nombre */}
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor="consigneeName"
+                        className="flex items-center gap-2 font-medium"
+                      >
+                        <User className="w-4 h-4 text-blue-600" />
+                        Nombre
+                      </Label>
+                      <Input
+                        id="consigneeName"
+                        type="text"
+                        value={cargoData.consignee?.name || ""}
+                        onChange={(e) =>
+                          updateCargoData({
+                            consignee: {
+                              ...cargoData.consignee,
+                              name: e.target.value || undefined,
+                            },
+                          })
+                        }
+                        placeholder="Nombre del destinatario"
+                      />
+                    </div>
+
+                    {/* Correo */}
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor="consigneeEmail"
+                        className="flex items-center gap-2 font-medium"
+                      >
+                        <Mail className="w-4 h-4 text-blue-600" />
+                        Correo Electrónico
+                      </Label>
+                      <Input
+                        id="consigneeEmail"
+                        type="email"
+                        value={cargoData.consignee?.email || ""}
+                        onChange={(e) =>
+                          updateCargoData({
+                            consignee: {
+                              ...cargoData.consignee,
+                              email: e.target.value || undefined,
+                            },
+                          })
+                        }
+                        placeholder="Correo del destinatario"
+                      />
+                    </div>
+
+                    {/* Teléfono */}
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor="consigneePhone"
+                        className="flex items-center gap-2 font-medium"
+                      >
+                        <Phone className="w-4 h-4 text-blue-600" />
+                        Teléfono
+                      </Label>
+                      <Input
+                        id="consigneePhone"
+                        type="tel"
+                        value={cargoData.consignee?.phone || ""}
+                        onChange={(e) =>
+                          updateCargoData({
+                            consignee: {
+                              ...cargoData.consignee,
+                              phone: e.target.value || undefined,
+                            },
+                          })
+                        }
+                        placeholder="Teléfono del destinatario"
+                      />
+                    </div>
+
+                    {/* Dirección */}
+                    <div className="space-y-1">
+                      <Label
+                        htmlFor="consigneeAddress"
+                        className="flex items-center gap-2 font-medium"
+                      >
+                        <MapPin className="w-4 h-4 text-blue-600" />
+                        Dirección
+                      </Label>
+                      <Input
+                        id="consigneeAddress"
+                        type="text"
+                        value={cargoData.consignee?.address || ""}
+                        onChange={(e) =>
+                          updateCargoData({
+                            consignee: {
+                              ...cargoData.consignee,
+                              address: e.target.value || undefined,
+                            },
+                          })
+                        }
+                        placeholder="Dirección del destinatario"
+                      />
+                    </div>
+
+                    {/* Empresa */}
+                    <div className="space-y-1 md:col-span-2">
+                      <Label
+                        htmlFor="consigneeCompany"
+                        className="flex items-center gap-2 font-medium"
+                      >
+                        <Building className="w-4 h-4 text-blue-600" />
+                        Empresa
+                      </Label>
+                      <Input
+                        id="consigneeCompany"
+                        type="text"
+                        value={cargoData.consignee?.company || ""}
+                        onChange={(e) =>
+                          updateCargoData({
+                            consignee: {
+                              ...cargoData.consignee,
+                              company: e.target.value || undefined,
+                            },
+                          })
+                        }
+                        placeholder="Empresa del destinatario"
+                      />
+                    </div>
+
+                    {/* Persona de contacto */}
+                    <div className="space-y-1 md:col-span-2">
+                      <Label
+                        htmlFor="consigneeContact"
+                        className="flex items-center gap-2 font-medium"
+                      >
+                        <User className="w-4 h-4 text-blue-600" />
+                        Persona de Contacto
+                      </Label>
+                      <Input
+                        id="consigneeContact"
+                        type="text"
+                        value={cargoData.consignee?.contact || ""}
+                        onChange={(e) =>
+                          updateCargoData({
+                            consignee: {
+                              ...cargoData.consignee,
+                              contact: e.target.value || undefined,
+                            },
+                          })
+                        }
+                        placeholder="Persona de contacto"
+                      />
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Location Assignment */}
-            <LocationSelector
-              warehouseId={formData.warehouseId}
-              rackId={formData.rackId}
-              level={formData.level}
-              column={formData.column.toString()}
-              onLocationChange={handleLocationChange}
-            />
-            {errors.location && (
-              <p className="text-sm text-red-600 flex items-center gap-1 mt-2">
-                <AlertCircle className="w-3 h-3" />
-                {errors.location}
-              </p>
-            )}
-
             {/* Document Upload */}
             <DocumentUpload
-              documents={formData.documents}
+              documents={cargoData.documents}
               onDocumentsChange={handleDocumentsChange}
             />
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Form Status */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Estado del Formulario</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Información básica</span>
-                    {formData.trackingCode &&
-                    formData.description &&
-                    formData.weightKg > 0 ? (
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 text-gray-400" />
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Ubicación asignada</span>
-                    {formData.warehouseId &&
-                    formData.rackId &&
-                    formData.level !== 0 &&
-                    formData.column !== "" ? (
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 text-gray-400" />
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Documentos</span>
-                    <Badge variant="outline">
-                      {formData.documents.length} archivos
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Preview Tabs */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Vista Previa</CardTitle>
@@ -593,37 +1284,35 @@ export const CargoRegistration = () => {
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="preview" className="mt-4">
-                    <CargoPreview formData={formData} />
+                    <CargoPreviewExtended cargo={cargoData} />
                   </TabsContent>
                   <TabsContent value="json" className="mt-4">
-                    <CargoPreview formData={formData} showJson />
+                    <CargoPreviewExtended showJson={true} cargo={cargoData} />
                   </TabsContent>
                 </Tabs>
               </CardContent>
             </Card>
           </div>
-        </div>
-
-        {/* Fixed Submit Button */}
-        <div className="fixed bottom-6 right-6 z-50">
-          <Button
-            onClick={handleSubmit}
-            disabled={!isFormValid() || isSubmitting}
-            size="lg"
-            className="shadow-lg hover:shadow-xl transition-shadow"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                Guardando...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                Guardar Carga
-              </>
-            )}
-          </Button>
+          <div className="fixed bottom-6 right-6 z-50">
+            <Button
+              onClick={handleCargoSubmit}
+              disabled={isSubmittingCargo}
+              size="lg"
+              className=""
+            >
+              {isSubmittingCargo ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-3" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5 mr-3" />
+                  Registrar Carga
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
