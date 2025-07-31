@@ -40,9 +40,11 @@ import { toast } from "@/components/ui/use-toast";
 import { DocumentUpload } from "@/components/cargo/document-upload";
 import type { DocumentsCargo, RegisterCargo } from "@/types/cargo";
 import { useRegisterCargo } from "@/lib/cargo";
+import { useCookies } from "react-cookie";
 
 export const CargoRegistrationWizard = () => {
   const [isSubmittingCargo, setIsSubmittingCargo] = useState(false);
+  const [cookies] = useCookies(["userId"])
 
   const [cargoData, setCargoData] = useState<RegisterCargo>({
     trackingCode: "",
@@ -95,6 +97,18 @@ export const CargoRegistrationWizard = () => {
     setIsSubmittingCargo(true);
 
     try {
+
+      const userId = cookies.userId
+
+      if (!userId) {
+        toast({
+          title: "Error de sesión",
+          description: "Por favor, inicia sesión para registrar la carga.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const transformedDocuments = cargoData.documents.map((doc) => ({
         fileUrl: doc.preview || "https://example.com/fallback.pdf",
         type: doc.type,
@@ -111,11 +125,12 @@ export const CargoRegistrationWizard = () => {
       }));
 
       // Omitimos llaves foráneas
-      const { warehouseId, rackId, levelId, columnId, ...cargoToSend } =
+      const { warehouseId, rackId, levelId, columnId, createdBy, ...cargoToSend } =
         cargoData;
 
       const cargoInput = {
         ...cargoToSend,
+        createdBy: userId,
         documents: transformedDocuments,
       };
 
@@ -127,6 +142,16 @@ export const CargoRegistrationWizard = () => {
       });
 
       setCargoData({
+        flightNumber: "",
+        originAirport: "",
+        destinationAirport: "",
+        customsStatus: "",
+        customsDeclarationNumber: "",
+        insurancePolicyNumber: "",
+        arrivalDate: undefined,
+        departureDate: undefined,
+        sealNumber: "",
+        internalReference: "",
         trackingCode: "",
         description: "",
         status: "almacenado",
@@ -154,7 +179,6 @@ export const CargoRegistrationWizard = () => {
           address: "",
         },
         documents: [],
-        createdBy: "user_001",
       });
     } catch (error) {
       toast({
@@ -186,7 +210,7 @@ export const CargoRegistrationWizard = () => {
         {/* Header */}
         <div className="mb-8">
           <Card className="shadow-lg">
-            <CardContent className="p-4">
+            <CardContent className="">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center">
                   <Package className="w-8 h-8 text-blue-700 dark:text-white " />

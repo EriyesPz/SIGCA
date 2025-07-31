@@ -123,7 +123,7 @@ export interface RegisterCargo {
   columnId?: string | null;
 
   // Meta
-  createdBy: string;
+  createdBy?: string;
 
   // Documentos
   documents: DocumentsCargo[];
