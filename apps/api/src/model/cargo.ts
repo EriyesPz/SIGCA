@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { RegisterCargo } from "../types/cargo";
+import { RegisterCargo, CargoIdentifier } from "../types/cargo";
 
 export const registerCargo = async (
   input: RegisterCargo
@@ -111,9 +111,118 @@ export const registerCargo = async (
       return cargo;
     });
 
-    return { cargoId: createdCargo.Id, trackingCode: createdCargo.TrackingCode ?? "" };
+    return {
+      cargoId: createdCargo.Id,
+      trackingCode: createdCargo.TrackingCode ?? "",
+    };
   } catch (error) {
     console.error("[ERROR] Error al registrar carga completa:", error);
     throw new Error("No se pudo registrar la carga.");
+  }
+};
+
+export const getCargoByIdentifier = async (identifier: CargoIdentifier) => {
+  try {
+    const conditions = [];
+
+    if (identifier.id) {
+      conditions.push({ Id: identifier.id });
+    }
+    if (identifier.trackingCode) {
+      conditions.push({ TrackingCode: identifier.trackingCode });
+    }
+    if (identifier.qrcode) {
+      conditions.push({ QRCode: identifier.qrcode });
+    }
+    if (identifier.airWaybillNumber) {
+      conditions.push({ AirWaybillNumber: identifier.airWaybillNumber });
+    }
+    if (identifier.houseAirWaybillNumber) {
+      conditions.push({
+        HouseAirWaybillNumber: identifier.houseAirWaybillNumber,
+      });
+    }
+
+    const cargo = await db.cargo.findFirst({
+      where: {
+        OR: conditions,
+      },
+      include: {
+        Warehouse: {
+          select: {
+            Name: true,
+          },
+        },
+        RackColumn: {
+          select: {
+            ColumnCode: true,
+            RackLevels: {
+              select: {
+                LevelNumber: true,
+                Racks: {
+                  select: {
+                    Name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        CargoDocuments: {
+          select: {
+            FileUrl: true,
+            Type: true,
+            Metadata: true,
+            CreatedAt: true,
+          },
+        },
+        CargoLocationHistory: {
+          orderBy: { MovedAt: "asc" },
+          take: 1,
+          select: {
+            MovedAt: true,
+          },
+        },
+        CargoStatusHistory: {
+          orderBy: { ChangedAt: "desc" },
+          take: 1,
+          select: {
+            NewStatus: true,
+            ChangedAt: true,
+          },
+        },
+      },
+    });
+
+    if (!cargo) return null;
+
+    return {
+      id: cargo.Id,
+      trackingCode: cargo.TrackingCode,
+      qrcode: cargo.QRCode,
+      status: cargo.Status,
+      description: cargo.Description,
+      quantity: cargo.Quantity,
+      weightKg: cargo.WeightKg,
+      volumeM3: cargo.VolumeM3,
+      dimensions: cargo.DimensionsCm,
+      entryDate: cargo.EntryDate,
+      exitDate: cargo.ExitDate,
+      airWaybillNumber: cargo.AirWaybillNumber,
+      houseAirWaybillNumber: cargo.HouseAirWaybillNumber,
+      createdBy: cargo.CreatedBy,
+      warehouse: cargo.Warehouse?.Name ?? null,
+      rack: cargo.RackColumn?.RackLevels?.Racks?.Name ?? null,
+      level: cargo.RackColumn?.RackLevels?.LevelNumber ?? null,
+      column: cargo.RackColumn?.ColumnCode ?? null,
+      locationDate: cargo.CargoLocationHistory[0]?.MovedAt ?? null,
+      latestStatus: cargo.CargoStatusHistory[0]?.NewStatus ?? cargo.Status,
+      documents: cargo.CargoDocuments,
+      shipper: cargo.Shipper,
+      consignee: cargo.Consignee,
+    };
+  } catch (error) {
+    console.error("[ERROR] Error buscando carga:", error);
+    throw new Error("No se pudo obtener la información de la carga.");
   }
 };
