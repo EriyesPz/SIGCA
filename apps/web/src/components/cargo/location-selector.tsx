@@ -84,10 +84,6 @@ export const LocationSelector = ({
     );
   };
 
-  const handleColumnChange = (value: string) => {
-    onLocationChange(warehouseId, rackId, level, value, "", "");
-  };
-
   const handlePositionClick = (pos: Position) => {
     if (!pos.isOccupied) {
       onLocationChange(
@@ -117,7 +113,6 @@ export const LocationSelector = ({
   const levels = [...new Set(availablePositions.map((p) => p.level))].sort(
     (a, b) => b - a
   );
-  const columns = [...new Set(availablePositions.map((p) => p.column))].sort();
 
   return (
     <Card>
@@ -258,22 +253,6 @@ export const LocationSelector = ({
                   {levels.map((l) => (
                     <SelectItem key={l} value={l.toString()}>
                       Nivel {l}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Columna</Label>
-              <Select value={column} onValueChange={handleColumnChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Columna" />
-                </SelectTrigger>
-                <SelectContent>
-                  {columns.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      Columna {c}
                     </SelectItem>
                   ))}
                 </SelectContent>

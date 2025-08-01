@@ -8,51 +8,32 @@ import {
   Button,
   Input,
   Label,
-  Textarea,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Checkbox,
   Badge,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
 } from "@/components/ui";
 import {
   Package,
   Save,
-  Eye,
-  Code,
   AlertCircle,
-  CheckCircle,
   Calendar,
   Weight,
   Hash,
-  FileText,
-  Snowflake,
   Search,
-  MapPin,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { LocationSelector } from "@/components/cargo/location-selector";
-import { DocumentUpload } from "@/components/cargo/document-upload";
-import { CargoPreview } from "@/components/cargo/cargo-preview";
-import { statusOptions } from "@/data/warehouse-data";
-import type {
-  CargoFormData,
-  DocumentUpload as DocumentUploadType,
-  RegisterCargoInput,
-} from "@/lib/types";
+import type { CargoFormData } from "@/lib/types";
 import { useGetCargo, useAssignCargoLocation } from "@/lib/cargo";
-import { z } from "zod";
+
 import { useCookies } from "react-cookie";
 import type { CargoIdentifier } from "@/types/cargo";
 
 export const RegisterCargoWarehouse = () => {
-  const [identifier, setIdentifier] = useState<CargoIdentifier>({
+  const [identifier] = useState<CargoIdentifier>({
     trackingCode: "",
     qrcode: "",
     airWaybillNumber: "",
@@ -64,8 +45,8 @@ export const RegisterCargoWarehouse = () => {
   >("trackingCode");
   const [cargoData, setCargoData] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
-  const [assigning, setAssigning] = useState(false);
-  const [location, setLocation] = useState({
+  const [, setAssigning] = useState(false);
+  const [location] = useState({
     warehouseId: "",
     rackId: "",
     levelId: "",
@@ -96,40 +77,42 @@ export const RegisterCargoWarehouse = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [, setShowPreview] = useState(false);
+  const [isSubmitting] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [searchError, setSearchError] = useState("");
 
-const handleSearch = async () => {
-  setLoading(true);
-  try {
-    const updatedIdentifier = { ...identifier, [searchType]: searchValue.trim() };
+  const handleSearch = async () => {
+    setLoading(true);
+    try {
+      const updatedIdentifier = {
+        ...identifier,
+        [searchType]: searchValue.trim(),
+      };
 
-    const result = await getCargo(updatedIdentifier); // <-- ahora recibe el identificador correctamente
+      const result = await getCargo(updatedIdentifier); // <-- ahora recibe el identificador correctamente
 
-    if (result?.success && result?.cargo) {
-      setCargoData(result.cargo);
-      setSearchError("");
-    } else {
-      setSearchError("Carga no encontrada.");
+      if (result?.success && result?.cargo) {
+        setCargoData(result.cargo);
+        setSearchError("");
+      } else {
+        setSearchError("Carga no encontrada.");
+        toast({
+          title: "Carga no encontrada",
+          description: "Verifica los datos e intenta nuevamente.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("[DEBUG] Error al buscar carga:", error);
       toast({
-        title: "Carga no encontrada",
-        description: "Verifica los datos e intenta nuevamente.",
+        title: "Error",
+        description: "No se pudo encontrar la carga. Inténtalo de nuevo.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("[DEBUG] Error al buscar carga:", error);
-    toast({
-      title: "Error",
-      description: "No se pudo encontrar la carga. Inténtalo de nuevo.",
-      variant: "destructive",
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleAssign = async () => {
     if (!cargoData) return;
@@ -196,11 +179,6 @@ const handleSearch = async () => {
     }
   };
 
-  const handleDocumentsChange = (documents: DocumentUploadType[]) => {
-    console.log("[DEBUG] handleDocumentsChange:", documents);
-    updateFormData({ documents });
-  };
-
   const getSearchTypeLabel = () => {
     const labels = {
       trackingCode: "Código de Tracking",
@@ -211,13 +189,13 @@ const handleSearch = async () => {
     return labels[searchType];
   };
 
-    const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('es-ES', {
-      year: 'numeric',
-      month: '2-digit', 
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString("es-ES", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -233,6 +211,17 @@ const handleSearch = async () => {
       formData.column;
     console.log("[DEBUG] isFormValid:", valid);
     return valid;
+  };
+
+  const canSubmit = () => {
+    return (
+      !!cargoData &&
+      cargoData.createdBy &&
+      formData.warehouseId &&
+      formData.rackId &&
+      formData.levelId &&
+      formData.columnId
+    );
   };
 
   return (
@@ -461,7 +450,6 @@ const handleSearch = async () => {
               </Card>
             )}
 
-
             {/* Location Assignment */}
             <LocationSelector
               warehouseId={formData.warehouseId}
@@ -479,54 +467,14 @@ const handleSearch = async () => {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Form Status */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Estado del Formulario</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Información básica</span>
-                    {formData.trackingCode &&
-                    formData.description &&
-                    formData.weightKg > 0 ? (
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 text-gray-400" />
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Ubicación asignada</span>
-                    {formData.warehouseId &&
-                    formData.rackId &&
-                    formData.level !== 0 &&
-                    formData.column !== "" ? (
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <AlertCircle className="w-4 h-4 text-gray-400" />
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Documentos</span>
-                    <Badge variant="outline">
-                      {formData.documents.length} archivos
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-
-          </div>
+          <div className="space-y-6"></div>
         </div>
 
         {/* Fixed Submit Button */}
         <div className="fixed bottom-6 right-6 z-50">
           <Button
             onClick={handleAssign}
-            disabled={!isFormValid() || isSubmitting}
+            disabled={!canSubmit() || isSubmitting}
             size="lg"
             className="shadow-lg hover:shadow-xl transition-shadow"
           >
