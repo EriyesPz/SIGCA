@@ -28,7 +28,6 @@ import { toast } from "@/components/ui/use-toast";
 import { LocationSelector } from "@/components/cargo/location-selector";
 import type { CargoFormData } from "@/lib/types";
 import { useGetCargo, useAssignCargoLocation } from "@/lib/cargo";
-
 import { useCookies } from "react-cookie";
 import type { CargoIdentifier } from "@/types/cargo";
 
@@ -46,40 +45,49 @@ export const RegisterCargoWarehouse = () => {
   const [cargoData, setCargoData] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [, setAssigning] = useState(false);
-  const [location] = useState({
+  const [location, setLocation] = useState({
     warehouseId: "",
     rackId: "",
     levelId: "",
     columnId: "",
+    level: 0,
+    column: "",
   });
   const { mutateAsync: getCargo } = useGetCargo();
   const { mutateAsync: assign } = useAssignCargoLocation();
   const [cookies] = useCookies(["userId"]);
   const userId = cookies.userId;
-  console.log("[DEBUG] Renderizando RegisterCargoWarehouse");
-  const [formData, setFormData] = useState<CargoFormData>({
-    trackingCode: "",
-    description: "",
-    status: "",
-    weightKg: 0,
-    quantity: 1,
-    entryDate: new Date().toISOString().slice(0, 16),
-    exitDate: "",
-    isPerishable: false,
-    warehouseId: "",
-    rackId: "",
-    level: 0,
-    column: "",
-    levelId: "",
-    columnId: "",
-    documents: [],
-    createdBy: userId || "",
-  });
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [searchError, setSearchError] = useState("");
+  const [isSubmitting] = useState(false);
+
+  // Usar React Hook Form
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+    watch,
+  } = useForm<CargoFormData>({
+    defaultValues: {
+      trackingCode: "",
+      description: "",
+      status: "",
+      weightKg: 0,
+      quantity: 1,
+      entryDate: new Date().toISOString().slice(0, 16),
+      exitDate: "",
+      isPerishable: false,
+      warehouseId: "",
+      rackId: "",
+      level: 0,
+      column: "",
+      levelId: "",
+      columnId: "",
+      documents: [],
+      createdBy: userId || "",
+    },
+  });
 
   const handleSearch = async () => {
     setLoading(true);
@@ -89,11 +97,22 @@ export const RegisterCargoWarehouse = () => {
         [searchType]: searchValue.trim(),
       };
 
-      const result = await getCargo(updatedIdentifier); // <-- ahora recibe el identificador correctamente
+      const result = await getCargo(updatedIdentifier);
 
       if (result?.success && result?.cargo) {
         setCargoData(result.cargo);
         setSearchError("");
+        // Actualizar campos del formulario con los datos encontrados
+        setValue("trackingCode", result.cargo.trackingCode || "");
+        setValue("description", result.cargo.description || "");
+        setValue("weightKg", result.cargo.weightKg || 0);
+        setValue("quantity", result.cargo.quantity || 1);
+        setValue("entryDate", result.cargo.entryDate || "");
+        setValue("exitDate", result.cargo.exitDate || "");
+        setValue("isPerishable", result.cargo.isPerishable || false);
+        setValue("status", result.cargo.status || "");
+        setValue("documents", result.cargo.documents || []);
+        setValue("createdBy", result.cargo.createdBy || userId || "");
       } else {
         setSearchError("Carga no encontrada.");
         toast({
@@ -120,7 +139,7 @@ export const RegisterCargoWarehouse = () => {
     setAssigning(true);
     try {
       await assign({
-        ...identifier,
+        id: cargoData.id,
         ...location,
         movedBy: cargoData.createdBy,
       });
@@ -134,20 +153,6 @@ export const RegisterCargoWarehouse = () => {
     }
   };
 
-  const updateFormData = (updates: Partial<CargoFormData>) => {
-    console.log("[DEBUG] updateFormData llamado con:", updates);
-    setFormData((prev) => {
-      const updated = { ...prev, ...updates };
-      console.log("[DEBUG] Nuevo formData:", updated);
-      return updated;
-    });
-    const newErrors = { ...errors };
-    Object.keys(updates).forEach((key) => {
-      delete newErrors[key];
-    });
-    setErrors(newErrors);
-  };
-
   const handleLocationChange = (
     warehouseId: string,
     rackId: string,
@@ -156,15 +161,7 @@ export const RegisterCargoWarehouse = () => {
     levelId?: string,
     columnId?: string
   ) => {
-    console.log("[DEBUG] handleLocationChange:", {
-      warehouseId,
-      rackId,
-      level,
-      column,
-      levelId,
-      columnId,
-    });
-    updateFormData({
+    setLocation({
       warehouseId,
       rackId,
       level,
@@ -172,11 +169,12 @@ export const RegisterCargoWarehouse = () => {
       levelId: levelId || "",
       columnId: columnId || "",
     });
-    if (errors.location) {
-      const newErrors = { ...errors };
-      delete newErrors.location;
-      setErrors(newErrors);
-    }
+    setValue("warehouseId", warehouseId);
+    setValue("rackId", rackId);
+    setValue("level", level);
+    setValue("column", column);
+    setValue("levelId", levelId || "");
+    setValue("columnId", columnId || "");
   };
 
   const getSearchTypeLabel = () => {
@@ -199,28 +197,14 @@ export const RegisterCargoWarehouse = () => {
     });
   };
 
-  const isFormValid = () => {
-    const valid =
-      formData.trackingCode &&
-      formData.description &&
-      formData.weightKg > 0 &&
-      formData.quantity > 0 &&
-      formData.warehouseId &&
-      formData.rackId &&
-      formData.level &&
-      formData.column;
-    console.log("[DEBUG] isFormValid:", valid);
-    return valid;
-  };
-
   const canSubmit = () => {
     return (
       !!cargoData &&
       cargoData.createdBy &&
-      formData.warehouseId &&
-      formData.rackId &&
-      formData.levelId &&
-      formData.columnId
+      location.warehouseId &&
+      location.rackId &&
+      location.levelId &&
+      location.columnId
     );
   };
 
@@ -452,16 +436,16 @@ export const RegisterCargoWarehouse = () => {
 
             {/* Location Assignment */}
             <LocationSelector
-              warehouseId={formData.warehouseId}
-              rackId={formData.rackId}
-              level={formData.level}
-              column={formData.column.toString()}
+              warehouseId={watch("warehouseId")}
+              rackId={watch("rackId")}
+              level={watch("level")}
+              column={watch("column").toString()}
               onLocationChange={handleLocationChange}
             />
-            {errors.location && (
+            {errors.warehouseId && (
               <p className="text-sm text-red-600 flex items-center gap-1 mt-2">
                 <AlertCircle className="w-3 h-3" />
-                {errors.location}
+                {errors.warehouseId.message}
               </p>
             )}
           </div>
