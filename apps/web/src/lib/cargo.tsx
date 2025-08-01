@@ -1,6 +1,10 @@
 import { getApiUrl } from "./client";
 import { useMutation } from "@tanstack/react-query";
-import { type RegisterCargoInput, type CargoIdentifier } from "@/types/cargo";
+import {
+  type RegisterCargoInput,
+  type CargoIdentifier,
+  type AssignLocation,
+} from "@/types/cargo";
 
 const transformCargoInputForApi = (input: RegisterCargoInput) => {
   return {
@@ -105,6 +109,32 @@ export const useGetCargo = (identifier: CargoIdentifier) => {
     mutationFn: () => getCargo(identifier),
     onError: (error) => {
       console.error("❌ Error fetching cargo:", error);
+    },
+  });
+};
+
+const assignCargoLocation = async (cargo: AssignLocation) => {
+  const response = await fetch(`${getApiUrl()}/cargo-assign-location`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(cargo),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error assigning cargo location: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+export const useAssignCargoLocation = () => {
+  return useMutation({
+    mutationKey: ["assignCargoLocation"],
+    mutationFn: assignCargoLocation,
+    onError: (error) => {
+      console.error("❌ Error assigning cargo location:", error);
     },
   });
 };

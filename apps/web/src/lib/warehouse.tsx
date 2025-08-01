@@ -1,7 +1,7 @@
 import { getApiUrl } from "./client";
 import { useQuery } from "@tanstack/react-query";
 
-export const getWarehouses = async (): Promise<any> => {
+const getWarehouses = async (): Promise<any> => {
   try {
     const response = await fetch(`${getApiUrl()}/warehouses`);
     if (!response.ok) {
