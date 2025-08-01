@@ -62,13 +62,12 @@ export interface ConsigneeCargo {
 }
 
 export interface DocumentsCargo {
-  id: string
-  file: File
-  type: "invoice" | "certificate" | "photo" | "other"
-  metadata: Record<string, string>
-  preview?: string
+  id: string;
+  file: File;
+  type: "invoice" | "certificate" | "photo" | "other";
+  metadata: Record<string, string>;
+  preview?: string;
 }
-
 
 export interface RegisterCargo {
   id?: string;
@@ -129,7 +128,6 @@ export interface RegisterCargo {
   documents: DocumentsCargo[];
 }
 
-
 export const CargoStatusList = Object.values(CargoStatusValues);
 
 export interface ExtendedDocumentsCargo {
@@ -161,3 +159,19 @@ export interface RegisterCargoInput extends Omit<RegisterCargo, "documents"> {
     };
   }[];
 }
+
+export interface CargoIdentifier {
+  id?: string;
+  trackingCode?: string;
+  qrcode?: string;
+  airWaybillNumber?: string;
+  houseAirWaybillNumber?: string;
+}
+
+export type AssignLocation = CargoIdentifier & {
+  warehouseId: string;
+  rackId: string;
+  levelId: string;
+  columnId: string;
+  movedBy: string;
+};
