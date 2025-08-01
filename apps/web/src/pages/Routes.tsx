@@ -10,7 +10,7 @@ import { NotFound } from "./Not-Found";
 import { WarehouseLocationTracker } from "./Tracker";
 import { Dashboard } from "./Dashboard";
 import { Reports } from "./Reports";
-import { RegisterCargoWarehouse } from "./RegisterWarehouse";
+import { RegisterCargoWarehouse } from "./RegisterCargoWarehouse";
 import { CargoRegistrationWizard } from "./RegisterCargo";
 
 export const router = createBrowserRouter([

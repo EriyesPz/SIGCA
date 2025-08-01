@@ -103,10 +103,10 @@ const getCargo = async (identifier: CargoIdentifier) => {
   }
 };
 
-export const useGetCargo = (identifier: CargoIdentifier) => {
+export const useGetCargo = () => {
   return useMutation({
-    mutationKey: ["getCargo", identifier],
-    mutationFn: () => getCargo(identifier),
+    mutationKey: ["getCargo"],
+    mutationFn: (identifier: CargoIdentifier) => getCargo(identifier),
     onError: (error) => {
       console.error("❌ Error fetching cargo:", error);
     },
