@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   SidebarProvider,
   Sidebar,
@@ -10,6 +11,9 @@ import {
   SidebarInset,
   SidebarTrigger,
   SidebarFooter,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ModeToggle } from "@/components/ui/mode-toggle";
@@ -26,6 +30,13 @@ import {
   ChevronUp,
   Package,
   Grid3X3,
+  Plus,
+  ChevronDown,
+  Warehouse,
+  PackagePlus,
+  MoveHorizontal,
+  Truck,
+  SearchCheck,
 } from "lucide-react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -42,6 +53,8 @@ export const AppLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [cookies] = useCookies(["userName", "email"]);
+  const [openUsers, setOpenUsers] = useState(false);
+  const [openWarehouse, setOpenWarehouse] = useState(false);
 
   const user = {
     name: cookies.userName || "Invitado",
@@ -101,10 +114,57 @@ export const AppLayout = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => navigate("/almacen")}>
-                  <LayoutDashboard className="mr-2" />
-                  Almacen
+                <SidebarMenuButton
+                  onClick={() => setOpenWarehouse((prev) => !prev)}
+                >
+                  <Warehouse className="mr-2" />
+                  <span className="flex-1 text-left">Almacén</span>
+                  {openWarehouse ? (
+                    <ChevronUp className="h-4 w-4 shrink-0" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 shrink-0" />
+                  )}
                 </SidebarMenuButton>
+                {openWarehouse && (
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        onClick={() => navigate("/almacen/registrar-carga")}
+                        isActive={location.pathname === "/almacen/registrar-carga"}
+                      >
+                        <PackagePlus  className="mr-0.5" />
+                        Registrar Carga
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        onClick={() => navigate("/almacen/traslado")}
+                        isActive={location.pathname === "/almacen/traslado"}
+                      >
+                        <MoveHorizontal className="mr-0.5 ml-0" />
+                        Traslado
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        onClick={() => navigate("/almacen/salida-carga")}
+                        isActive={location.pathname === "/almacen/salida-carga"}
+                      >
+                        <Truck className="mr-0.5 ml-0" />
+                        Salida de Carga
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        onClick={() => navigate("/almacen/inspeccion-carga")}
+                        isActive={location.pathname === "/almacen/inspeccion-carga"}
+                      >
+                        <SearchCheck  className="mr-0.5 ml-0" />
+                        Inspección de Carga
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                )}
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => navigate("/tracker")}>
@@ -113,11 +173,41 @@ export const AppLayout = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => navigate("/users")}>
+                <SidebarMenuButton
+                  onClick={() => setOpenUsers((prev) => !prev)}
+                >
                   <Users className="mr-2" />
-                  Usuarios
+                  <span className="flex-1 text-left">Usuarios</span>
+                  {openUsers ? (
+                    <ChevronUp className="h-4 w-4 shrink-0" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 shrink-0" />
+                  )}
                 </SidebarMenuButton>
+                {openUsers && (
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        onClick={() => navigate("/users/list")}
+                        isActive={location.pathname === "/users/list"}
+                      >
+                        <User className="mr-0.5 ml-0" />
+                        Lista de Usuarios
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        onClick={() => navigate("/users/create")}
+                        isActive={location.pathname === "/users/create"}
+                      >
+                        <Plus className="mr-0.5" />
+                        Crear Usuario
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                )}
               </SidebarMenuItem>
+
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => navigate("/reportes")}>
                   <BarChart3 className="mr-2" />

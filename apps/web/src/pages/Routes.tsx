@@ -47,7 +47,7 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute><Dashboard /></ProtectedRoute>,
       },
       {
-        path: "almacen",
+        path: "almacen/registrar-carga",
         element: <ProtectedRoute><RegisterCargoWarehouse /></ProtectedRoute>,
       },
       {
