@@ -4,6 +4,7 @@ import {
   type RegisterCargoInput,
   type CargoIdentifier,
   type AssignLocation,
+  type TransferCargoType,
 } from "@/types/cargo";
 
 const transformCargoInputForApi = (input: RegisterCargoInput) => {
@@ -135,6 +136,32 @@ export const useAssignCargoLocation = () => {
     mutationFn: assignCargoLocation,
     onError: (error) => {
       console.error("❌ Error assigning cargo location:", error);
+    },
+  });
+};
+
+const transferCargo = async (cargo: TransferCargoType) => {
+  const response = await fetch(`${getApiUrl()}/cargo-transfer`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(cargo),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error transferring cargo: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+export const useTransferCargo = () => {
+  return useMutation({
+    mutationKey: ["transferCargo"],
+    mutationFn: transferCargo,
+    onError: (error) => {
+      console.error("❌ Error transferring cargo:", error);
     },
   });
 };

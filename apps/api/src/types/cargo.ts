@@ -8,7 +8,7 @@ export enum CargoStatus {
   RECHAZADO = "rechazado",
   CORRECCION = "correccion",
   ENTREGADA = "entregada",
-  TRASNFERENCIA = "trasnferencia",
+  TRASNFERENCIA = "transferencia",
   DANIADO = "daniado",
   RETENIDO = "retenido",
   EN_ESPERA = "en_espera",

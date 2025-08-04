@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { type TransferCargoType, type CargoIdentifier } from "@/types/cargo";
-import { useGetCargo } from "@/lib/cargo";
+import { useGetCargo, useTransferCargo } from "@/lib/cargo";
 import { type CargoFormData } from "@/lib/types";
 import { LocationSelector } from "@/components/cargo/location-selector";
 
@@ -62,6 +62,7 @@ export const TransferCargo = () => {
     level: 0,
     column: "",
   });
+  const { mutateAsync: transferCargo } = useTransferCargo();
 
   const {
     register,
