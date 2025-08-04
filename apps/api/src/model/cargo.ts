@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { RegisterCargo, CargoIdentifier } from "../types/cargo";
+import { RegisterCargo, CargoIdentifier, TransferCargo, CargoStatus } from "../types/cargo";
 
 export const registerCargo = async (
   input: RegisterCargo
@@ -226,3 +226,90 @@ export const getCargoByIdentifier = async (identifier: CargoIdentifier) => {
     throw new Error("No se pudo obtener la información de la carga.");
   }
 };
+
+export const transferCargo = async (transfer: TransferCargo): Promise<void> => {
+  try {
+    const orConditions: { Id?: string; AirWaybillNumber?: string; TrackingCode?: string; HouseAirWaybillNumber?: string; QRCode?: string; }[] = [];
+
+    if (transfer.id) orConditions.push({ Id: transfer.id });
+    if (transfer.airWaybillNumber)
+      orConditions.push({ AirWaybillNumber: transfer.airWaybillNumber });
+    if (transfer.trackingCode)
+      orConditions.push({ TrackingCode: transfer.trackingCode });
+    if (transfer.houseAirWaybillNumber)
+      orConditions.push({ HouseAirWaybillNumber: transfer.houseAirWaybillNumber });
+    if (transfer.qrcode) orConditions.push({ QRCode: transfer.qrcode });
+
+    if (orConditions.length === 0) {
+      throw new Error("Debe proporcionar al menos un identificador de carga");
+    }
+
+    await db.$transaction(async (tx) => {
+      // 1. Buscar carga
+      const cargo = await tx.cargo.findFirst({
+        where: { OR: orConditions },
+        select: { Id: true, WarehouseId: true },
+      });
+
+      if (!cargo) {
+        throw new Error("Carga no encontrada con los identificadores proporcionados");
+      }
+
+      const cargoId = cargo.Id;
+
+      // 2. Si cambia de almacén ⇒ Registrar transferencia
+      if (
+        transfer.toWarehouseId &&
+        transfer.fromWarehouseId &&
+        transfer.toWarehouseId !== transfer.fromWarehouseId
+      ) {
+        await tx.transfers.create({
+          data: {
+            CargoId: cargoId,
+            FromWarehouseId: transfer.fromWarehouseId,
+            ToWarehouseId: transfer.toWarehouseId,
+            Notes: transfer.transferReason ?? undefined,
+            TransferredBy: transfer.movedBy,
+          },
+        });
+      }
+
+      await tx.cargoLocationHistory.create({
+        data: {
+          CargoId: cargoId,
+          FromRackId: transfer.fromRackId ?? null,
+          FromLevelId: transfer.fromLevelId ?? null,
+          FromColumnId: transfer.fromColumnId ?? null,
+          ToRackId: transfer.toRackId ?? null,
+          ToLevelId: transfer.toLevelId ?? null,
+          ToColumnId: transfer.toColumnId ?? null,
+          MovedBy: transfer.movedBy,
+        },
+      });
+
+      await tx.cargo.update({
+        where: { Id: cargoId },
+        data: {
+          WarehouseId: transfer.toWarehouseId,
+          RackId: transfer.toRackId,
+          LevelId: transfer.toLevelId,
+          ColumnId: transfer.toColumnId,
+          Status: CargoStatus.TRASNFERENCIA,
+        },
+      });
+
+      await tx.cargoStatusHistory.create({
+        data: {
+          CargoId: cargoId,
+          PreviousStatus: null,
+          NewStatus: CargoStatus.TRASNFERENCIA,
+          ChangedBy: transfer.movedBy,
+        },
+      });
+    });
+  } catch (error) {
+    console.error("[ERROR] Error al transferir carga:", error);
+    throw new Error("No se pudo transferir la carga.");
+  }
+};
+

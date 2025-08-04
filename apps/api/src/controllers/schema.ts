@@ -75,3 +75,23 @@ export const registerCargoSchema = z.object({
 
   documents: z.array(documentSchema),
 });
+
+export const transferCargoSchema = z.object({
+  id: z.string().uuid().optional(),
+  trackingCode: z.string().optional(),
+  qrcode: z.string().optional(),
+  airWaybillNumber: z.string().optional(),
+  houseAirWaybillNumber: z.string().optional(),
+
+  fromWarehouseId: z.string().uuid().optional(),
+  toWarehouseId: z.string().uuid(),
+  fromRackId: z.string().uuid().optional(),
+  toRackId: z.string().uuid(),
+  fromLevelId: z.string().uuid().optional(),
+  toLevelId: z.string().uuid(),
+  fromColumnId: z.string().uuid().optional(),
+  toColumnId: z.string().uuid(),
+
+  movedBy: z.string().uuid(),
+  transferReason: z.string().optional(),
+});

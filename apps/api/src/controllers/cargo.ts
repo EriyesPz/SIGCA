@@ -1,5 +1,9 @@
-import { registerCargo, getCargoByIdentifier } from "../model/cargo";
-import { registerCargoSchema } from "./schema";
+import {
+  registerCargo,
+  getCargoByIdentifier,
+  transferCargo,
+} from "../model/cargo";
+import { registerCargoSchema, transferCargoSchema } from "./schema";
 import { Request, Response } from "express";
 
 export const createCargo = async (
@@ -85,5 +89,66 @@ export const getCargo = async (req: Request, res: Response): Promise<void> => {
     console.error("[ERROR] Error fetching cargo:", error);
     res.status(500).json({ success: false, message: "Error fetching cargo" });
     return;
+  }
+};
+
+export const transferCargoController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const parsed = transferCargoSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      console.warn("[ZOD] Payload inválido:", parsed.error.flatten());
+      res.status(400).json({
+        success: false,
+        message: "Invalid input",
+        errors: parsed.error.flatten().fieldErrors,
+      });
+      return;
+    }
+
+    const input = parsed.data;
+
+    if (
+      !input.id &&
+      !input.trackingCode &&
+      !input.qrcode &&
+      !input.airWaybillNumber &&
+      !input.houseAirWaybillNumber
+    ) {
+      res.status(400).json({
+        success: false,
+        message: "Se requiere al menos un identificador de carga",
+      });
+      return;
+    }
+
+    if (
+      !input.toWarehouseId ||
+      !input.toRackId ||
+      !input.toLevelId ||
+      !input.toColumnId
+    ) {
+      res.status(400).json({
+        success: false,
+        message: "Ubicación destino incompleta",
+      });
+      return;
+    }
+
+    await transferCargo(input);
+
+    res.status(200).json({
+      success: true,
+      message: "Traslado de carga realizado exitosamente",
+    });
+  } catch (error) {
+    console.error("[ERROR] Error en traslado de carga:", error);
+    res.status(500).json({
+      success: false,
+      message: "No se pudo completar el traslado de la carga",
+    });
   }
 };

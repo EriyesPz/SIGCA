@@ -12,6 +12,7 @@ import { Dashboard } from "./Dashboard";
 import { Reports } from "./Reports";
 import { RegisterCargoWarehouse } from "./RegisterCargoWarehouse";
 import { CargoRegistrationWizard } from "./RegisterCargo";
+import { TransferCargo } from "@/pages/Transfer-Cargo";
 
 export const router = createBrowserRouter([
   {
@@ -62,6 +63,10 @@ export const router = createBrowserRouter([
         path: "reportes",
         element: <ProtectedRoute><Reports /></ProtectedRoute>,
       },
+      {
+        path: "/almacen/trasladar-carga",
+        element: <ProtectedRoute><TransferCargo /></ProtectedRoute>,
+      }
 
     ],
   },

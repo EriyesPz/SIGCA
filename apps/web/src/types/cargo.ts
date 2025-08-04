@@ -175,3 +175,16 @@ export type AssignLocation = CargoIdentifier & {
   columnId: string;
   movedBy: string;
 };
+
+export type TransferCargoType = CargoIdentifier & {
+  fromWarehouseId?: string;
+  toWarehouseId: string;
+  fromRackId?: string;
+  toRackId?: string;
+  fromLevelId?: string;
+  toLevelId?: string;
+  fromColumnId?: string;
+  toColumnId?: string;
+  movedBy: string;
+  transferReason?: string;
+}

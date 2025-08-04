@@ -138,8 +138,8 @@ export const AppLayout = () => {
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton
-                        onClick={() => navigate("/almacen/traslado")}
-                        isActive={location.pathname === "/almacen/traslado"}
+                        onClick={() => navigate("/almacen/trasladar-carga")}
+                        isActive={location.pathname === "/almacen/trasladar-carga"}
                       >
                         <MoveHorizontal className="mr-0.5 ml-0" />
                         Traslado

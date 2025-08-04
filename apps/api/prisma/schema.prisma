@@ -212,7 +212,7 @@ model Sessions {
 }
 
 model Transfers {
-  Id                                             String    @id
+  Id               String   @id @default(uuid())
   CargoId                                        String
   FromWarehouseId                                String
   ToWarehouseId                                  String
