@@ -1,5 +1,10 @@
 import { db } from "./db";
-import { RegisterCargo, CargoIdentifier, TransferCargo, CargoStatus } from "../types/cargo";
+import {
+  RegisterCargo,
+  CargoIdentifier,
+  TransferCargo,
+  CargoStatus,
+} from "../types/cargo";
 
 export const registerCargo = async (
   input: RegisterCargo
@@ -233,7 +238,13 @@ export const getCargoByIdentifier = async (identifier: CargoIdentifier) => {
 
 export const transferCargo = async (transfer: TransferCargo): Promise<void> => {
   try {
-    const orConditions: { Id?: string; AirWaybillNumber?: string; TrackingCode?: string; HouseAirWaybillNumber?: string; QRCode?: string; }[] = [];
+    const orConditions: {
+      Id?: string;
+      AirWaybillNumber?: string;
+      TrackingCode?: string;
+      HouseAirWaybillNumber?: string;
+      QRCode?: string;
+    }[] = [];
 
     if (transfer.id) orConditions.push({ Id: transfer.id });
     if (transfer.airWaybillNumber)
@@ -241,7 +252,9 @@ export const transferCargo = async (transfer: TransferCargo): Promise<void> => {
     if (transfer.trackingCode)
       orConditions.push({ TrackingCode: transfer.trackingCode });
     if (transfer.houseAirWaybillNumber)
-      orConditions.push({ HouseAirWaybillNumber: transfer.houseAirWaybillNumber });
+      orConditions.push({
+        HouseAirWaybillNumber: transfer.houseAirWaybillNumber,
+      });
     if (transfer.qrcode) orConditions.push({ QRCode: transfer.qrcode });
 
     if (orConditions.length === 0) {
@@ -256,22 +269,32 @@ export const transferCargo = async (transfer: TransferCargo): Promise<void> => {
       });
 
       if (!cargo) {
-        throw new Error("Carga no encontrada con los identificadores proporcionados");
+        throw new Error(
+          "Carga no encontrada con los identificadores proporcionados"
+        );
       }
 
       const cargoId = cargo.Id;
 
-      // 2. Si cambia de almacén ⇒ Registrar transferencia
       if (
-        transfer.toWarehouseId &&
         transfer.fromWarehouseId &&
-        transfer.toWarehouseId !== transfer.fromWarehouseId
+        transfer.toWarehouseId &&
+        (transfer.fromWarehouseId !== transfer.toWarehouseId ||
+          transfer.fromRackId !== transfer.toRackId ||
+          transfer.fromLevelId !== transfer.toLevelId ||
+          transfer.fromColumnId !== transfer.toColumnId)
       ) {
         await tx.transfers.create({
           data: {
             CargoId: cargoId,
             FromWarehouseId: transfer.fromWarehouseId,
             ToWarehouseId: transfer.toWarehouseId,
+            FromRackId: transfer.fromRackId,
+            ToRackId: transfer.toRackId,
+            FromLevelId: transfer.fromLevelId,
+            ToLevelId: transfer.toLevelId,
+            FromColumnId: transfer.fromColumnId,
+            ToColumnId: transfer.toColumnId,
             Notes: transfer.transferReason ?? undefined,
             TransferredBy: transfer.movedBy,
           },
@@ -316,4 +339,3 @@ export const transferCargo = async (transfer: TransferCargo): Promise<void> => {
     throw new Error("No se pudo transferir la carga.");
   }
 };
-

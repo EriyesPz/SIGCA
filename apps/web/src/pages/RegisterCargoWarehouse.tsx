@@ -63,8 +63,6 @@ export const RegisterCargoWarehouse = () => {
 
   // Usar React Hook Form
   const {
-    register,
-    handleSubmit,
     setValue,
     formState: { errors },
     watch,

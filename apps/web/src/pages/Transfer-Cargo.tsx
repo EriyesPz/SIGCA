@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -16,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
   Badge,
-  Textarea
+  Textarea,
 } from "@/components/ui";
 import {
   Package,
@@ -33,10 +31,11 @@ import {
   Columns3,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import { type TransferCargoType, type CargoIdentifier } from "@/types/cargo";
+import { type CargoIdentifier } from "@/types/cargo";
 import { useGetCargo, useTransferCargo } from "@/lib/cargo";
 import { type CargoFormData } from "@/lib/types";
 import { LocationSelector } from "@/components/cargo/location-selector";
+import { useCookies } from "react-cookie";
 
 export const TransferCargo = () => {
   const [identifier] = useState<CargoIdentifier>({
@@ -54,6 +53,7 @@ export const TransferCargo = () => {
   const { mutateAsync: getCargo } = useGetCargo();
   const [searchValue, setSearchValue] = useState("");
   const [searchError, setSearchError] = useState("");
+  const [transferReason, setTransferReason] = useState("");
   const [location, setLocation] = useState({
     warehouseId: "",
     rackId: "",
@@ -63,10 +63,11 @@ export const TransferCargo = () => {
     column: "",
   });
   const { mutateAsync: transferCargo } = useTransferCargo();
+  const [cookies] = useCookies(["userId"]);
+
+  const userId = cookies.userId;
 
   const {
-    register,
-    handleSubmit,
     setValue,
     formState: { errors },
     watch,
@@ -87,7 +88,7 @@ export const TransferCargo = () => {
       levelId: "",
       columnId: "",
       documents: [],
-      createdBy: "",
+      createdBy: userId || "",
     },
   });
 
@@ -113,7 +114,7 @@ export const TransferCargo = () => {
         setValue("isPerishable", result.cargo.isPerishable || false);
         setValue("status", result.cargo.status || "");
         setValue("documents", result.cargo.documents || []);
-        setValue("createdBy", result.cargo.createdBy || "");
+        setValue("createdBy", result.cargo.createdBy || userId);
       }
     } catch (error) {
       console.error("Error fetching cargo data:", error);
@@ -124,6 +125,57 @@ export const TransferCargo = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTransfer = async () => {
+    if (!cargoData) return;
+
+    // Validaciones básicas
+    if (
+      !location.warehouseId ||
+      !location.rackId ||
+      !location.levelId ||
+      !location.columnId
+    ) {
+      toast({
+        title: "Ubicación incompleta",
+        description: "Debes seleccionar una nueva ubicación completa.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await transferCargo({
+        id: cargoData.id,
+        fromWarehouseId: cargoData.warehouseId,
+        toWarehouseId: location.warehouseId,
+        fromRackId: cargoData.rackId,
+        toRackId: location.rackId,
+        fromLevelId: cargoData.levelId,
+        toLevelId: location.levelId,
+        fromColumnId: cargoData.columnId,
+        toColumnId: location.columnId,
+        movedBy: userId,
+        transferReason,
+      });
+
+      toast({
+        title: "Transferencia exitosa",
+        description: "La carga ha sido transferida correctamente.",
+      });
+
+      setCargoData(null);
+      setTransferReason("");
+      setSearchValue("");
+    } catch (error) {
+      console.error("❌ Transferencia fallida:", error);
+      toast({
+        title: "Error al transferir",
+        description: "Ocurrió un error al intentar transferir la carga.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -439,12 +491,16 @@ export const TransferCargo = () => {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <Label className="text-sm font-medium">Razon de Transferencia</Label>
+                  <Label className="text-sm font-medium">
+                    Razon de Transferencia
+                  </Label>
                   <Textarea
                     placeholder="Escribe la razón de la transferencia..."
                     required
                     className="mt-2"
                     rows={3}
+                    value={transferReason}
+                    onChange={(e) => setTransferReason(e.target.value)}
                   />
                 </div>
                 <LocationSelector
@@ -466,22 +522,13 @@ export const TransferCargo = () => {
         </div>
         <div className="fixed bottom-6 right-6 z-50">
           <Button
-            onClick={() => {}}
-            disabled={false}
+            onClick={handleTransfer}
+            disabled={!cargoData || !location.warehouseId}
             size="lg"
             className="shadow-lg hover:shadow-xl transition-shadow"
           >
-            {false ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                Guardando...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                Guardar Carga
-              </>
-            )}
+            <Save className="w-4 h-4 mr-2" />
+            Guardar Carga
           </Button>
         </div>
       </div>
