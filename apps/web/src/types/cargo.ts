@@ -188,3 +188,11 @@ export type TransferCargoType = CargoIdentifier & {
   movedBy: string;
   transferReason?: string;
 }
+
+export type DeliverCargo = CargoIdentifier & {
+  receiver: string;
+  verifiedBy: string;
+  deliveredBy?: string;
+  deliveredAt?: Date;
+  metadata?: Record<string, any>;
+} 

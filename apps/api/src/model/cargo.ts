@@ -346,9 +346,12 @@ export const deliverCargo = async (input: DeliverCargo): Promise<void> => {
     const conditions: { [key: string]: string }[] = [];
 
     if (input.id) conditions.push({ Id: input.id });
-    if (input.trackingCode) conditions.push({ TrackingCode: input.trackingCode });
-    if (input.airWaybillNumber) conditions.push({ AirWaybillNumber: input.airWaybillNumber });
-    if (input.houseAirWaybillNumber) conditions.push({ HouseAirWaybillNumber: input.houseAirWaybillNumber });
+    if (input.trackingCode)
+      conditions.push({ TrackingCode: input.trackingCode });
+    if (input.airWaybillNumber)
+      conditions.push({ AirWaybillNumber: input.airWaybillNumber });
+    if (input.houseAirWaybillNumber)
+      conditions.push({ HouseAirWaybillNumber: input.houseAirWaybillNumber });
     if (input.qrcode) conditions.push({ QRCode: input.qrcode });
 
     if (conditions.length === 0) {
@@ -367,12 +370,10 @@ export const deliverCargo = async (input: DeliverCargo): Promise<void> => {
         throw new Error("Carga no encontrada.");
       }
 
-      if (cargo.Status.toLowerCase() !== "liberado") {
-        throw new Error("La carga no ha sido liberada y no puede ser entregada.");
-      }
-
       if (cargo.Alerts.length > 0) {
-        throw new Error("La carga tiene alertas pendientes. No se puede entregar.");
+        throw new Error(
+          "La carga tiene alertas pendientes. No se puede entregar."
+        );
       }
 
       const deliveryDate = input.deliveredAt ?? new Date();
@@ -393,6 +394,10 @@ export const deliverCargo = async (input: DeliverCargo): Promise<void> => {
         data: {
           Status: CargoStatus.ENTREGADA,
           ExitDate: deliveryDate,
+          WarehouseId: null,
+          RackId: null,
+          LevelId: null,
+          ColumnId: null,
         },
       });
 

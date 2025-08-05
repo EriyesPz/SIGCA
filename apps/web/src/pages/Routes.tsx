@@ -13,6 +13,7 @@ import { Reports } from "./Reports";
 import { RegisterCargoWarehouse } from "./RegisterCargoWarehouse";
 import { CargoRegistrationWizard } from "./RegisterCargo";
 import { TransferCargo } from "@/pages/Transfer-Cargo";
+import { DeliverCargoPage } from '@/pages/DeliverCargo';
 
 export const router = createBrowserRouter([
   {
@@ -50,6 +51,10 @@ export const router = createBrowserRouter([
       {
         path: "almacen/registrar-carga",
         element: <ProtectedRoute><RegisterCargoWarehouse /></ProtectedRoute>,
+      },
+      {
+        path: "almacen/salida-carga",
+        element: <ProtectedRoute><DeliverCargoPage /></ProtectedRoute>,
       },
       {
         path: "tracker",
