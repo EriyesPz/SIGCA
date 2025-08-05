@@ -4,6 +4,7 @@ import {
   CargoIdentifier,
   TransferCargo,
   CargoStatus,
+  DeliverCargo,
 } from "../types/cargo";
 
 export const registerCargo = async (
@@ -337,5 +338,75 @@ export const transferCargo = async (transfer: TransferCargo): Promise<void> => {
   } catch (error) {
     console.error("[ERROR] Error al transferir carga:", error);
     throw new Error("No se pudo transferir la carga.");
+  }
+};
+
+export const deliverCargo = async (input: DeliverCargo): Promise<void> => {
+  try {
+    const conditions: { [key: string]: string }[] = [];
+
+    if (input.id) conditions.push({ Id: input.id });
+    if (input.trackingCode) conditions.push({ TrackingCode: input.trackingCode });
+    if (input.airWaybillNumber) conditions.push({ AirWaybillNumber: input.airWaybillNumber });
+    if (input.houseAirWaybillNumber) conditions.push({ HouseAirWaybillNumber: input.houseAirWaybillNumber });
+    if (input.qrcode) conditions.push({ QRCode: input.qrcode });
+
+    if (conditions.length === 0) {
+      throw new Error("Debe proporcionar al menos un identificador de carga");
+    }
+
+    await db.$transaction(async (tx) => {
+      const cargo = await tx.cargo.findFirst({
+        where: { OR: conditions },
+        include: {
+          Alerts: { where: { Resolved: false } },
+        },
+      });
+
+      if (!cargo) {
+        throw new Error("Carga no encontrada.");
+      }
+
+      if (cargo.Status.toLowerCase() !== "liberado") {
+        throw new Error("La carga no ha sido liberada y no puede ser entregada.");
+      }
+
+      if (cargo.Alerts.length > 0) {
+        throw new Error("La carga tiene alertas pendientes. No se puede entregar.");
+      }
+
+      const deliveryDate = input.deliveredAt ?? new Date();
+
+      await tx.deliveries.create({
+        data: {
+          CargoId: cargo.Id,
+          Receiver: input.receiver,
+          VerifiedBy: input.verifiedBy,
+          DeliveredBy: input.deliveredBy,
+          DeliveredAt: deliveryDate,
+          Metadata: input.metadata ?? undefined,
+        },
+      });
+
+      await tx.cargo.update({
+        where: { Id: cargo.Id },
+        data: {
+          Status: CargoStatus.ENTREGADA,
+          ExitDate: deliveryDate,
+        },
+      });
+
+      await tx.cargoStatusHistory.create({
+        data: {
+          CargoId: cargo.Id,
+          PreviousStatus: cargo.Status,
+          NewStatus: CargoStatus.ENTREGADA,
+          ChangedBy: input.deliveredBy,
+        },
+      });
+    });
+  } catch (error) {
+    console.error("[ERROR] Error al entregar la carga:", error);
+    throw new Error("No se pudo completar la entrega de la carga.");
   }
 };

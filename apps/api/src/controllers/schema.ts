@@ -95,3 +95,18 @@ export const transferCargoSchema = z.object({
   movedBy: z.string().uuid(),
   transferReason: z.string().optional(),
 });
+
+export const deliverCargoSchema = z.object({
+  id: z.string().uuid().optional(),
+  trackingCode: z.string().optional(),
+  qrcode: z.string().optional(),
+  airWaybillNumber: z.string().optional(),
+  houseAirWaybillNumber: z.string().optional(),
+
+  receiver: z.string().min(1, "El nombre del receptor es obligatorio"),
+  deliveredBy: z.string().uuid().optional(),
+  verifiedBy: z.string().uuid().min(1, "Debe indicar quién verifica la entrega"),
+  deliveredAt: z.coerce.date().optional(),
+
+  metadata: z.record(z.any()).optional(),
+});

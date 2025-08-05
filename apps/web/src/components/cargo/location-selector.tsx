@@ -73,17 +73,6 @@ export const LocationSelector = ({
     onLocationChange(warehouseId, value, 0, "");
   };
 
-  const handleLevelChange = (value: string) => {
-    onLocationChange(
-      warehouseId,
-      rackId,
-      Number.parseInt(value),
-      column,
-      "",
-      ""
-    );
-  };
-
   const handlePositionClick = (pos: Position) => {
     if (!pos.isOccupied) {
       onLocationChange(
@@ -234,29 +223,6 @@ export const LocationSelector = ({
                   </div>
                 );
               })}
-            </div>
-          </div>
-        )}
-
-        {selectedRack && (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Nivel</Label>
-              <Select
-                value={level.toString()}
-                onValueChange={handleLevelChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Nivel" />
-                </SelectTrigger>
-                <SelectContent>
-                  {levels.map((l) => (
-                    <SelectItem key={l} value={l.toString()}>
-                      Nivel {l}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
         )}

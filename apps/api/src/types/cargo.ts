@@ -43,10 +43,10 @@ export interface ConsigneeCargo {
 }
 
 export interface DocumentsCargo {
-  
-    fileUrl: string;
-    type: string;
-    metadata?: {};
+
+  fileUrl: string;
+  type: string;
+  metadata?: {};
 }
 
 export interface RegisterCargo {
@@ -136,3 +136,11 @@ export type TransferCargo = CargoIdentifier & {
   movedBy: string;
   transferReason?: string;
 }
+
+export type DeliverCargo = CargoIdentifier & {
+  receiver: string;
+  verifiedBy: string;
+  deliveredBy?: string;
+  deliveredAt?: Date;
+  metadata?: Record<string, any>;
+} 

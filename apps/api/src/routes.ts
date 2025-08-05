@@ -9,11 +9,16 @@ import {
   getLocations,
   getLocationsWarehouse,
   getLocationsRack,
-  getLocationStatus
+  getLocationStatus,
 } from "./controllers/locations";
 import { getWarehouses, assignLocation } from "./controllers/warehouse";
 import { getRacksByWarehouse } from "./controllers/rack";
-import { createCargo, getCargo, transferCargoController } from "./controllers/cargo";
+import {
+  createCargo,
+  getCargo,
+  transferCargoController,
+  deliverCargoController,
+} from "./controllers/cargo";
 
 const router = Router();
 
@@ -31,5 +36,6 @@ router.post("/cargo", createCargo);
 router.post("/cargo-assign-location", assignLocation);
 router.get("/cargo", getCargo);
 router.post("/cargo-transfer", transferCargoController);
+router.post("/cargo-deliver", deliverCargoController);
 
 export { router };

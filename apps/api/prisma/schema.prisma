@@ -130,12 +130,13 @@ model Categories {
 }
 
 model Deliveries {
-  Id          String   @id
+  Id          String   @id @default(uuid())
   CargoId     String
   Receiver    String
   DeliveredAt DateTime
   VerifiedBy  String
   DeliveredBy String?
+  Metadata             Json?
   Cargo       Cargo    @relation(fields: [CargoId], references: [Id])
   Users       Users?   @relation(fields: [DeliveredBy], references: [Id])
 }
@@ -226,7 +227,7 @@ model Transfers {
   ToLevelId        String?
   FromColumnId     String?
   ToColumnId       String?
-
+  
   Cargo            Cargo     @relation(fields: [CargoId], references: [Id])
   Warehouse_Transfers_FromWarehouseIdToWarehouse Warehouse @relation("Transfers_FromWarehouseIdToWarehouse", fields: [FromWarehouseId], references: [Id])
   Warehouse_Transfers_ToWarehouseIdToWarehouse   Warehouse @relation("Transfers_ToWarehouseIdToWarehouse", fields: [ToWarehouseId], references: [Id])
