@@ -30,13 +30,13 @@ import {
   ChevronUp,
   Package,
   Grid3X3,
-  Plus,
   ChevronDown,
   Warehouse,
   PackagePlus,
   MoveHorizontal,
   Truck,
   SearchCheck,
+  ShieldCheck
 } from "lucide-react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -197,11 +197,20 @@ export const AppLayout = () => {
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton
-                        onClick={() => navigate("/users/create")}
-                        isActive={location.pathname === "/users/create"}
+                        onClick={() => navigate("/usuarios/sesiones")}
+                        isActive={location.pathname === "/usuarios/sesiones"}
                       >
-                        <Plus className="mr-0.5" />
-                        Crear Usuario
+                        <Activity className="mr-0.5" />
+                        Sesiones
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        onClick={() => navigate("/usuarios/roles-permisos")}
+                        isActive={location.pathname === "/usuarios/roles-permisos"}
+                      >
+                        <ShieldCheck className="mr-0.5" />
+                        Roles y Permisos
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                   </SidebarMenuSub>

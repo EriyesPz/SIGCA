@@ -15,6 +15,8 @@ import { CargoRegistrationWizard } from "./RegisterCargo";
 import { TransferCargo } from "@/pages/Transfer-Cargo";
 import { DeliverCargoPage } from '@/pages/DeliverCargo';
 import { ListUsers } from "@/pages/ListUsers";
+import { Sessions } from "@/pages/Sessions";
+import { RolesPermissions } from "@/pages/RolesPermisions";
 
 export const router = createBrowserRouter([
   {
@@ -76,6 +78,14 @@ export const router = createBrowserRouter([
       {
         path: "usuarios/lista",
         element: <ProtectedRoute><ListUsers /></ProtectedRoute>,
+      },
+      {
+        path: "usuarios/sesiones",
+        element: <ProtectedRoute><Sessions /></ProtectedRoute>,
+      },
+      {
+        path: "usuarios/roles-permisos",
+        element: <ProtectedRoute><RolesPermissions /></ProtectedRoute>,
       }
 
     ],

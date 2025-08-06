@@ -1,5 +1,6 @@
 export type UserType = {
   Id: string;
+  Name?: string | null;
   Email: string;
   User: string;
   IsActive: boolean;

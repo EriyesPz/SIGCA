@@ -28,6 +28,7 @@ export async function getUsers() {
     select: {
       Id: true,
       Email: true,
+      Name: true,
       User: true,
       IsActive: true,
       CreatedAt: true,
@@ -58,6 +59,7 @@ export async function getUsers() {
   return users.map((user) => ({
     Id: user.Id,
     Email: user.Email,
+    Name: user.Name,
     User: user.User,
     IsActive: user.IsActive,
     CreatedAt: user.CreatedAt,

@@ -188,8 +188,7 @@ model Warehouse {
 model Users {
   Id                   String                 @id @default(uuid())
   Email                String                 @unique
-  FirstName            String?
-  LastName             String?
+  Name                 String?
   User                 String
   Password             String?
   IsActive             Boolean                @default(true)
