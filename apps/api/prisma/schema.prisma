@@ -17,7 +17,7 @@ model Alerts {
   Resolved    Boolean  @default(false)
   TriggeredBy String?
   Cargo       Cargo    @relation(fields: [CargoId], references: [Id])
-  Users       Users?   @relation(fields: [TriggeredBy], references: [Id])
+  Users       Users?   @relation("Alerts_TriggeredBy", fields: [TriggeredBy], references: [Id])
 }
 
 model Cargo {
@@ -67,9 +67,8 @@ model Cargo {
   ULDNumber                 String?
   VolumeM3                  Float?
 
-  // Relaciones
   Alerts                    Alerts[]
-  Users                     Users?                 @relation(fields: [CreatedBy], references: [Id])
+  Users                     Users?                 @relation("Cargo_CreatedBy", fields: [CreatedBy], references: [Id])
   Warehouse                 Warehouse?             @relation(fields: [WarehouseId], references: [Id], onDelete: Cascade)
   CargoDocuments            CargoDocuments[]
   CargoLocationHistory      CargoLocationHistory[]
@@ -79,21 +78,20 @@ model Cargo {
   RackColumn                RackColumns?           @relation(fields: [ColumnId], references: [Id], onDelete: Cascade)
 }
 
-
 model CargoDocuments {
-  Id String @id @default(uuid())
-  CargoId   String
-  FileUrl   String
-  Type      String
-  Metadata  Json?
-  CreatedAt DateTime @default(now())
-  CreatedBy String?
-  Cargo     Cargo    @relation(fields: [CargoId], references: [Id], onDelete: Cascade)
-  Users     Users?   @relation(fields: [CreatedBy], references: [Id])
+  Id         String   @id @default(uuid())
+  CargoId    String
+  FileUrl    String
+  Type       String
+  Metadata   Json?
+  CreatedAt  DateTime @default(now())
+  CreatedBy  String?
+  Cargo      Cargo    @relation(fields: [CargoId], references: [Id], onDelete: Cascade)
+  Users      Users?   @relation("CargoDocuments_CreatedBy", fields: [CreatedBy], references: [Id])
 }
 
 model CargoLocationHistory {
-  Id String @id @default(uuid())
+  Id           String   @id @default(uuid())
   CargoId      String
   FromRackId   String?
   FromLevelId  String?
@@ -104,18 +102,18 @@ model CargoLocationHistory {
   MovedAt      DateTime @default(now())
   MovedBy      String?
   Cargo        Cargo    @relation(fields: [CargoId], references: [Id])
-  Users        Users?   @relation(fields: [MovedBy], references: [Id])
+  Users        Users?   @relation("CargoLocationHistory_MovedBy", fields: [MovedBy], references: [Id])
 }
 
 model CargoStatusHistory {
-  Id String @id @default(uuid())
+  Id             String   @id @default(uuid())
   CargoId        String
   PreviousStatus String?
   NewStatus      String
   ChangedAt      DateTime @default(now())
   ChangedBy      String?
   Cargo          Cargo    @relation(fields: [CargoId], references: [Id])
-  Users          Users?   @relation(fields: [ChangedBy], references: [Id])
+  Users          Users?   @relation("CargoStatusHistory_ChangedBy", fields: [ChangedBy], references: [Id])
 }
 
 model Categories {
@@ -126,7 +124,7 @@ model Categories {
   IsActive  Boolean  @default(true)
   CreatedAt DateTime @default(now())
   CreatedBy String?
-  Users     Users?   @relation(fields: [CreatedBy], references: [Id])
+  Users     Users?   @relation("Categories_CreatedBy", fields: [CreatedBy], references: [Id])
 }
 
 model Deliveries {
@@ -136,40 +134,9 @@ model Deliveries {
   DeliveredAt DateTime
   VerifiedBy  String
   DeliveredBy String?
-  Metadata             Json?
+  Metadata    Json?
   Cargo       Cargo    @relation(fields: [CargoId], references: [Id])
-  Users       Users?   @relation(fields: [DeliveredBy], references: [Id])
-}
-
-model EmailOTPs {
-  Id        String   @id @default(uuid())
-  Email     String
-  Otp       String
-  ExpiresAt DateTime
-  Used      Boolean  @default(false)
-  CreatedAt DateTime @default(now())
-}
-
-model Permissions {
-  Id              String            @id
-  Name            String            @unique
-  RolePermissions RolePermissions[]
-}
-
-model RackColumns {
-  Id         String     @id
-  LevelId    String
-  ColumnCode String     @db.VarChar(3)
-  RackLevels RackLevels @relation(fields: [LevelId], references: [Id], onDelete: Cascade)
-  Cargos     Cargo[]
-}
-
-model RackLevels {
-  Id          String        @id
-  RackId      String
-  LevelNumber Int
-  RackColumns RackColumns[]
-  Racks       Racks         @relation(fields: [RackId], references: [Id], onDelete: Cascade)
+  Users       Users?   @relation("Deliveries_DeliveredBy", fields: [DeliveredBy], references: [Id])
 }
 
 model Racks {
@@ -181,24 +148,66 @@ model Racks {
   CreatedBy   String?
   Code        String?      @db.VarChar(5)
   RackLevels  RackLevels[]
-  Users       Users?       @relation(fields: [CreatedBy], references: [Id])
+  Users       Users?       @relation("Racks_CreatedBy", fields: [CreatedBy], references: [Id])
   Warehouse   Warehouse    @relation(fields: [WarehouseId], references: [Id], onDelete: Cascade)
 }
 
-model RolePermissions {
-  RoleId       String
-  PermissionId String
-  Permissions  Permissions @relation(fields: [PermissionId], references: [Id], onDelete: Cascade)
-  Roles        Roles       @relation(fields: [RoleId], references: [Id], onDelete: Cascade)
-
-  @@id([RoleId, PermissionId])
+model Transfers {
+  Id               String   @id @default(uuid())
+  CargoId          String
+  FromWarehouseId  String
+  ToWarehouseId    String
+  TransferDate     DateTime @default(now())
+  Notes            String?
+  TransferredBy    String?
+  FromRackId       String?
+  ToRackId         String?
+  FromLevelId      String?
+  ToLevelId        String?
+  FromColumnId     String?
+  ToColumnId       String?
+  Cargo            Cargo     @relation(fields: [CargoId], references: [Id])
+  Warehouse_Transfers_FromWarehouseIdToWarehouse Warehouse @relation("Transfers_FromWarehouseIdToWarehouse", fields: [FromWarehouseId], references: [Id])
+  Warehouse_Transfers_ToWarehouseIdToWarehouse   Warehouse @relation("Transfers_ToWarehouseIdToWarehouse", fields: [ToWarehouseId], references: [Id])
+  Users           Users?     @relation("Transfers_TransferredBy", fields: [TransferredBy], references: [Id])
 }
 
-model Roles {
-  Id              String            @id
-  Name            String            @unique
-  RolePermissions RolePermissions[]
-  UserRoles       UserRoles[]
+model Warehouse {
+  Id                                             String      @id @default(uuid())
+  Name                                           String
+  IsActive                                       Boolean     @default(true)
+  CreatedAt                                      DateTime    @default(now())
+  CreatedBy                                      String?
+  Cargo                                          Cargo[]
+  Racks                                          Racks[]
+  Transfers_Transfers_FromWarehouseIdToWarehouse Transfers[] @relation("Transfers_FromWarehouseIdToWarehouse")
+  Transfers_Transfers_ToWarehouseIdToWarehouse   Transfers[] @relation("Transfers_ToWarehouseIdToWarehouse")
+  Users                                          Users?      @relation("Warehouse_CreatedBy", fields: [CreatedBy], references: [Id])
+}
+
+model Users {
+  Id                   String                 @id @default(uuid())
+  Email                String                 @unique
+  FirstName            String?
+  LastName             String?
+  User                 String
+  Password             String?
+  IsActive             Boolean                @default(true)
+  Avatar               String?
+  CreatedAt            DateTime               @default(now())
+
+  AlertsTriggered        Alerts[]               @relation("Alerts_TriggeredBy")
+  CreatedCargos          Cargo[]                @relation("Cargo_CreatedBy")
+  CreatedDocuments       CargoDocuments[]       @relation("CargoDocuments_CreatedBy")
+  MovedCargoHistory      CargoLocationHistory[] @relation("CargoLocationHistory_MovedBy")
+  ChangedCargoStatus     CargoStatusHistory[]   @relation("CargoStatusHistory_ChangedBy")
+  CreatedCategories      Categories[]           @relation("Categories_CreatedBy")
+  DeliveriesMade         Deliveries[]           @relation("Deliveries_DeliveredBy")
+  CreatedRacks           Racks[]                @relation("Racks_CreatedBy")
+  Sessions               Sessions[]
+  TransfersMade          Transfers[]            @relation("Transfers_TransferredBy")
+  UserRoles              UserRoles[]
+  CreatedWarehouses      Warehouse[]            @relation("Warehouse_CreatedBy")
 }
 
 model Sessions {
@@ -212,29 +221,6 @@ model Sessions {
   Users     Users    @relation(fields: [UserId], references: [Id], onDelete: Cascade)
 }
 
-model Transfers {
-  Id               String   @id @default(uuid())
-  CargoId          String
-  FromWarehouseId  String
-  ToWarehouseId    String
-  TransferDate     DateTime @default(now())
-  Notes            String?
-  TransferredBy    String?
-
-  FromRackId       String?
-  ToRackId         String?
-  FromLevelId      String?
-  ToLevelId        String?
-  FromColumnId     String?
-  ToColumnId       String?
-  
-  Cargo            Cargo     @relation(fields: [CargoId], references: [Id])
-  Warehouse_Transfers_FromWarehouseIdToWarehouse Warehouse @relation("Transfers_FromWarehouseIdToWarehouse", fields: [FromWarehouseId], references: [Id])
-  Warehouse_Transfers_ToWarehouseIdToWarehouse   Warehouse @relation("Transfers_ToWarehouseIdToWarehouse", fields: [ToWarehouseId], references: [Id])
-  Users           Users?     @relation(fields: [TransferredBy], references: [Id])
-}
-
-
 model UserRoles {
   UserId String
   RoleId String
@@ -244,26 +230,49 @@ model UserRoles {
   @@id([UserId, RoleId])
 }
 
-model Users {
-  Id                   String                 @id @default(uuid())
-  Email                String                 @unique
-  FirstName            String
-  LastName             String
-  User                 String
-  Password             String?
-  IsActive             Boolean                @default(true)
-  CreatedAt            DateTime               @default(now())
+model Roles {
+  Id              String            @id
+  Name            String            @unique
+  RolePermissions RolePermissions[]
+  UserRoles       UserRoles[]
 }
 
-model Warehouse {
-  Id                                             String      @id @default(uuid())
-  Name                                           String
-  IsActive                                       Boolean     @default(true)
-  CreatedAt                                      DateTime    @default(now())
-  CreatedBy                                      String?
-  Cargo                                          Cargo[]
-  Racks                                          Racks[]
-  Transfers_Transfers_FromWarehouseIdToWarehouse Transfers[] @relation("Transfers_FromWarehouseIdToWarehouse")
-  Transfers_Transfers_ToWarehouseIdToWarehouse   Transfers[] @relation("Transfers_ToWarehouseIdToWarehouse")
-  Users                                          Users?      @relation(fields: [CreatedBy], references: [Id])
+model RolePermissions {
+  RoleId       String
+  PermissionId String
+  Permissions  Permissions @relation(fields: [PermissionId], references: [Id], onDelete: Cascade)
+  Roles        Roles       @relation(fields: [RoleId], references: [Id], onDelete: Cascade)
+
+  @@id([RoleId, PermissionId])
+}
+
+model Permissions {
+  Id              String            @id
+  Name            String            @unique
+  RolePermissions RolePermissions[]
+}
+
+model EmailOTPs {
+  Id        String   @id @default(uuid())
+  Email     String
+  Otp       String
+  ExpiresAt DateTime
+  Used      Boolean  @default(false)
+  CreatedAt DateTime @default(now())
+}
+
+model RackLevels {
+  Id          String        @id
+  RackId      String
+  LevelNumber Int
+  RackColumns RackColumns[]
+  Racks       Racks         @relation(fields: [RackId], references: [Id], onDelete: Cascade)
+}
+
+model RackColumns {
+  Id         String     @id
+  LevelId    String
+  ColumnCode String     @db.VarChar(3)
+  RackLevels RackLevels @relation(fields: [LevelId], references: [Id], onDelete: Cascade)
+  Cargos     Cargo[]
 }

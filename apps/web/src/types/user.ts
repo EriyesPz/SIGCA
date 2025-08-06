@@ -8,6 +8,7 @@ export type UserType = {
     Id: string;
     Name: string;
   }[];
+  Avatar?: string | null;
   LastSessionAt: string | null;
   LastSessionIp: string | null;
   LastSessionUserAgent: string | null;

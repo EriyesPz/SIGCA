@@ -3,7 +3,6 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { markOTPAsUsed, saveOTP, validateOTP } from "../model/otp";
 import { findUserByEmail, createUser, updateUserPassword } from "../model/user";
-import { assignDefaultRole } from "../model/roles";
 import { createSession } from "../model/session";
 import { sendOtpEmail } from "../utils/email";
 import bcrypt from "bcrypt";
