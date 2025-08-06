@@ -134,7 +134,9 @@ export const Sessions = () => {
                       >
                         <TableCell className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={user.Avatar || "/placeholder.svg"} />
+                            <AvatarImage
+                              src={user.Avatar || "/placeholder.svg"}
+                            />
                             <AvatarFallback className="bg-slate-700 text-white">
                               {user.User.split(" ")
                                 .map((n) => n[0])
@@ -236,24 +238,34 @@ export const Sessions = () => {
             <Dialog open={isViewUserOpen} onOpenChange={setIsViewUserOpen}>
               <DialogContent className="bg-slate-900 border-slate-700 max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle className="text-white">Detalles del Usuario</DialogTitle>
-                  <DialogDescription>Información detallada del usuario</DialogDescription>
+                  <DialogTitle className="text-white">
+                    Detalles del Usuario
+                  </DialogTitle>
+                  <DialogDescription>
+                    Información detallada del usuario
+                  </DialogDescription>
                 </DialogHeader>
                 {viewingUser && (
                   <div className="grid gap-6 py-4">
                     <div className="flex items-center space-x-4">
                       <Avatar className="h-16 w-16">
-                        <AvatarImage src={viewingUser.Avatar || "/placeholder.svg"} />
+                        <AvatarImage
+                          src={viewingUser.Avatar || "/placeholder.svg"}
+                        />
                         <AvatarFallback className="bg-slate-700 text-white text-lg">
-                          {viewingUser.User.split(' ').map(n => n[0]).join('')}
+                          {viewingUser.User.split(" ")
+                            .map((n) => n[0])
+                            .join("")}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <h3 className="text-xl font-semibold text-white">{viewingUser.User}</h3>
+                        <h3 className="text-xl font-semibold text-white">
+                          {viewingUser.User}
+                        </h3>
                         <p className="text-slate-400">{viewingUser.Email}</p>
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-white">Nombre</Label>
@@ -266,12 +278,15 @@ export const Sessions = () => {
                         <p className="text-slate-300 bg-slate-800 p-2 rounded">
                           {viewingUser.User}
                         </p>
-                      
                       </div>
                       <div className="space-y-2">
                         <Label className="text-white">Estado</Label>
                         <div className="flex items-center space-x-2 bg-slate-800 p-2 rounded">
-                          <div className={`w-2 h-2 rounded-full ${getStatusColor(viewingUser.IsActive)}`}></div>
+                          <div
+                            className={`w-2 h-2 rounded-full ${getStatusColor(
+                              viewingUser.IsActive
+                            )}`}
+                          ></div>
                           <span className="text-slate-300">
                             {viewingUser.IsActive ? "Activo" : "Inactivo"}
                           </span>
@@ -294,7 +309,9 @@ export const Sessions = () => {
                               </Badge>
                             ))
                           ) : (
-                            <span className="text-slate-400 text-sm">Sin roles asignados</span>
+                            <span className="text-slate-400 text-sm">
+                              Sin roles asignados
+                            </span>
                           )}
                         </div>
                       </div>
@@ -325,7 +342,9 @@ export const Sessions = () => {
 
                     {viewingUser.LastSessionUserAgent && (
                       <div className="space-y-2">
-                        <Label className="text-white">Dispositivo/Navegador</Label>
+                        <Label className="text-white">
+                          Dispositivo/Navegador
+                        </Label>
                         <p className="text-slate-300 bg-slate-800 p-2 rounded text-sm">
                           {viewingUser.LastSessionUserAgent}
                         </p>
@@ -334,7 +353,7 @@ export const Sessions = () => {
                   </div>
                 )}
                 <DialogFooter>
-                  <Button 
+                  <Button
                     onClick={() => setIsViewUserOpen(false)}
                     className="bg-blue-600 hover:bg-blue-700"
                   >

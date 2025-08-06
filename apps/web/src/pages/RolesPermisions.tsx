@@ -71,9 +71,9 @@ export const RolesPermissions = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Sesiones y Logs</h1>
+            <h1 className="text-3xl font-bold">Roles y Permisos</h1>
             <p className="text-slate-400 mt-2">
-              Muestra y gestiona las sesiones de los usuarios.
+              Roles y permisos de los usuarios del sistema.
             </p>
           </div>
         </div>
