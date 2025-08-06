@@ -188,8 +188,8 @@ export const AppLayout = () => {
                   <SidebarMenuSub>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton
-                        onClick={() => navigate("/users/list")}
-                        isActive={location.pathname === "/users/list"}
+                        onClick={() => navigate("usuarios/lista")}
+                        isActive={location.pathname === "usuarios/lista"}
                       >
                         <User className="mr-0.5 ml-0" />
                         Lista de Usuarios

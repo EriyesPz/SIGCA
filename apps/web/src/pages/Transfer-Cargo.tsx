@@ -226,21 +226,21 @@ export const TransferCargo = () => {
   return (
     <div className="min-h-screen p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <ArrowRightLeft className="h-6 w-6 text-gray-500" />
-            <h1 className="text-2xl font-bold">Transferir Carga</h1>
+        <header className="space-y-2">
+          <div className="flex items-center gap-3">
+            <ArrowRightLeft className="w-8 h-8" />
+            <h1 className="text-3xl font-bold">Transferir Carga</h1>
           </div>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Transfiera la carga a una nueva ubicación.
           </p>
-        </div>
+        </header>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 pr-8">
+        <div className="">
           {/* Card de búsqueda */}
-          <Card>
+          <Card className="mt-6 w-full max-w-4xl mx-auto">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <Search className="w-5 h-5" />
                 Búsqueda de carga
               </CardTitle>
@@ -316,7 +316,8 @@ export const TransferCargo = () => {
 
           {/* Información de carga */}
           {cargoData && (
-            <Card className="lg:col-span-2 border-green-200 dark:border-green-800">
+            <Card className="mt-6 w-full max-w-4xl mx-auto">
+
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-3">
                   <div className="p-2 bg-green-500/10 rounded-lg">
@@ -480,8 +481,8 @@ export const TransferCargo = () => {
             </Card>
           )}
         </div>
-        <div className="mt-6 pr-8">
-          <Card>
+        <div className="mt-6">
+          <Card className="mt-6 w-full max-w-4xl mx-auto">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ArrowRightLeft className="w-5 h-5" />

@@ -19,6 +19,7 @@ import {
   transferCargoController,
   deliverCargoController,
 } from "./controllers/cargo";
+import { listUsers } from "./controllers/users";
 
 const router = Router();
 
@@ -37,5 +38,6 @@ router.post("/cargo-assign-location", assignLocation);
 router.get("/cargo", getCargo);
 router.post("/cargo-transfer", transferCargoController);
 router.post("/cargo-deliver", deliverCargoController);
+router.get("/users", listUsers);
 
 export { router };

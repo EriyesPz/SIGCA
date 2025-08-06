@@ -247,22 +247,12 @@ model UserRoles {
 model Users {
   Id                   String                 @id @default(uuid())
   Email                String                 @unique
+  FirstName            String
+  LastName             String
   User                 String
   Password             String?
   IsActive             Boolean                @default(true)
   CreatedAt            DateTime               @default(now())
-  Alerts               Alerts[]
-  Cargo                Cargo[]
-  CargoDocuments       CargoDocuments[]
-  CargoLocationHistory CargoLocationHistory[]
-  CargoStatusHistory   CargoStatusHistory[]
-  Categories           Categories[]
-  Deliveries           Deliveries[]
-  Racks                Racks[]
-  Sessions             Sessions[]
-  Transfers            Transfers[]
-  UserRoles            UserRoles[]
-  Warehouse            Warehouse[]
 }
 
 model Warehouse {

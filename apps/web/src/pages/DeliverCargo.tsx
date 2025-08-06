@@ -133,15 +133,15 @@ export const DeliverCargoPage = () => {
         </header>
 
         {/* Tarjeta de búsqueda */}
-        <Card>
+        <Card className="w-full max-w-4xl mx-auto">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Search className="w-5 h-5" />
               Buscar carga
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <CardContent className="space-y-6 flex flex-col sm:flex-col sm:items-center sm:justify-between">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Tipo de búsqueda</Label>
                 <Select
@@ -175,7 +175,7 @@ export const DeliverCargoPage = () => {
               </div>
             </div>
 
-            <Button onClick={handleSearch} className="w-full sm:w-auto">
+            <Button onClick={handleSearch} className="col-span-1 sm:col-span-2">
               <Search className="w-4 h-4 mr-2" />
               Buscar carga
             </Button>
@@ -191,7 +191,7 @@ export const DeliverCargoPage = () => {
 
         {/* Datos de la carga */}
         {cargoData && (
-          <Card>
+          <Card className="w-full max-w-4xl mx-auto">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Package className="w-5 h-5" />
@@ -233,7 +233,7 @@ export const DeliverCargoPage = () => {
         {/* Registro de entrega */}
         {cargoData && (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <Card>
+            <Card className="w-full max-w-4xl mx-auto">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <ClipboardSignature className="w-5 h-5" />
