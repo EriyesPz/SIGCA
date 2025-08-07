@@ -46,7 +46,6 @@ import {
 } from "lucide-react";
 import { useDashboardData } from "@/lib/dashboard";
 
-// Tipos para TypeScript
 type CargoPorEstado = {
   estado: string;
   cantidad: number;
@@ -88,7 +87,7 @@ export const Dashboard = () => {
           : item.estado === "entregado" || item.estado === "entregada"
           ? "#1d4ed8"
           : item.estado === "en_transito"
-          ? "#93c5fd" 
+          ? "#93c5fd"
           : "#60a5fa",
     }));
 
@@ -116,14 +115,10 @@ export const Dashboard = () => {
   const categoriasData: Categoria[] = dashboardData.categorias.principales.map(
     (cat: any, index: number) => ({
       ...cat,
-      color:
-        index === 0
-          ? "#93c5fd"
-          : index === 1
-          ? "#3b82f6"
-          : "#1d4ed8",
+      color: index === 0 ? "#93c5fd" : index === 1 ? "#3b82f6" : "#1d4ed8",
     })
   );
+
   const almacenesDataConColor = dashboardData.ubicaciones.detalleAlmacenes.map(
     (almacen: any, index: number) => ({
       ...almacen,
@@ -477,9 +472,11 @@ export const Dashboard = () => {
                       radius={[0, 4, 4, 0]}
                       animationDuration={1000}
                     >
-                      {almacenesDataConColor.map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
+                      {almacenesDataConColor.map(
+                        (entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        )
+                      )}
                       <LabelList
                         dataKey="ocupacion"
                         position="right"
@@ -719,7 +716,6 @@ export const Dashboard = () => {
 
         {/* Documentos y Movimientos - Mejorados */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-
           <Card className="border-border">
             <CardHeader>
               <CardTitle className="text-foreground flex items-center gap-3">
