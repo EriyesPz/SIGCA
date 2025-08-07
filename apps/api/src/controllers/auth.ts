@@ -66,7 +66,7 @@ export async function login(req: Request, res: Response): Promise<void> {
   const token = jwt.sign(
     { sub: user.Id, email: user.Email },
     process.env.JWT_SECRET!,
-    { expiresIn: "1h" }
+    { expiresIn: "96h" }
   );
 
   await createSession(

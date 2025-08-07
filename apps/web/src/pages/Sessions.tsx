@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -21,8 +21,15 @@ import {
   DropdownMenuTrigger,
   Alert,
   AlertDescription,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  Label,
 } from "@/components/ui";
-import { MoreHorizontal, Eye, Trash2, RefreshCw, AlertCircle } from "lucide-react";
+import { MoreHorizontal, Eye, RefreshCw, AlertCircle } from "lucide-react";
 import { useSessionsLogs } from "@/lib/session";
 import type { UseQueryResult } from "@tanstack/react-query";
 
@@ -49,6 +56,9 @@ export const Sessions = () => {
     error,
     refetch,
   }: UseQueryResult<Session[], Error> = useSessionsLogs();
+
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Efecto para depuración
   useEffect(() => {
@@ -91,6 +101,16 @@ export const Sessions = () => {
     }
   };
 
+  const openSessionDetails = (session: Session) => {
+    setSelectedSession(session);
+    setIsDialogOpen(true);
+  };
+
+  const closeSessionDetails = () => {
+    setIsDialogOpen(false);
+    setSelectedSession(null);
+  };
+
   if (isLoading) {
     console.log("Renderizando estado de carga...");
     return (
@@ -117,8 +137,6 @@ export const Sessions = () => {
     );
   }
 
-  console.log("Preparando para renderizar sesiones...", sessions);
-
   return (
     <div className="min-h-screen bg-slate-950 text-white p-6">
       <div className="max-w-7xl mx-auto">
@@ -132,10 +150,7 @@ export const Sessions = () => {
           <Button 
             variant="outline" 
             className="text-slate-300 hover:text-white"
-            onClick={() => {
-              console.log("Refrescando datos...");
-              refetch();
-            }}
+            onClick={() => refetch()}
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Actualizar
@@ -155,103 +170,173 @@ export const Sessions = () => {
           </CardHeader>
           <CardContent>
             {sessions && sessions.length > 0 ? (
-              <>
-                <div className="hidden">
-                  {/* Mensaje de depuración oculto */}
-                  Datos completos: {JSON.stringify(sessions, null, 2)}
-                </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-slate-700">
-                      <TableHead className="text-slate-300">Usuario</TableHead>
-                      <TableHead className="text-slate-300">Email</TableHead>
-                      <TableHead className="text-slate-300">Dispositivo</TableHead>
-                      <TableHead className="text-slate-300">IP</TableHead>
-                      <TableHead className="text-slate-300">Creada</TableHead>
-                      <TableHead className="text-slate-300">Expira</TableHead>
-                      <TableHead className="text-slate-300">Estado</TableHead>
-                      <TableHead className="text-slate-300">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sessions.map((session, index) => {
-                      console.log(`Renderizando sesión ${index}:`, session);
-                      return (
-                        <TableRow key={session.sessionId} className="border-slate-700">
-                          <TableCell className="text-white font-medium">
-                            {session.user.username || session.user.name || "N/A"}
-                          </TableCell>
-                          <TableCell className="text-slate-300">
-                            {session.user.email}
-                          </TableCell>
-                          <TableCell className="text-slate-300">
-                            <div className="max-w-[200px] truncate">
-                              {session.userAgent}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-slate-300">
-                            {session.ipAddress}
-                          </TableCell>
-                          <TableCell className="text-slate-300">
-                            {formatDate(session.createdAt)}
-                          </TableCell>
-                          <TableCell className="text-slate-300">
-                            {formatDate(session.expiresAt)}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={`${getStatusColor(session.expiresAt)} text-white border-transparent`}
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-slate-700">
+                    <TableHead className="text-slate-300">Usuario</TableHead>
+                    <TableHead className="text-slate-300">Email</TableHead>
+                    <TableHead className="text-slate-300">Dispositivo</TableHead>
+                    <TableHead className="text-slate-300">IP</TableHead>
+                    <TableHead className="text-slate-300">Creada</TableHead>
+                    <TableHead className="text-slate-300">Expira</TableHead>
+                    <TableHead className="text-slate-300">Estado</TableHead>
+                    <TableHead className="text-slate-300">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sessions.map((session) => (
+                    <TableRow key={session.sessionId} className="border-slate-700">
+                      <TableCell className="text-white font-medium">
+                        {session.user.username || session.user.name || "N/A"}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {session.user.email}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        <div className="max-w-[200px] truncate">
+                          {session.userAgent}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {session.ipAddress}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {formatDate(session.createdAt)}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {formatDate(session.expiresAt)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={`${getStatusColor(session.expiresAt)} text-white border-transparent`}
+                        >
+                          {getStatus(session.expiresAt)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="h-8 w-8 p-0 text-slate-400 hover:text-white"
                             >
-                              {getStatus(session.expiresAt)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  className="h-8 w-8 p-0 text-slate-400 hover:text-white"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                align="end"
-                                className="bg-slate-800 border-slate-700"
-                              >
-                                <DropdownMenuLabel className="text-white">
-                                  Acciones
-                                </DropdownMenuLabel>
-                                <DropdownMenuSeparator className="bg-slate-700" />
-                                <DropdownMenuItem className="text-slate-300 hover:text-white">
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  Ver detalles
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator className="bg-slate-700" />
-                                <DropdownMenuItem className="text-red-400 hover:text-red-300">
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Terminar sesión
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="bg-slate-800 border-slate-700"
+                          >
+                            <DropdownMenuLabel className="text-white">
+                              Acciones
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator className="bg-slate-700" />
+                            <DropdownMenuItem 
+                              className="text-slate-300 hover:text-white"
+                              onClick={() => openSessionDetails(session)}
+                            >
+                              <Eye className="mr-2 h-4 w-4" />
+                              Ver detalles
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-slate-700" />
+                          
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             ) : (
               <div className="text-center py-8 text-slate-400">
                 No se encontraron sesiones
-                <div className="mt-2 text-xs">
-                  {sessions ? "La respuesta fue un array vacío" : "La respuesta fue null/undefined"}
-                </div>
               </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Dialog para detalles de sesión */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="bg-slate-900 border-slate-800 sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-white">
+                Detalles de Sesión
+              </DialogTitle>
+              <DialogDescription className="text-slate-400">
+                Información detallada de la sesión seleccionada
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedSession && (
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Usuario</Label>
+                    <div className="text-white">
+                      {selectedSession.user.username || selectedSession.user.name || "N/A"}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Email</Label>
+                    <div className="text-white">{selectedSession.user.email}</div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-slate-300">ID de Sesión</Label>
+                  <div className="text-white font-mono text-sm p-2 bg-slate-800 rounded">
+                    {selectedSession.sessionId}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Estado</Label>
+                    <Badge
+                      variant="outline"
+                      className={`${getStatusColor(selectedSession.expiresAt)} text-white border-transparent`}
+                    >
+                      {getStatus(selectedSession.expiresAt)}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Dirección IP</Label>
+                    <div className="text-white">{selectedSession.ipAddress}</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Creada</Label>
+                    <div className="text-white">{formatDate(selectedSession.createdAt)}</div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Expira</Label>
+                    <div className="text-white">{formatDate(selectedSession.expiresAt)}</div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Dispositivo/Navegador</Label>
+                  <div className="text-white p-2 bg-slate-800 rounded">
+                    {selectedSession.userAgent}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button 
+                variant="outline"
+                onClick={closeSessionDetails}
+                className="border-slate-700 text-slate-300 hover:text-white"
+              >
+                Cerrar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
