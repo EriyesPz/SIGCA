@@ -48,6 +48,6 @@ router.get("/users", listUsers);
 router.get("/permissions", allPermisions);
 router.get("/roles", allRoles);
 router.get("/roles-permissions", rolesWithPermissions);
-router.get("/sessions", getSessionLogs);
+router.get("/api/sessions", getSessionLogs);
 
 export { router };

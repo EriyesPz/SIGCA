@@ -77,28 +77,6 @@ export const ListUsers = () => {
             </p>
           </div>
         </div>
-
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-slate-900">
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Usuarios
-            </TabsTrigger>
-            <TabsTrigger value="identity" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              Identity Management
-            </TabsTrigger>
-            <TabsTrigger value="sessions" className="flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              Sesiones
-            </TabsTrigger>
-            <TabsTrigger value="logs" className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Logs
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="users">
             <Card className="bg-slate-900 border-slate-800">
               <CardHeader>
                 <div className="flex items-center space-x-2 mt-4">
@@ -343,8 +321,6 @@ export const ListUsers = () => {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </TabsContent>
-        </Tabs>
       </div>
     </div>
   );
