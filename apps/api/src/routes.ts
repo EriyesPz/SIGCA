@@ -25,6 +25,7 @@ import {
   allRoles,
   rolesWithPermissions,
 } from "./controllers/roles-permissions";
+import { getSessionLogs } from "./controllers/session";
 
 const router = Router();
 
@@ -47,5 +48,6 @@ router.get("/users", listUsers);
 router.get("/permissions", allPermisions);
 router.get("/roles", allRoles);
 router.get("/roles-permissions", rolesWithPermissions);
+router.get("/sessions", getSessionLogs);
 
 export { router };
