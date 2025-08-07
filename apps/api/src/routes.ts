@@ -20,6 +20,11 @@ import {
   deliverCargoController,
 } from "./controllers/cargo";
 import { listUsers } from "./controllers/users";
+import {
+  allPermisions,
+  allRoles,
+  rolesWithPermissions,
+} from "./controllers/roles-permissions";
 
 const router = Router();
 
@@ -39,5 +44,8 @@ router.get("/cargo", getCargo);
 router.post("/cargo-transfer", transferCargoController);
 router.post("/cargo-deliver", deliverCargoController);
 router.get("/users", listUsers);
+router.get("/permissions", allPermisions);
+router.get("/roles", allRoles);
+router.get("/roles-permissions", rolesWithPermissions);
 
 export { router };
