@@ -14,10 +14,6 @@ import {
   AvatarImage,
   Badge,
   Button,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Tabs,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -36,12 +32,9 @@ import {
 import {
   MoreHorizontal,
   Shield,
-  Users,
-  Activity,
   Eye,
   Edit,
   Trash2,
-  Clock,
 } from "lucide-react";
 import { useListUsers } from "@/lib/users";
 import { type UserType } from "@/types/user";
