@@ -213,7 +213,7 @@ export const cargoTransferReport = async () => {
   const levelIds = new Set<string>();
   const columnIds = new Set<string>();
 
-  transfers.forEach(transfer => {
+  transfers.forEach((transfer) => {
     if (transfer.FromRackId) rackIds.add(transfer.FromRackId);
     if (transfer.ToRackId) rackIds.add(transfer.ToRackId);
     if (transfer.FromLevelId) levelIds.add(transfer.FromLevelId);
@@ -225,37 +225,47 @@ export const cargoTransferReport = async () => {
   // Consultar todos los racks, niveles y columnas necesarios
   const racks = await db.racks.findMany({
     where: { Id: { in: Array.from(rackIds) } },
-    select: { Id: true, Name: true }
+    select: { Id: true, Name: true },
   });
 
   const levels = await db.rackLevels.findMany({
     where: { Id: { in: Array.from(levelIds) } },
-    select: { Id: true, LevelNumber: true }
+    select: { Id: true, LevelNumber: true },
   });
 
   const columns = await db.rackColumns.findMany({
     where: { Id: { in: Array.from(columnIds) } },
-    select: { Id: true, ColumnCode: true }
+    select: { Id: true, ColumnCode: true },
   });
 
   // Crear mapas para acceso rápido
-  const rackMap = new Map(racks.map(rack => [rack.Id, rack]));
-  const levelMap = new Map(levels.map(level => [level.Id, level]));
-  const columnMap = new Map(columns.map(column => [column.Id, column]));
+  const rackMap = new Map(racks.map((rack) => [rack.Id, rack]));
+  const levelMap = new Map(levels.map((level) => [level.Id, level]));
+  const columnMap = new Map(columns.map((column) => [column.Id, column]));
 
   const data = transfers.map((transfer) => {
     const cargo = transfer.Cargo;
     if (cargo?.WeightKg) totalWeightKg += cargo.WeightKg;
 
     // Obtener detalles del rack, nivel y columna de origen
-    const fromRack = transfer.FromRackId ? rackMap.get(transfer.FromRackId) : null;
-    const fromLevel = transfer.FromLevelId ? levelMap.get(transfer.FromLevelId) : null;
-    const fromColumn = transfer.FromColumnId ? columnMap.get(transfer.FromColumnId) : null;
+    const fromRack = transfer.FromRackId
+      ? rackMap.get(transfer.FromRackId)
+      : null;
+    const fromLevel = transfer.FromLevelId
+      ? levelMap.get(transfer.FromLevelId)
+      : null;
+    const fromColumn = transfer.FromColumnId
+      ? columnMap.get(transfer.FromColumnId)
+      : null;
 
     // Obtener detalles del rack, nivel y columna de destino
     const toRack = transfer.ToRackId ? rackMap.get(transfer.ToRackId) : null;
-    const toLevel = transfer.ToLevelId ? levelMap.get(transfer.ToLevelId) : null;
-    const toColumn = transfer.ToColumnId ? columnMap.get(transfer.ToColumnId) : null;
+    const toLevel = transfer.ToLevelId
+      ? levelMap.get(transfer.ToLevelId)
+      : null;
+    const toColumn = transfer.ToColumnId
+      ? columnMap.get(transfer.ToColumnId)
+      : null;
 
     return {
       transferId: transfer.Id,
@@ -274,7 +284,8 @@ export const cargoTransferReport = async () => {
       },
 
       fromLocation: {
-        warehouse: transfer.Warehouse_Transfers_FromWarehouseIdToWarehouse?.Name ?? null,
+        warehouse:
+          transfer.Warehouse_Transfers_FromWarehouseIdToWarehouse?.Name ?? null,
         rackId: transfer.FromRackId ?? null,
         rackName: fromRack?.Name ?? null,
         levelId: transfer.FromLevelId ?? null,
@@ -284,7 +295,8 @@ export const cargoTransferReport = async () => {
       },
 
       toLocation: {
-        warehouse: transfer.Warehouse_Transfers_ToWarehouseIdToWarehouse?.Name ?? null,
+        warehouse:
+          transfer.Warehouse_Transfers_ToWarehouseIdToWarehouse?.Name ?? null,
         rackId: transfer.ToRackId ?? null,
         rackName: toRack?.Name ?? null,
         levelId: transfer.ToLevelId ?? null,
@@ -301,5 +313,142 @@ export const cargoTransferReport = async () => {
     data,
     total: data.length,
     totalWeightKg,
+  };
+};
+
+export const distributionByLocationReport = async () => {
+  const cargos = await db.cargo.findMany({
+    where: {
+      ExitDate: null,
+      ColumnId: {
+        not: null,
+      },
+    },
+    include: {
+      Warehouse: true,
+      RackColumn: {
+        include: {
+          RackLevels: {
+            include: {
+              Racks: {
+                include: {
+                  Warehouse: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      Users: true,
+    },
+    orderBy: {
+      EntryDate: "asc",
+    },
+  });
+
+  const result = cargos.map((cargo) => {
+    const rackLevel = cargo.RackColumn?.RackLevels;
+    const rack = rackLevel?.Racks;
+    const warehouse = cargo.Warehouse;
+    const capacity = rack?.Capacity ?? 100;
+    const utilization = Math.min(
+      Math.round((cargo.Quantity / capacity) * 100),
+      100
+    );
+
+    let utilizationLevel = "Baja";
+    if (utilization >= 75) utilizationLevel = "Alta";
+    else if (utilization >= 50) utilizationLevel = "Media";
+
+    return {
+      codigo: cargo.TrackingCode ?? `CGX-${cargo.Id.slice(0, 8)}`,
+      descripcion: cargo.Description ?? "-",
+      almacen: warehouse?.Name ?? "Sin Almacén",
+      rack: rack?.Code ?? rack?.Name ?? "Sin Rack",
+      nivel: `${rackLevel?.LevelNumber.toString()}`,
+      columna: cargo.RackColumn?.ColumnCode ?? "Sin Columna",
+      categoria: cargo.CargoType ?? "Sin categoría",
+      cantidad: cargo.Quantity,
+      capacidad: capacity,
+      utilizacion: `${utilization}% - ${utilizationLevel}`,
+      fecha: cargo.EntryDate.toLocaleDateString("es-HN"),
+      responsable: cargo.Users?.Name ?? cargo.Users?.User ?? "Sin usuario",
+    };
+  });
+
+  return {
+    total: result.length,
+    data: result,
+  };
+};
+
+
+export const cargoReturnReentryReport = async () => {
+  const cambios = await db.cargoStatusHistory.findMany({
+    where: {
+      NewStatus: {
+        in: ["revision", "almacenado", "rechazado"], // nuevos estados relevantes
+      },
+      PreviousStatus: {
+        not: null,
+      },
+    },
+    include: {
+      Cargo: {
+        select: {
+          TrackingCode: true,
+          Description: true,
+          DamageDescription: true,
+        },
+      },
+      Users: {
+        select: {
+          Name: true,
+          User: true,
+        },
+      },
+    },
+    orderBy: {
+      ChangedAt: "desc",
+    },
+  });
+
+  const data = cambios.map((record) => {
+    const { PreviousStatus, NewStatus } = record;
+
+    let tipoCambio = "correccion";
+    if (PreviousStatus === "entregado" && NewStatus === "almacenado") {
+      tipoCambio = "reingreso";
+    } else if (PreviousStatus === "liberado" && NewStatus === "revision") {
+      tipoCambio = "devolucion";
+    } else if (NewStatus === "rechazado") {
+      tipoCambio = "rechazo";
+    }
+
+    return {
+      codigo: record.Cargo?.TrackingCode ?? "Sin Código",
+      descripcion: record.Cargo?.Description ?? "-",
+      estadoAnterior: PreviousStatus,
+      nuevoEstado: NewStatus,
+      tipoCambio,
+      fechaCambio: record.ChangedAt.toLocaleDateString("es-HN"),
+      realizadoPor: record.Users?.Name ?? record.Users?.User ?? "Desconocido",
+      motivo: record.Cargo?.DamageDescription ?? "Sin motivo registrado",
+    };
+  });
+
+  const total = data.length;
+  const devoluciones = data.filter((r) => r.tipoCambio === "devolucion").length;
+  const reingresos = data.filter((r) => r.tipoCambio === "reingreso").length;
+  const rechazos = data.filter((r) => r.tipoCambio === "rechazo").length;
+
+  return {
+    resumen: {
+      totalCasos: total,
+      devoluciones,
+      reingresos,
+      rechazos,
+    },
+    data,
   };
 };

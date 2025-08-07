@@ -27,7 +27,13 @@ import {
 } from "./controllers/roles-permissions";
 import { getSessionLogs } from "./controllers/session";
 import { getDashboardData } from "./controllers/dashboard";
-import { getCargoEntryReport, getCargoExitReport, getCargoTransferReport } from "./controllers/reports";
+import {
+  getCargoEntryReport,
+  getCargoExitReport,
+  getCargoTransferReport,
+  getDistributionByLocationReport,
+  getCargoReturnReentryReport,
+} from "./controllers/reports";
 
 const router = Router();
 
@@ -51,9 +57,11 @@ router.get("/permissions", allPermisions);
 router.get("/roles", allRoles);
 router.get("/roles-permissions", rolesWithPermissions);
 router.get("/api/sessions", getSessionLogs);
-router.get("/dashboard", getDashboardData)
+router.get("/dashboard", getDashboardData);
 router.get("/reports/cargo-entry", getCargoEntryReport);
 router.get("/reports/cargo-exit", getCargoExitReport);
 router.get("/reports/cargo-transfer", getCargoTransferReport);
+router.get("/reports/distribution-by-location", getDistributionByLocationReport);
+router.get("/reports/cargo-return-reentry", getCargoReturnReentryReport);
 
 export { router };
