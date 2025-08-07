@@ -12,9 +12,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
+  Skeleton,
 } from "@/components/ui";
 import {
   Bar,
@@ -26,6 +25,8 @@ import {
   YAxis,
   CartesianGrid,
   ResponsiveContainer,
+  Legend,
+  LabelList,
 } from "recharts";
 import {
   Package,
@@ -45,80 +46,93 @@ import {
 } from "lucide-react";
 import { useDashboardData } from "@/lib/dashboard";
 
+// Tipos para TypeScript
+type CargoPorEstado = {
+  estado: string;
+  cantidad: number;
+  color: string;
+};
+
+type TipoEspecial = {
+  nombre: string;
+  cantidad: number;
+  porcentaje: number;
+  color: string;
+};
+
+type Categoria = {
+  nombre: string;
+  cantidad: number;
+  color: string;
+};
+
 export const Dashboard = () => {
   const [selectedView, setSelectedView] = useState("general");
   const { data: dashboardData, isLoading, error } = useDashboardData();
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error loading data</div>;
-  if (!dashboardData) return <div>No data available</div>;
+  if (isLoading) return <DashboardSkeleton />;
+  if (error)
+    return (
+      <div className="p-6 text-destructive">Error al cargar los datos</div>
+    );
+  if (!dashboardData)
+    return <div className="p-6">No hay datos disponibles</div>;
 
-  // Preparar datos para gráficos usando colores del tema
-  type CargoPorEstado = {
-    estado: string;
-    cantidad: number;
-    color: string;
-  };
+  const estadosData: CargoPorEstado[] =
+    dashboardData.general.cargosPorEstado.map((item: any) => ({
+      estado: item.estado.replace("_", " ").toUpperCase(),
+      cantidad: item.cantidad,
+      color:
+        item.estado === "almacenado"
+          ? "#3b82f6"
+          : item.estado === "entregado" || item.estado === "entregada"
+          ? "#1d4ed8"
+          : item.estado === "en_transito"
+          ? "#93c5fd" 
+          : "#60a5fa",
+    }));
 
-  const estadosData = dashboardData.general.cargosPorEstado.map((item: CargoPorEstado) => ({
-    estado: item.estado.replace("_", " ").toUpperCase(),
-    cantidad: item.cantidad,
-    color:
-      item.estado === "almacenado"
-        ? "hsl(var(--chart-2))"
-        : item.estado === "entregado" || item.estado === "entregada"
-        ? "hsl(var(--chart-4))"
-        : item.estado === "en_transito"
-        ? "hsl(var(--chart-1))"
-        : "hsl(var(--chart-3))",
-  }));
-
-  const tiposEspecialesData = [
+  const tiposEspecialesData: TipoEspecial[] = [
     {
       nombre: "Perecederos",
       cantidad: dashboardData.general.cargosPerecederos,
       porcentaje: dashboardData.general.porcentajeCargosPerecederos,
-      color: "hsl(var(--chart-2))",
+      color: "#3b82f6",
     },
     {
       nombre: "Peligrosos",
       cantidad: dashboardData.general.cargosPeligrosos,
       porcentaje: dashboardData.general.porcentajeCargosPeligrosos,
-      color: "hsl(var(--chart-5))",
+      color: "#1e40af",
     },
     {
       nombre: "Alto Valor",
       cantidad: dashboardData.general.cargosAltoValor,
       porcentaje: dashboardData.general.porcentajeCargosAltoValor,
-      color: "hsl(var(--chart-3))",
+      color: "#2563eb",
     },
   ];
 
-  type Categoria = {
-    nombre: string;
-    cantidad: number;
-    color: string;
-  };
-
-  const categoriasData = dashboardData.categorias.principales.map(
-    (cat: Categoria, index: number) => ({
+  const categoriasData: Categoria[] = dashboardData.categorias.principales.map(
+    (cat: any, index: number) => ({
       ...cat,
       color:
         index === 0
-          ? "hsl(var(--chart-1))"
+          ? "#93c5fd"
           : index === 1
-          ? "hsl(var(--chart-2))"
-          : "hsl(var(--chart-4))",
+          ? "#3b82f6"
+          : "#1d4ed8",
+    })
+  );
+  const almacenesDataConColor = dashboardData.ubicaciones.detalleAlmacenes.map(
+    (almacen: any, index: number) => ({
+      ...almacen,
+      color: `hsl(${(index * 40) % 360}, 70%, 60%)`,
     })
   );
 
-  const documentosData = dashboardData.documentos.tipos.map((doc: any, index: number) => ({
-    ...doc,
-    color: `hsl(var(--chart-${(index % 5) + 1}))`,
-  }));
-
   const getEstadoLabel = (estado: string) => {
-    const labels: { [key: string]: string } = {
+    const labels: Record<string, string> = {
       almacenado: "Almacenado",
       entregado: "Entregado",
       entregada: "Entregada",
@@ -129,33 +143,33 @@ export const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-background p-4 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
         {/* Header */}
         <Card className="border-border shadow-lg">
-          <CardHeader className="pb-6">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <CardHeader className="pb-4 md:pb-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 md:gap-6">
               <div>
-                <CardTitle className="text-4xl font-bold text-foreground mb-3">
+                <CardTitle className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-2 md:mb-3">
                   Sistema Logístico - Dashboard en Vivo
                 </CardTitle>
-                <CardDescription className="text-lg text-muted-foreground">
+                <CardDescription className="text-sm md:text-base lg:text-lg text-muted-foreground">
                   Datos actuales del sistema de gestión de cargas
                 </CardDescription>
-                <div className="flex items-center gap-6 mt-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-3 md:gap-6 mt-2 md:mt-4">
+                  <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
                     <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
                     Sistema conectado
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4" />
+                  <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                    <Clock className="h-3 w-3 md:h-4 md:w-4" />
                     Actualizado: {new Date().toLocaleTimeString()}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-2 md:gap-4">
                 <Select value={selectedView} onValueChange={setSelectedView}>
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-full md:w-40">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -164,7 +178,7 @@ export const Dashboard = () => {
                     <SelectItem value="movimientos">Movimientos</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button>
+                <Button className="w-full md:w-auto">
                   <Download className="h-4 w-4 mr-2" />
                   Exportar
                 </Button>
@@ -173,123 +187,62 @@ export const Dashboard = () => {
           </CardHeader>
         </Card>
 
-        {/* KPIs Principales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-          <Card className="border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Cargas
-              </CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {dashboardData.general.totalCargos}
-              </div>
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                <Activity className="h-3 w-3" />
-                Sistema activo
-              </p>
-            </CardContent>
-          </Card>
+        {/* KPIs Principales - Responsive Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6">
+          {renderKPICard(
+            "Total Cargas",
+            dashboardData.general.totalCargos,
+            <Package className="h-4 w-4 text-muted-foreground" />,
+            <Activity className="h-3 w-3" />,
+            "Sistema activo"
+          )}
 
-          <Card className="border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Peso Total
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {(dashboardData.general.pesoTotalKg / 1000).toFixed(1)}T
-              </div>
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                <ArrowUpRight className="h-3 w-3" />
-                Promedio: {dashboardData.general.pesoPromedioKg.toFixed(1)}kg
-              </p>
-            </CardContent>
-          </Card>
+          {renderKPICard(
+            "Peso Total",
+            `${(dashboardData.general.pesoTotalKg / 1000).toFixed(1)}T`,
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />,
+            <ArrowUpRight className="h-3 w-3" />,
+            `Promedio: ${dashboardData.general.pesoPromedioKg.toFixed(1)}kg`
+          )}
 
-          <Card className="border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Volumen Total
-              </CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {dashboardData.general.volumenTotalM3.toFixed(0)}m³
-              </div>
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                <TrendingUp className="h-3 w-3" />
-                Capacidad utilizada
-              </p>
-            </CardContent>
-          </Card>
+          {renderKPICard(
+            "Volumen Total",
+            `${dashboardData.general.volumenTotalM3.toFixed(0)}m³`,
+            <Package className="h-4 w-4 text-muted-foreground" />,
+            <TrendingUp className="h-3 w-3" />,
+            "Capacidad utilizada"
+          )}
 
-          <Card className="border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Alertas
-              </CardTitle>
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {dashboardData.alertas.activas}
-              </div>
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                <Thermometer className="h-3 w-3" />
-                {dashboardData.alertas.porTipo[0]?.tipo || "Sin alertas"}
-              </p>
-            </CardContent>
-          </Card>
+          {renderKPICard(
+            "Alertas",
+            dashboardData.alertas.activas,
+            <AlertTriangle className="h-4 w-4 text-destructive" />,
+            <Thermometer className="h-3 w-3" />,
+            dashboardData.alertas.porTipo[0]?.tipo || "Sin alertas"
+          )}
 
-          <Card className="border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Almacenes
-              </CardTitle>
-              <Warehouse className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {dashboardData.ubicaciones.totalAlmacenes}
-              </div>
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                <MapPin className="h-3 w-3" />
-                {dashboardData.ubicaciones.porcentajeOcupacionColumnas.toFixed(
-                  1
-                )}
-                % ocupación
-              </p>
-            </CardContent>
-          </Card>
+          {renderKPICard(
+            "Almacenes",
+            dashboardData.ubicaciones.totalAlmacenes,
+            <Warehouse className="h-4 w-4 text-muted-foreground" />,
+            <MapPin className="h-3 w-3" />,
+            `${dashboardData.ubicaciones.porcentajeOcupacionColumnas.toFixed(
+              1
+            )}% ocupación`
+          )}
 
-          <Card className="border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Documentos
-              </CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {dashboardData.documentos.total}
-              </div>
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                <CheckCircle className="h-3 w-3" />
-                {dashboardData.documentos.tipos.length} tipos
-              </p>
-            </CardContent>
-          </Card>
+          {renderKPICard(
+            "Documentos",
+            dashboardData.documentos.total,
+            <FileText className="h-4 w-4 text-muted-foreground" />,
+            <CheckCircle className="h-3 w-3" />,
+            `${dashboardData.documentos.tipos.length} tipos`
+          )}
         </div>
 
-        {/* Gráficos principales */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Estados de Cargas */}
+        {/* Gráficos principales - Mejorados para responsividad */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+          {/* Estados de Cargas - Gráfico de Pie mejorado */}
           <Card className="border-border">
             <CardHeader>
               <CardTitle className="text-foreground flex items-center gap-3">
@@ -303,14 +256,9 @@ export const Dashboard = () => {
                 {dashboardData.general.totalCargos} total)
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <ChartContainer
-                  config={{
-                    cantidad: { label: "Cantidad" },
-                  }}
-                  className="h-[250px]"
-                >
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+                <div className="w-full md:w-1/2 h-[250px] min-w-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -318,27 +266,33 @@ export const Dashboard = () => {
                         cx="50%"
                         cy="50%"
                         innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
+                        outerRadius={80}
+                        paddingAngle={2}
                         dataKey="cantidad"
+                        animationDuration={500}
+                        label={({ name, percent }) =>
+                          `${name}: ${(percent * 100).toFixed(0)}%`
+                        }
+                        labelLine={false}
                       >
-                        {estadosData.map((entry: CargoPorEstado, index: number) => (
+                        {estadosData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
+                      <Legend
+                        layout="horizontal"
+                        verticalAlign="bottom"
+                        wrapperStyle={{ fontSize: "0.75rem" }}
+                      />
                       <ChartTooltip
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                             const data = payload[0].payload;
                             return (
-                              <div className="bg-card p-3 border border-border rounded-lg shadow-lg">
-                                <p className="font-semibold text-card-foreground">
-                                  {data.estado}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {data.cantidad} cargas
-                                </p>
-                                <p className="text-sm text-muted-foreground">
+                              <div className="bg-card p-3 border border-border rounded-lg shadow-lg text-sm">
+                                <p className="font-semibold">{data.estado}</p>
+                                <p>{data.cantidad} cargas</p>
+                                <p>
                                   {(
                                     (data.cantidad /
                                       dashboardData.general.totalCargos) *
@@ -354,43 +308,45 @@ export const Dashboard = () => {
                       />
                     </PieChart>
                   </ResponsiveContainer>
-                </ChartContainer>
-                <div className="space-y-3">
-                  {dashboardData.general.cargosPorEstado.map((item: CargoPorEstado, index: number) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-4 h-4 rounded-full"
-                          style={{ backgroundColor: estadosData[index]?.color }}
-                        />
-                        <span className="font-medium text-foreground">
-                          {getEstadoLabel(item.estado)}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-bold text-foreground">
-                          {item.cantidad}
+                </div>
+                <div className="w-full md:w-1/2 space-y-2 md:space-y-3">
+                  {dashboardData.general.cargosPorEstado.map(
+                    (item: any, index: number) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 md:p-3 bg-muted rounded-lg text-sm"
+                      >
+                        <div className="flex items-center gap-2 md:gap-3">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{
+                              backgroundColor: estadosData[index]?.color,
+                            }}
+                          />
+                          <span className="font-medium">
+                            {getEstadoLabel(item.estado)}
+                          </span>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          {(
-                            (item.cantidad /
-                              dashboardData.general.totalCargos) *
-                            100
-                          ).toFixed(1)}
-                          %
+                        <div className="text-right">
+                          <div className="font-bold">{item.cantidad}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {(
+                              (item.cantidad /
+                                dashboardData.general.totalCargos) *
+                              100
+                            ).toFixed(1)}
+                            %
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Tipos Especiales */}
+          {/* Tipos Especiales - Gráfico de Barras mejorado */}
           <Card className="border-border">
             <CardHeader>
               <CardTitle className="text-foreground flex items-center gap-3">
@@ -403,99 +359,13 @@ export const Dashboard = () => {
                 Cargas que requieren manejo especial
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
-              <ChartContainer
-                config={{
-                  cantidad: { label: "Cantidad", color: "hsl(var(--chart-2))" },
-                }}
-                className="h-[350px]"
-              >
+            <CardContent className="p-4 md:p-6">
+              <div className="h-[300px] md:h-[350px] min-w-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={tiposEspecialesData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="hsl(var(--border))"
-                    />
-                    <XAxis
-                      dataKey="nombre"
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <ChartTooltip
-                      content={({ active, payload, label }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-card p-4 border border-border rounded-lg shadow-lg">
-                              <p className="font-semibold text-card-foreground">
-                                {label}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Cantidad: {data.cantidad}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Porcentaje: {data.porcentaje.toFixed(1)}%
-                              </p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar
-                      dataKey="cantidad"
-                      fill="hsl(var(--chart-2))"
-                      radius={[4, 4, 0, 0]}
-                      name="Cantidad"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Segunda fila de gráficos */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Ocupación por Almacén */}
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground flex items-center gap-3">
-                <div className="p-2 bg-accent rounded-lg">
-                  <Warehouse className="h-5 w-5 text-accent-foreground" />
-                </div>
-                Ocupación por Almacén
-              </CardTitle>
-              <CardDescription>
-                Porcentaje de ocupación y capacidad por almacén
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              <ChartContainer
-                config={{
-                  ocupacion: {
-                    label: "Ocupación %",
-                    color: "hsl(var(--chart-4))",
-                  },
-                }}
-                className="h-[350px]"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={dashboardData.ubicaciones.detalleAlmacenes}
-                    layout="horizontal"
-                    margin={{ top: 20, right: 30, left: 100, bottom: 5 }}
+                    margin={{ top: 20, right: 20, left: 0, bottom: 40 }}
+                    layout="vertical"
                   >
                     <CartesianGrid
                       strokeDasharray="3 3"
@@ -509,51 +379,154 @@ export const Dashboard = () => {
                       axisLine={false}
                     />
                     <YAxis
-                      type="category"
                       dataKey="nombre"
+                      type="category"
+                      width={80}
                       stroke="hsl(var(--muted-foreground))"
-                      fontSize={10}
+                      fontSize={12}
                       tickLine={false}
                       axisLine={false}
-                      width={90}
                     />
+                    <Bar
+                      dataKey="cantidad"
+                      fill="hsl(var(--chart-2))"
+                      radius={[0, 4, 4, 0]}
+                      animationDuration={1000}
+                    >
+                      <LabelList
+                        dataKey="cantidad"
+                        position="right"
+                        formatter={(value: number) =>
+                          `${value} (${(
+                            (value / dashboardData.general.totalCargos) *
+                            100
+                          ).toFixed(1)}%)`
+                        }
+                        fontSize={12}
+                      />
+                    </Bar>
                     <ChartTooltip
-                      content={({ active, payload, label }) => {
+                      content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           const data = payload[0].payload;
                           return (
-                            <div className="bg-card p-4 border border-border rounded-lg shadow-lg">
-                              <p className="font-semibold text-card-foreground">
-                                {label}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Ocupación: {data.ocupacion.toFixed(1)}%
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Cargas: {data.cargas}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Peso: {(data.pesoKg / 1000).toFixed(1)}T
-                              </p>
+                            <div className="bg-card p-3 border border-border rounded-lg shadow-lg text-sm">
+                              <p className="font-semibold">{data.nombre}</p>
+                              <p>Cantidad: {data.cantidad}</p>
+                              <p>Porcentaje: {data.porcentaje.toFixed(1)}%</p>
                             </div>
                           );
                         }
                         return null;
                       }}
                     />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Segunda fila de gráficos - Mejorados */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+          {/* Ocupación por Almacén - Gráfico horizontal mejorado */}
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="text-foreground flex items-center gap-3">
+                <div className="p-2 bg-accent rounded-lg">
+                  <Warehouse className="h-5 w-5 text-accent-foreground" />
+                </div>
+                Ocupación por Almacén
+              </CardTitle>
+              <CardDescription>
+                Porcentaje de ocupación y capacidad por almacén
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 md:p-6">
+              <div className="h-[300px] md:h-[350px] min-w-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={dashboardData.ubicaciones.detalleAlmacenes}
+                    layout="vertical"
+                    margin={{ top: 20, right: 30, left: 80, bottom: 20 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="hsl(var(--border))"
+                    />
+                    <XAxis
+                      type="number"
+                      domain={[0, 100]}
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      dataKey="nombre"
+                      type="category"
+                      width={100}
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
                     <Bar
                       dataKey="ocupacion"
                       fill="hsl(var(--chart-4))"
                       radius={[0, 4, 4, 0]}
-                      name="Ocupación %"
+                      animationDuration={1000}
+                    >
+                      {almacenesDataConColor.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                      <LabelList
+                        dataKey="ocupacion"
+                        position="right"
+                        content={({ x, y, width, height, value, index }) => {
+                          const safeIndex =
+                            typeof index === "number" ? index : 0;
+                          const color =
+                            almacenesDataConColor[safeIndex]?.color || "#000"; // Color dinámico
+                          return (
+                            <text
+                              x={Number(x) + Number(width) + 4}
+                              y={Number(y) + Number(height) / 2}
+                              fill={color}
+                              textAnchor="start"
+                              dominantBaseline="middle"
+                              fontSize={12}
+                              fontWeight="bold"
+                            >
+                              {`${Number(value).toFixed(1)}%`}
+                            </text>
+                          );
+                        }}
+                      />
+                    </Bar>
+                    <ChartTooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-card p-3 border border-border rounded-lg shadow-lg text-sm">
+                              <p className="font-semibold">{data.nombre}</p>
+                              <p>Ocupación: {data.ocupacion.toFixed(1)}%</p>
+                              <p>Cargas: {data.cargas}</p>
+                              <p>Peso: {(data.pesoKg / 1000).toFixed(1)}T</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
                     />
                   </BarChart>
                 </ResponsiveContainer>
-              </ChartContainer>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Categorías Principales */}
+          {/* Categorías Principales - Gráfico de Pie mejorado */}
           <Card className="border-border">
             <CardHeader>
               <CardTitle className="text-foreground flex items-center gap-3">
@@ -567,43 +540,48 @@ export const Dashboard = () => {
                 total)
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <ChartContainer
-                  config={{
-                    cantidad: { label: "Cantidad" },
-                  }}
-                  className="h-[250px]"
-                >
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+                <div className="w-full md:w-1/2 h-[250px] min-w-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={categoriasData}
                         cx="50%"
                         cy="50%"
-                        outerRadius={100}
-                        fill="#8884d8"
+                        outerRadius={80}
+                        paddingAngle={2}
                         dataKey="cantidad"
+                        animationDuration={500}
                         label={({ nombre, cantidad }) =>
                           `${nombre}: ${cantidad}`
                         }
                         labelLine={false}
                       >
-                        {categoriasData.map((entry: Categoria, index: number) => (
+                        {categoriasData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
+                      <Legend
+                        layout="horizontal"
+                        verticalAlign="bottom"
+                        wrapperStyle={{ fontSize: "0.75rem" }}
+                      />
                       <ChartTooltip
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                             const data = payload[0].payload;
                             return (
-                              <div className="bg-card p-3 border border-border rounded-lg shadow-lg">
-                                <p className="font-semibold text-card-foreground">
-                                  {data.nombre}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {data.cantidad} productos
+                              <div className="bg-card p-3 border border-border rounded-lg shadow-lg text-sm">
+                                <p className="font-semibold">{data.nombre}</p>
+                                <p>{data.cantidad} productos</p>
+                                <p>
+                                  {(
+                                    (data.cantidad /
+                                      dashboardData.categorias.total) *
+                                    100
+                                  ).toFixed(1)}
+                                  %
                                 </p>
                               </div>
                             );
@@ -613,25 +591,23 @@ export const Dashboard = () => {
                       />
                     </PieChart>
                   </ResponsiveContainer>
-                </ChartContainer>
-                <div className="space-y-4">
-                  {categoriasData.map((categoria: Categoria, index: number) => (
+                </div>
+                <div className="w-full md:w-1/2 space-y-2 md:space-y-3">
+                  {categoriasData.map((categoria, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-4 bg-muted rounded-lg"
+                      className="flex items-center justify-between p-2 md:p-3 bg-muted rounded-lg text-sm"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 md:gap-3">
                         <div
-                          className="w-4 h-4 rounded-full"
+                          className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: categoria.color }}
                         />
-                        <span className="font-medium text-foreground">
-                          {categoria.nombre}
-                        </span>
+                        <span className="font-medium">{categoria.nombre}</span>
                       </div>
                       <Badge
                         variant="outline"
-                        className="font-bold text-lg px-3 py-1"
+                        className="font-bold px-2 py-0.5 md:px-3 md:py-1"
                       >
                         {categoria.cantidad}
                       </Badge>
@@ -643,7 +619,7 @@ export const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Información detallada de almacenes */}
+        {/* Información detallada de almacenes - Mejorada para móviles */}
         <Card className="border-border">
           <CardHeader>
             <CardTitle className="text-foreground flex items-center gap-3">
@@ -656,39 +632,35 @@ export const Dashboard = () => {
               Información detallada de capacidad, peso y volumen por almacén
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <CardContent className="p-4 md:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
               {dashboardData.ubicaciones.detalleAlmacenes.map(
                 (almacen: any, index: number) => (
                   <div
                     key={index}
-                    className="bg-muted rounded-lg p-6 border border-border"
+                    className="bg-muted rounded-lg p-4 md:p-6 border border-border"
                   >
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-bold text-foreground text-sm">
+                    <div className="flex items-center justify-between mb-3 md:mb-4">
+                      <h3 className="font-bold text-sm md:text-base">
                         {almacen.nombre}
                       </h3>
                       <div className="flex items-center gap-1">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <span className="text-xs text-muted-foreground">
-                          Activo
-                        </span>
+                        <span className="text-xs">Activo</span>
                       </div>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-3 md:space-y-4">
                       <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm text-muted-foreground">
-                            Ocupación
-                          </span>
-                          <span className="font-bold text-foreground">
+                        <div className="flex justify-between items-center mb-1 md:mb-2">
+                          <span className="text-xs md:text-sm">Ocupación</span>
+                          <span className="font-bold">
                             {almacen.ocupacion.toFixed(1)}%
                           </span>
                         </div>
-                        <div className="w-full bg-border rounded-full h-3">
+                        <div className="w-full bg-border rounded-full h-2 md:h-3">
                           <div
-                            className={`h-3 rounded-full transition-all duration-500 ${
+                            className={`h-2 md:h-3 rounded-full transition-all duration-500 ${
                               almacen.ocupacion > 15
                                 ? "bg-destructive"
                                 : almacen.ocupacion > 10
@@ -700,32 +672,28 @@ export const Dashboard = () => {
                             }}
                           />
                         </div>
-                        <div className="text-xs text-muted-foreground mt-1">
+                        <div className="text-xs mt-1">
                           {almacen.ocupadas}/{almacen.columnas} columnas
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div className="bg-card rounded-lg p-3 text-center border border-border">
-                          <div className="text-muted-foreground">Cargas</div>
-                          <div className="font-bold text-foreground">
-                            {almacen.cargas}
-                          </div>
+                      <div className="grid grid-cols-2 gap-2 md:gap-3 text-xs md:text-sm">
+                        <div className="bg-card rounded-lg p-2 md:p-3 text-center border border-border">
+                          <div>Cargas</div>
+                          <div className="font-bold">{almacen.cargas}</div>
                         </div>
-                        <div className="bg-card rounded-lg p-3 text-center border border-border">
-                          <div className="text-muted-foreground">Peso</div>
-                          <div className="font-bold text-foreground">
+                        <div className="bg-card rounded-lg p-2 md:p-3 text-center border border-border">
+                          <div>Peso</div>
+                          <div className="font-bold">
                             {(almacen.pesoKg / 1000).toFixed(1)}T
                           </div>
                         </div>
                       </div>
 
-                      <div className="bg-card rounded-lg p-3 border border-border">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm text-muted-foreground">
-                            Volumen
-                          </span>
-                          <span className="font-bold text-foreground">
+                      <div className="bg-card rounded-lg p-2 md:p-3 border border-border">
+                        <div className="flex justify-between items-center mb-1 md:mb-2">
+                          <span className="text-xs md:text-sm">Volumen</span>
+                          <span className="font-bold">
                             {almacen.volumenM3.toFixed(0)}m³
                           </span>
                         </div>
@@ -749,68 +717,9 @@ export const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Documentos y Movimientos */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Tipos de Documentos */}
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground flex items-center gap-3">
-                <div className="p-2 bg-accent rounded-lg">
-                  <FileText className="h-5 w-5 text-accent-foreground" />
-                </div>
-                Documentos por Tipo
-              </CardTitle>
-              <CardDescription>
-                Distribución de documentos en el sistema (
-                {dashboardData.documentos.total} total)
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              <ChartContainer
-                config={{
-                  cantidad: { label: "Cantidad", color: "hsl(var(--chart-1))" },
-                }}
-                className="h-[300px]"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={documentosData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="hsl(var(--border))"
-                    />
-                    <XAxis
-                      dataKey="tipo"
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      angle={-45}
-                      textAnchor="end"
-                      height={80}
-                    />
-                    <YAxis
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar
-                      dataKey="cantidad"
-                      fill="hsl(var(--chart-1))"
-                      radius={[4, 4, 0, 0]}
-                      name="Cantidad"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+        {/* Documentos y Movimientos - Mejorados */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
 
-          {/* Últimas Entregas */}
           <Card className="border-border">
             <CardHeader>
               <CardTitle className="text-foreground flex items-center gap-3">
@@ -823,32 +732,30 @@ export const Dashboard = () => {
                 Últimas entregas y transferencias del sistema
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-6">
+            <CardContent className="p-4 md:p-6">
+              <div className="space-y-4 md:space-y-6">
                 <div>
-                  <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <h4 className="font-semibold text-sm md:text-base mb-2 md:mb-3 flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-chart-2" />
                     Entregas Completadas (
                     {dashboardData.movimientos.cargasEntregadas})
                   </h4>
-                  <div className="space-y-3">
+                  <div className="space-y-2 md:space-y-3">
                     {dashboardData.movimientos.ultimasEntregas.map(
-                      (entrega: {
-                        trackingCode: string;
-                        recibidoPor: string;
-                        fechaEntrega: string | number | Date;
-                      }, index: number) => (
+                      (entrega: any, index: number) => (
                         <div
                           key={index}
-                          className="bg-muted border border-border rounded-lg p-4"
+                          className="bg-muted border border-border rounded-lg p-3 md:p-4 text-sm"
                         >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-foreground">
+                          <div className="flex items-center justify-between mb-1 md:mb-2">
+                            <span className="font-medium">
                               {entrega.trackingCode}
                             </span>
-                            <Badge variant="secondary">Entregado</Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              Entregado
+                            </Badge>
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div>
                             <p>
                               Recibido por:{" "}
                               <span className="font-medium">
@@ -869,19 +776,19 @@ export const Dashboard = () => {
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <h4 className="font-semibold text-sm md:text-base mb-2 md:mb-3 flex items-center gap-2">
                     <Activity className="h-4 w-4 text-chart-1" />
                     Transferencias (
                     {dashboardData.movimientos.totalTransferencias})
                   </h4>
-                  <div className="bg-muted border border-border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-foreground">
-                        TRK-2025-0001
-                      </span>
-                      <Badge variant="outline">Transferido</Badge>
+                  <div className="bg-muted border border-border rounded-lg p-3 md:p-4 text-sm">
+                    <div className="flex items-center justify-between mb-1 md:mb-2">
+                      <span className="font-medium">TRK-2025-0001</span>
+                      <Badge variant="outline" className="text-xs">
+                        Transferido
+                      </Badge>
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div>
                       <p>De: Carga General → A: Carga General</p>
                       <p>Fecha: 22/07/2025</p>
                     </div>
@@ -895,3 +802,58 @@ export const Dashboard = () => {
     </div>
   );
 };
+
+// Componente auxiliar para renderizar tarjetas KPI
+const renderKPICard = (
+  title: string,
+  value: string | number,
+  icon: React.ReactNode,
+  secondaryIcon: React.ReactNode,
+  description: string
+) => (
+  <Card className="border-border">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground">
+        {title}
+      </CardTitle>
+      {icon}
+    </CardHeader>
+    <CardContent>
+      <div className="text-xl md:text-2xl font-bold text-foreground">
+        {value}
+      </div>
+      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+        {secondaryIcon}
+        {description}
+      </p>
+    </CardContent>
+  </Card>
+);
+
+// Skeleton para loading state
+const DashboardSkeleton = () => (
+  <div className="min-h-screen bg-background p-6">
+    <div className="max-w-7xl mx-auto space-y-8">
+      <Skeleton className="h-24 w-full" />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+        {[...Array(6)].map((_, i) => (
+          <Skeleton key={i} className="h-32" />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {[...Array(4)].map((_, i) => (
+          <Skeleton key={i} className="h-96" />
+        ))}
+      </div>
+
+      <Skeleton className="h-64 w-full" />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Skeleton className="h-64" />
+        <Skeleton className="h-64" />
+      </div>
+    </div>
+  </div>
+);
