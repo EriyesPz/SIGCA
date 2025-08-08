@@ -89,3 +89,39 @@ export const useCargoTransferReport = (filters: CargoTransferFilters) => {
     enabled: true,
   });
 };
+
+export interface DistributionByLocationFilters {
+  from?: string;       // YYYY-MM-DD (opcional)
+  to?: string;         // YYYY-MM-DD (opcional)
+  warehouseId?: string;
+}
+
+const fetchDistributionByLocationReport = async (filters: DistributionByLocationFilters) => {
+  const queryParams = new URLSearchParams();
+
+  if (filters.from) queryParams.append("from", filters.from);
+  if (filters.to) queryParams.append("to", filters.to);
+  if (filters.warehouseId) queryParams.append("warehouseId", filters.warehouseId);
+
+  const res = await fetch(
+    `${getApiUrl()}/reports/distribution-by-location?${queryParams.toString()}`
+  );
+
+  if (!res.ok) {
+    throw new Error(
+      `Error fetching distribution by location report: ${res.statusText}`
+    );
+  }
+
+  return res.json();
+};
+
+export const useDistributionByLocationReport = (
+  filters: DistributionByLocationFilters
+) => {
+  return useQuery({
+    queryKey: ["distributionByLocationReport", filters],
+    queryFn: () => fetchDistributionByLocationReport(filters),
+    enabled: true,
+  });
+};

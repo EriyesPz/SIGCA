@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -25,93 +25,26 @@ import {
   Filter,
   RotateCcw,
   Package,
-  Warehouse,
+  Warehouse as WarehouseIcon,
   Archive,
   TrendingUp,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
-import { PDFPreview } from "@/components/pdf";
 import { generatePDF } from "@/utils/pdfExport";
+import { generateExcelReport } from "@/utils/excelExport";
+import { useDistributionByLocationReport } from "@/lib/reports";
 
-const mockData = [
-  {
-    codigo: "UBC-2024-001",
-    descripcion: "Smartphones - Samsung Galaxy A54",
-    almacen: "Almacen General",
-    rack: "R-01",
-    nivel: "N-03",
-    columna: "C-05",
-    categoria: "Electrónicos",
-    cantidad: 45,
-    capacidad: 60,
-    utilizacion: 75,
-    fechaActualizacion: "15/1/2024",
-    responsable: "Juan Pérez",
-  },
-  {
-    codigo: "UBC-2024-002",
-    descripcion: "Ropa deportiva - Lote 30 piezas",
-    almacen: "Almacen General",
-    rack: "R-02",
-    nivel: "N-02",
-    columna: "C-12",
-    categoria: "Textiles",
-    cantidad: 28,
-    capacidad: 40,
-    utilizacion: 70,
-    fechaActualizacion: "15/1/2024",
-    responsable: "María González",
-  },
-  {
-    codigo: "UBC-2024-003",
-    descripcion: "Medicamentos varios - Pedido farmacia",
-    almacen: "Almacen General",
-    rack: "R-01",
-    nivel: "N-01",
-    columna: "C-08",
-    categoria: "Farmacéuticos",
-    cantidad: 120,
-    capacidad: 150,
-    utilizacion: 80,
-    fechaActualizacion: "16/1/2024",
-    responsable: "Carlos Rodríguez",
-  },
-  {
-    codigo: "UBC-2024-004",
-    descripcion: "Electrodomésticos - Licuadora y tostadora",
-    almacen: "Almacen General",
-    rack: "R-03",
-    nivel: "N-04",
-    columna: "C-03",
-    categoria: "Electrodomésticos",
-    cantidad: 18,
-    capacidad: 25,
-    utilizacion: 72,
-    fechaActualizacion: "16/1/2024",
-    responsable: "Ana Martínez",
-  },
-  {
-    codigo: "UBC-2024-005",
-    descripcion: "Artículos de oficina - Kit completo",
-    almacen: "Almacen General",
-    rack: "R-02",
-    nivel: "N-01",
-    columna: "C-15",
-    categoria: "Oficina",
-    cantidad: 85,
-    capacidad: 100,
-    utilizacion: 85,
-    fechaActualizacion: "17/1/2024",
-    responsable: "Luis Fernández",
-  },
-];
-
-const getUtilizacionBadge = (utilizacion: number) => {
-  if (utilizacion >= 80)
+// helper: badge según % de utilización
+const getUtilizacionBadge = (utilizacionPercent: number) => {
+  if (utilizacionPercent >= 80)
     return { variant: "destructive" as const, text: "Alta" };
-  if (utilizacion >= 60) return { variant: "default" as const, text: "Media" };
+  if (utilizacionPercent >= 60)
+    return { variant: "default" as const, text: "Media" };
   return { variant: "secondary" as const, text: "Baja" };
 };
 
+// columnas para PDF
 const columnsDistribution = [
   { header: "Código", accessor: "codigo" },
   { header: "Descripción", accessor: "descripcion" },
@@ -124,17 +57,144 @@ const columnsDistribution = [
   { header: "Capacidad", accessor: "capacidad" },
   {
     header: "Utilización",
-    accessor: "utilizacion",
-    render: (val: number) => `${val}%`,
+    accessor: "utilizacionPercent",
+    render: (_: number, row: any) =>
+      `${row.utilizacionPercent}% - ${row.utilizacionLevel}`,
   },
-  { header: "Fecha", accessor: "fechaActualizacion" },
+  {
+    header: "Fecha",
+    accessor: "fecha",
+    render: (v: string) =>
+      new Date(v).toLocaleDateString("es-ES", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }),
+  },
   { header: "Responsable", accessor: "responsable" },
 ];
 
+// formatea a YYYY-MM-DD o undefined
+const toYMD = (s: string) =>
+  s ? new Date(s).toISOString().slice(0, 10) : undefined;
+
 export const DistributionCargo = () => {
-  const [fechaInicio, setFechaInicio] = useState("01/16/2024");
-  const [fechaFin, setFechaFin] = useState("01/18/2024");
-  const [showPDF, setShowPDF] = useState(false);
+  // fechas opcionales
+  const [fechaInicio, setFechaInicio] = useState<string>("");
+  const [fechaFin, setFechaFin] = useState<string>("");
+  const [, setShowPDF] = useState(false);
+  const warehouseId: string | undefined = undefined;
+
+  // PAGINACIÓN (cliente)
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+
+  // hook al backend
+  const { data, isLoading, error } = useDistributionByLocationReport({
+    from: toYMD(fechaInicio),
+    to: toYMD(fechaFin),
+    warehouseId,
+  });
+
+  // normaliza la data
+  const rows = useMemo(() => {
+    return Array.isArray(data?.data) ? data.data : [];
+  }, [data]);
+
+  // KPIs
+  const summary = useMemo(() => {
+    const total = rows.length;
+    const ocupadas = rows.filter(
+      (r: any) => Number(r.cantidad ?? 0) > 0
+    ).length;
+    const disponibles = total - ocupadas;
+
+    const avg =
+      total > 0
+        ? rows.reduce(
+            (acc: number, r: any) => acc + Number(r.utilizacionPercent ?? 0),
+            0
+          ) / total
+        : 0;
+
+    return {
+      total,
+      ocupadas,
+      disponibles,
+      utilizacionPromedio: Math.round(avg),
+    };
+  }, [rows]);
+
+  // Derivados de paginación
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = Math.min(rows.length, startIndex + pageSize);
+  const pagedRows = useMemo(
+    () => rows.slice(startIndex, endIndex),
+    [rows, startIndex, endIndex]
+  );
+
+  // Resetear página cuando cambian filtros, data o pageSize
+  useEffect(() => {
+    setPage(1);
+  }, [fechaInicio, fechaFin, pageSize, rows.length]);
+
+  const resetFilters = () => {
+    setFechaInicio("");
+    setFechaFin("");
+  };
+
+  const onDownloadPdf = () => {
+    generatePDF(
+      "Distribución por Ubicación",
+      columnsDistribution,
+      rows, // exporta todo, no solo la página actual
+      `Total ubicaciones: ${summary.total}\nOcupadas: ${summary.ocupadas}\nDisponibles: ${summary.disponibles}\nUtilización Promedio: ${summary.utilizacionPromedio}%`,
+      `• Reubicar exceso en racks con utilización alta.\n• Verificar niveles con sobrecarga.\n• Considerar redistribución en columnas poco usadas.`,
+      fechaInicio && fechaFin
+        ? `${toYMD(fechaInicio)} - ${toYMD(fechaFin)}`
+        : "Sin rango de fechas"
+    );
+  };
+
+  const onDownloadExcel = () => {
+    const excelRows = rows.map((r: any) => ({
+      Código: r.codigo,
+      Descripción: r.descripcion,
+      Almacén: r.almacen,
+      Rack: r.rack,
+      Nivel: r.nivel,
+      Columna: r.columna,
+      Categoría: r.categoria,
+      Cantidad: r.cantidad,
+      Capacidad: r.capacidad,
+      "Utilización (%)": r.utilizacionPercent,
+      "Nivel Utilización": r.utilizacionLevel,
+      Fecha: r.fecha,
+      Responsable: r.responsable,
+    }));
+    generateExcelReport(excelRows, "reporte_distribucion_ubicacion");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background p-6 text-foreground">
+        <div className="max-w-7xl mx-auto">
+          <p className="text-muted-foreground">Cargando reporte…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background p-6 text-foreground">
+        <div className="max-w-7xl mx-auto">
+          <p className="text-red-600">Error al cargar el reporte.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-6 text-foreground">
@@ -151,35 +211,32 @@ export const DistributionCargo = () => {
                   Reporte de Distribución por Ubicación
                 </h1>
                 <p className="text-muted-foreground">
-                  Análisis detallado de Rack, Nivel y Columna • 2024-01-16 -
-                  2024-01-18
+                  Análisis de Rack, Nivel y Columna •{" "}
+                  {fechaInicio && fechaFin
+                    ? `${toYMD(fechaInicio)} - ${toYMD(fechaFin)}`
+                    : "Sin rango de fechas"}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowPDF(true)}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPDF(true)}
+              >
                 <Eye className="h-4 w-4 mr-2" />
                 Vista previa
               </Button>
               <Button
                 size="sm"
                 className="bg-red-600 hover:bg-red-700 text-white"
-                onClick={() =>
-                  generatePDF(
-                    "Distribución por Ubicación",
-                    columnsDistribution,
-                    mockData,
-                    `Total ubicaciones: 24\nOcupadas: 18\nDisponibles: 6\nUtilización Promedio: 76%`,
-                    `• Reubicar exceso en Rack R-01\n• Verificar niveles N-01 y N-03 por sobrecarga\n• Considerar redistribución en columnas poco usadas`,
-                    `${fechaInicio} - ${fechaFin}`
-                  )
-                }
+                onClick={onDownloadPdf}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Descargar PDF
               </Button>
 
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={onDownloadExcel}>
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
                 Descargar Excel
               </Button>
@@ -199,63 +256,56 @@ export const DistributionCargo = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div>
               <label className="block text-sm text-muted-foreground mb-2">
-                Fecha Inicio
+                Fecha Inicio (opcional)
               </label>
               <Input
+                type="date"
                 value={fechaInicio}
                 onChange={(e) => setFechaInicio(e.target.value)}
+                placeholder="YYYY-MM-DD"
               />
             </div>
             <div>
               <label className="block text-sm text-muted-foreground mb-2">
-                Fecha Fin
+                Fecha Fin (opcional)
               </label>
               <Input
+                type="date"
                 value={fechaFin}
                 onChange={(e) => setFechaFin(e.target.value)}
+                placeholder="YYYY-MM-DD"
               />
             </div>
             <div>
               <label className="block text-sm text-muted-foreground mb-2">
-                Rack
+                Tamaño de página
               </label>
-              <Select>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(v) => setPageSize(Number(v))}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Buscar por rack..." />
+                  <SelectValue placeholder="Filas por página" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos los racks</SelectItem>
-                  <SelectItem value="R-01">Rack R-01</SelectItem>
-                  <SelectItem value="R-02">Rack R-02</SelectItem>
-                  <SelectItem value="R-03">Rack R-03</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <label className="block text-sm text-muted-foreground mb-2">
-                Categoría
-              </label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas las categorías" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las categorías</SelectItem>
-                  <SelectItem value="electronics">Electrónicos</SelectItem>
-                  <SelectItem value="textiles">Textiles</SelectItem>
-                  <SelectItem value="pharmaceuticals">Farmacéuticos</SelectItem>
-                  <SelectItem value="appliances">Electrodomésticos</SelectItem>
-                  <SelectItem value="office">Oficina</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-end">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={resetFilters}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Limpiar Filtros
+              </Button>
             </div>
-          </div>
-
-          <div className="flex justify-end">
-            <Button variant="outline" size="sm">
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Limpiar Filtros
-            </Button>
           </div>
         </div>
 
@@ -269,7 +319,7 @@ export const DistributionCargo = () => {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Total Ubicaciones</p>
-                  <p className="text-2xl">24</p>
+                  <p className="text-2xl">{summary.total}</p>
                 </div>
               </div>
             </CardContent>
@@ -279,11 +329,11 @@ export const DistributionCargo = () => {
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-green-600 rounded-lg">
-                  <Warehouse className="h-6 w-6 text-white" />
+                  <WarehouseIcon className="h-6 w-6 text-white" />
                 </div>
                 <div>
                   <p className="text-muted-foreground">Ocupadas</p>
-                  <p className="text-2xl">18</p>
+                  <p className="text-2xl">{summary.ocupadas}</p>
                 </div>
               </div>
             </CardContent>
@@ -297,7 +347,7 @@ export const DistributionCargo = () => {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Disponibles</p>
-                  <p className="text-2xl">6</p>
+                  <p className="text-2xl">{summary.disponibles}</p>
                 </div>
               </div>
             </CardContent>
@@ -311,7 +361,7 @@ export const DistributionCargo = () => {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Utilización Promedio</p>
-                  <p className="text-2xl">76%</p>
+                  <p className="text-2xl">{summary.utilizacionPromedio}%</p>
                 </div>
               </div>
             </CardContent>
@@ -320,10 +370,20 @@ export const DistributionCargo = () => {
 
         {/* Tabla de Detalle */}
         <div className="bg-card rounded-lg border border-border">
-          <div className="p-4 border-b border-border">
+          <div className="p-4 border-b border-border flex items-center justify-between">
             <h3 className="text-foreground">
               Detalle de Distribución por Ubicación
             </h3>
+            <div className="text-sm text-muted-foreground">
+              {rows.length > 0 ? (
+                <>
+                  Mostrando <strong>{startIndex + 1}</strong>–
+                  <strong>{endIndex}</strong> de <strong>{rows.length}</strong>
+                </>
+              ) : (
+                "Sin registros"
+              )}
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -332,7 +392,7 @@ export const DistributionCargo = () => {
                 <TableRow className="border-border hover:bg-muted/50">
                   <TableHead>Código</TableHead>
                   <TableHead>Descripción</TableHead>
-                  <TableHead>Almacen</TableHead>
+                  <TableHead>Almacén</TableHead>
                   <TableHead>Rack</TableHead>
                   <TableHead>Nivel</TableHead>
                   <TableHead>Columna</TableHead>
@@ -345,13 +405,13 @@ export const DistributionCargo = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockData.map((item, index) => {
-                  const utilizacionBadge = getUtilizacionBadge(
-                    item.utilizacion
+                {pagedRows.map((item: any, index: number) => {
+                  const b = getUtilizacionBadge(
+                    Number(item.utilizacionPercent ?? 0)
                   );
                   return (
                     <TableRow
-                      key={index}
+                      key={item.codigo ?? index}
                       className="border-border hover:bg-muted/50"
                     >
                       <TableCell>{item.codigo}</TableCell>
@@ -392,17 +452,56 @@ export const DistributionCargo = () => {
                       <TableCell>{item.cantidad}</TableCell>
                       <TableCell>{item.capacidad}</TableCell>
                       <TableCell>
-                        <Badge variant={utilizacionBadge.variant}>
-                          {item.utilizacion}% - {utilizacionBadge.text}
+                        <Badge variant={b.variant}>
+                          {item.utilizacionPercent}% - {item.utilizacionLevel}
                         </Badge>
                       </TableCell>
-                      <TableCell>{item.fechaActualizacion}</TableCell>
+                      <TableCell>
+                        {new Date(item.fecha).toLocaleDateString("es-ES")}
+                      </TableCell>
                       <TableCell>{item.responsable}</TableCell>
                     </TableRow>
                   );
                 })}
+                {pagedRows.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={12}
+                      className="text-center text-muted-foreground"
+                    >
+                      No hay registros para los filtros seleccionados.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Controles de paginación */}
+          <div className="flex items-center justify-between p-4 border-t border-border">
+            <div className="text-sm text-muted-foreground">
+              Página {page} de {totalPages}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Anterior
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+              >
+                Siguiente
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>

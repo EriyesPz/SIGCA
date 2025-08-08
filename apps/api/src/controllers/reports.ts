@@ -69,12 +69,44 @@ export const getCargoTransferReport = async (
     return;
   }
 };
+
+const startOfDay = (d: Date) =>
+  new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+const endOfDay = (d: Date) =>
+  new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+
 export const getDistributionByLocationReport = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    const report = await distributionByLocationReport();
+    const { from, to } = req.query as { from?: string; to?: string };
+
+    let dateRange:
+      | { gte?: Date; lte?: Date }
+      | undefined = undefined;
+
+    if (from || to) {
+      dateRange = {};
+      if (from) {
+        const f = new Date(from);
+        if (isNaN(f.getTime())) {
+          res.status(400).json({ error: "Parámetro 'from' inválido. Use YYYY-MM-DD." });
+          return;
+        }
+        dateRange.gte = startOfDay(f);
+      }
+      if (to) {
+        const t = new Date(to);
+        if (isNaN(t.getTime())) {
+          res.status(400).json({ error: "Parámetro 'to' inválido. Use YYYY-MM-DD." });
+          return;
+        }
+        dateRange.lte = endOfDay(t);
+      }
+    }
+
+    const report = await distributionByLocationReport({ dateRange });
     res.status(200).json(report);
     return;
   } catch (error) {

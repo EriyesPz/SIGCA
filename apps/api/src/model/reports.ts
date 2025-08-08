@@ -397,14 +397,27 @@ export const cargoTransferReport = async (params?: DateFilters) => {
   };
 };
 
-export const distributionByLocationReport = async () => {
+type DistributionByLocationParams = {
+  dateRange?: { gte?: Date; lte?: Date };
+};
+
+export const distributionByLocationReport = async (
+  params: DistributionByLocationParams = {}
+) => {
+  const where: any = {
+    ExitDate: null,
+    ColumnId: { not: null },
+  };
+
+  // Filtrar por EntryDate si vino rango
+  if (params.dateRange?.gte || params.dateRange?.lte) {
+    where.EntryDate = {};
+    if (params.dateRange.gte) where.EntryDate.gte = params.dateRange.gte;
+    if (params.dateRange.lte) where.EntryDate.lte = params.dateRange.lte;
+  }
+
   const cargos = await db.cargo.findMany({
-    where: {
-      ExitDate: null,
-      ColumnId: {
-        not: null,
-      },
-    },
+    where,
     include: {
       Warehouse: true,
       RackColumn: {
@@ -431,33 +444,39 @@ export const distributionByLocationReport = async () => {
     const rackLevel = cargo.RackColumn?.RackLevels;
     const rack = rackLevel?.Racks;
     const warehouse = cargo.Warehouse;
+
+    // capacidad tomada del rack si existe; si no, default 100
     const capacity = rack?.Capacity ?? 100;
-    const utilization = Math.min(
-      Math.round((cargo.Quantity / capacity) * 100),
-      100
-    );
+
+    const utilizationPct = capacity > 0
+      ? Math.min(Math.round((cargo.Quantity / capacity) * 100), 100)
+      : 0;
 
     let utilizationLevel = "Baja";
-    if (utilization >= 75) utilizationLevel = "Alta";
-    else if (utilization >= 50) utilizationLevel = "Media";
+    if (utilizationPct >= 75) utilizationLevel = "Alta";
+    else if (utilizationPct >= 50) utilizationLevel = "Media";
 
     return {
       codigo: cargo.TrackingCode ?? `CGX-${cargo.Id.slice(0, 8)}`,
       descripcion: cargo.Description ?? "-",
       almacen: warehouse?.Name ?? "Sin Almacén",
       rack: rack?.Code ?? rack?.Name ?? "Sin Rack",
-      nivel: `${rackLevel?.LevelNumber.toString()}`,
+      nivel: rackLevel?.LevelNumber?.toString() ?? "-",
       columna: cargo.RackColumn?.ColumnCode ?? "Sin Columna",
       categoria: cargo.CargoType ?? "Sin categoría",
       cantidad: cargo.Quantity,
       capacidad: capacity,
-      utilizacion: `${utilization}% - ${utilizationLevel}`,
-      fecha: cargo.EntryDate.toLocaleDateString("es-HN"),
+      utilizacion: `${utilizationPct}% - ${utilizationLevel}`,
+      fecha: cargo.EntryDate, // mejor devolver Date crudo y formatear en el frontend
       responsable: cargo.Users?.Name ?? cargo.Users?.User ?? "Sin usuario",
     };
   });
 
   return {
+    meta: {
+      from: params.dateRange?.gte ?? null,
+      to: params.dateRange?.lte ?? null,
+    },
     total: result.length,
     data: result,
   };
