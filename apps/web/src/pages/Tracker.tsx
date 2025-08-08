@@ -21,7 +21,19 @@ export const WarehouseLocationTracker = () => {
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  type SelectedLocation = Location & { rack: Rack; warehouse: Warehouse };
+  // Extras que vienen del backend:
+  type BackendExtras = {
+    airWaybillNumber?: string;
+    houseAirWaybillNumber?: string;
+    masterAirWaybillNumber?: string;
+    manifestNumber?: string;
+    weightKg?: number;
+    dimensionsCm?: { Width: number; Height: number; Length: number };
+    rackCode?: string;
+    isOccupied?: boolean;
+  };
+
+  type SelectedLocation = Location & { rack: Rack; warehouse: Warehouse } & BackendExtras;
   const [selectedLocation, setSelectedLocation] =
     useState<SelectedLocation | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -46,6 +58,7 @@ export const WarehouseLocationTracker = () => {
 
   const isFilteringByWarehouse = selectedWarehouse !== "all";
 
+  // Normaliza para la tabla (nombres de almacén/rack e IDs)
   const enrichedLocations = useMemo(() => {
     const raw =
       isFilteringByWarehouse && warehouseData
@@ -61,20 +74,30 @@ export const WarehouseLocationTracker = () => {
     }));
   }, [isFilteringByWarehouse, warehouseData, pagedData]);
 
+  // Para el árbol de racks/ubicaciones
   const rowsForTree = useMemo(() => {
-    return enrichedLocations.map((loc: any) => ({
-      warehouse: loc.warehouseId,
-      warehouseName: loc.warehouseName,
-      rackCode: loc.rackId,
-      rack: loc.rackName,
-      level: loc.level,
-      column: loc.column,
-      status: loc.status,
-      trackingCode: loc.trackingCode,
-      description: loc.description,
-      isOccupied: loc.status === "almacenado" || loc.status === "reservado",
-    }));
-  }, [enrichedLocations]);
+  return enrichedLocations.map((loc: any) => ({
+    warehouse: loc.warehouseId,
+    warehouseName: loc.warehouseName,
+    rackCode: loc.rackId,
+    rack: loc.rackName,
+    level: loc.level,
+    column: loc.column,
+    status: loc.status,
+    trackingCode: loc.trackingCode,
+    description: loc.description,
+    isOccupied: loc.status === "almacenado" || loc.status === "reservado",
+
+    // 👇👇👇 AÑADIDOS (vienen del backend)
+    airWaybillNumber: loc.airWaybillNumber ?? null,
+    houseAirWaybillNumber: loc.houseAirWaybillNumber ?? null,
+    masterAirWaybillNumber: loc.masterAirWaybillNumber ?? null,
+    manifestNumber: loc.manifestNumber ?? null,
+    weightKg: loc.weightKg ?? null,
+    dimensionsCm: loc.dimensionsCm ?? null,
+  }));
+}, [enrichedLocations]);
+
 
   const warehouseLocations = useMemo(() => {
     return buildWarehouseTree(rowsForTree);
@@ -94,18 +117,33 @@ export const WarehouseLocationTracker = () => {
     setPage(1); // Resetear a página 1 si cambia el filtro
   }, [selectedWarehouse, filterStatus]);
 
+  // Fuente plana de datos originales del backend (para extra fields)
+  const flatLocations = isFilteringByWarehouse
+    ? (warehouseData as any[]) || []
+    : (pagedData?.data as any[]) || [];
+
   const handleLocationClick = (
     location: Location,
     rack: Rack,
     warehouse: Warehouse
   ) => {
-    setSelectedLocation({ ...location, rack, warehouse });
+    // Buscar el registro original del backend que coincide con la celda clickeada
+    const original = (flatLocations as any[]).find((fl) =>
+      (fl.warehouseId ?? fl.warehouse) === (location as any).warehouseId &&
+      ((fl.rackId ?? fl.rackCode) === (location as any).rackId) &&
+      fl.level === (location as any).level &&
+      fl.column === (location as any).column
+    );
+
+    // Mezcla: lo de la tabla + rack/warehouse + extras del backend
+    setSelectedLocation({
+      ...(location as any),
+      rack,
+      warehouse,
+      ...(original ?? {}),
+    });
     setIsDetailOpen(true);
   };
-
-  const flatLocations = isFilteringByWarehouse
-  ? warehouseData || []
-  : pagedData?.data || [];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">

@@ -133,7 +133,6 @@ export const LocationsTable = ({
 
   const currentPageLocations = sortedLocations;
 
-
   const handleSort = (field: string) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -237,6 +236,7 @@ export const LocationsTable = ({
                 <SortableHeader field="rackName">Rack</SortableHeader>
                 <SortableHeader field="position">Posición</SortableHeader>
                 <SortableHeader field="status">Estado</SortableHeader>
+                <SortableHeader field="houseAirWaybillNumber">Guía</SortableHeader>
                 <SortableHeader field="trackingCode">Tracking</SortableHeader>
                 <SortableHeader field="description">Descripción</SortableHeader>
                 <TableHead className="w-20">Acciones</TableHead>
@@ -296,6 +296,11 @@ export const LocationsTable = ({
                         >
                           {status.label}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-mono text-sm">
+                          {location.houseAirWaybillNumber}
+                        </span>
                       </TableCell>
                       <TableCell>
                         {location.trackingCode ? (

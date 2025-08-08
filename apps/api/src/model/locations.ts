@@ -18,6 +18,13 @@ export const getAllLocations = async (page = 1, limit = 10) => {
                       TrackingCode: true,
                       Status: true,
                       Description: true,
+                      AirWaybillNumber: true,
+                      HouseAirWaybillNumber: true,
+                      MasterAirWaybillNumber: true,
+                      ManifestNumber: true,
+                      WeightKg: true,
+                      DimensionsCm: true
+
                     },
                     orderBy: {
                       EntryDate: "asc",
@@ -51,6 +58,12 @@ export const getAllLocations = async (page = 1, limit = 10) => {
             trackingCode: cargo?.TrackingCode ?? null,
             status: cargo ? LocationStatus.ALMACENADO : LocationStatus.DISPONIBLE,
             description: cargo?.Description ?? null,
+            airWaybillNumber: cargo?.AirWaybillNumber ?? null,
+            houseAirWaybillNumber: cargo?.HouseAirWaybillNumber ?? null,
+            masterAirWaybillNumber: cargo?.MasterAirWaybillNumber ?? null,
+            manifestNumber: cargo?.ManifestNumber ?? null,
+            weightKg: cargo?.WeightKg ?? null,
+            dimensionsCm: cargo?.DimensionsCm ?? null,
           };
         })
       )
