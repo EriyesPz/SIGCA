@@ -1,12 +1,39 @@
 import { db } from "./db";
 import { CargoStatus } from "../types/cargo";
 
-export const cargoEntry = async () => {
+type CargoEntryParams = {
+  from?: string;       // YYYY-MM-DD opcional
+  to?: string;         // YYYY-MM-DD opcional
+  warehouseId?: string;
+};
+
+type ExitReportParams = {
+  from?: string;       // YYYY-MM-DD opcional
+  to?: string;         // YYYY-MM-DD opcional
+  warehouseId?: string;
+};
+
+const startOfDay = (d: Date) =>
+  new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0);
+const endOfDay = (d: Date) =>
+  new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+
+export const cargoEntry = async (params: CargoEntryParams = {}) => {
+  // Construir filtro de fechas sólo si se pasan
+  let entryDateFilter: { gte?: Date; lte?: Date } | undefined = undefined;
+
+  if (params.from || params.to) {
+    const gte = params.from ? startOfDay(new Date(params.from)) : undefined;
+    const lte = params.to ? endOfDay(new Date(params.to)) : undefined;
+    entryDateFilter = {};
+    if (gte) entryDateFilter.gte = gte;
+    if (lte) entryDateFilter.lte = lte;
+  }
+
   const cargos = await db.cargo.findMany({
     where: {
-      EntryDate: {
-        not: undefined,
-      },
+      ...(entryDateFilter ? { EntryDate: entryDateFilter } : {}), // si no hay fechas, no filtra
+      ...(params.warehouseId ? { WarehouseId: params.warehouseId } : {}),
     },
     include: {
       Warehouse: true,
@@ -21,14 +48,10 @@ export const cargoEntry = async () => {
       },
       Users: true,
       CargoDocuments: {
-        select: {
-          Id: true,
-        },
+        select: { Id: true },
       },
     },
-    orderBy: {
-      EntryDate: "desc",
-    },
+    orderBy: { EntryDate: "desc" },
   });
 
   let totalWeightKg = 0;
@@ -40,8 +63,7 @@ export const cargoEntry = async () => {
     const rack = rackLevel?.Racks;
 
     const hasLocation =
-      cargo.RackColumn?.ColumnCode && rackLevel?.LevelNumber && rack?.Name;
-
+      !!cargo.RackColumn?.ColumnCode && !!rackLevel?.LevelNumber && !!rack?.Name;
     const hasDocuments = cargo.CargoDocuments.length > 0;
 
     if (cargo.WeightKg) totalWeightKg += cargo.WeightKg;
@@ -83,6 +105,11 @@ export const cargoEntry = async () => {
   });
 
   return {
+    filters: {
+      from: params.from ?? null,
+      to: params.to ?? null,
+      warehouseId: params.warehouseId ?? null,
+    },
     data,
     total: data.length,
     totalWeightKg,
@@ -91,12 +118,28 @@ export const cargoEntry = async () => {
   };
 };
 
-export const cargoExitReport = async () => {
+export const cargoExitReport = async (params: ExitReportParams = {}) => {
+  // Construir filtros dinámicos
+  let dateFilter: any = { not: null }; // por defecto: tiene ExitDate
+  if (params.from && params.to) {
+    dateFilter = {
+      gte: startOfDay(new Date(params.from)),
+      lte: endOfDay(new Date(params.to)),
+    };
+  } else if (params.from && !params.to) {
+    dateFilter = {
+      gte: startOfDay(new Date(params.from)),
+    };
+  } else if (!params.from && params.to) {
+    dateFilter = {
+      lte: endOfDay(new Date(params.to)),
+    };
+  }
+
   const cargos = await db.cargo.findMany({
     where: {
-      ExitDate: {
-        not: null,
-      },
+      ExitDate: dateFilter,
+      ...(params.warehouseId ? { WarehouseId: params.warehouseId } : {}),
     },
     include: {
       Warehouse: true,
@@ -114,6 +157,8 @@ export const cargoExitReport = async () => {
         include: {
           Users: true,
         },
+        orderBy: { DeliveredAt: "desc" },
+        take: 1, // la entrega más reciente (si hay varias)
       },
       CargoDocuments: {
         select: { Id: true },
@@ -165,13 +210,17 @@ export const cargoExitReport = async () => {
       arrivalDate: cargo.ArrivalDate ?? null,
       departureDate: cargo.DepartureDate ?? null,
       createdBy: cargo.Users?.Name ?? cargo.Users?.User ?? null,
+
+      // Entrega
       deliveredAt: delivery?.DeliveredAt ?? null,
-      deliveredBy: delivery?.Users?.Name ?? null,
+      deliveredBy: delivery?.Users?.Name ?? delivery?.Users?.User ?? null,
       receiver: delivery?.Receiver ?? null,
+
       hasDocuments,
       isPerishable: cargo.IsPerishable,
       isHazardousMaterial: cargo.IsHazardousMaterial,
       isHighValue: cargo.IsHighValue,
+      documentsCount: cargo.CargoDocuments.length,
     };
   });
 
@@ -180,6 +229,11 @@ export const cargoExitReport = async () => {
     total: data.length,
     totalWeightKg,
     totalWithDocuments,
+    range: {
+      from: params.from ?? null,
+      to: params.to ?? null,
+    },
+    warehouseId: params.warehouseId ?? null,
   };
 };
 
@@ -593,8 +647,6 @@ export type DailyCargoByTypeParams = {
 };
 
 // --- helpers de fecha y formato ---
-const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0);
-const endOfDay   = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
 const dayKey     = (d: Date) => d.toISOString().slice(0, 10);
 const toNumber   = (n: number | null | undefined) => (typeof n === "number" ? n : 0);
 

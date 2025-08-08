@@ -14,29 +14,39 @@ export const getCargoEntryReport = async (
   res: Response
 ): Promise<void> => {
   try {
-    const report = await cargoEntry();
+    const { from, to, warehouseId } = req.query as {
+      from?: string;
+      to?: string;
+      warehouseId?: string;
+    };
+
+    const report = await cargoEntry({ from, to, warehouseId });
     res.status(200).json(report);
-    return;
   } catch (error) {
     console.error("Error al generar el reporte de cargas:", error);
     res.status(500).json({ error: "Error al generar el reporte de cargas" });
-    return;
   }
 };
 
-export const getCargoExitReport = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const getCargoExitReport = async (req: Request, res: Response): Promise<void> => {
   try {
-    const report = await cargoExitReport();
+    const { from, to, warehouseId } = req.query as {
+      from?: string;
+      to?: string;
+      warehouseId?: string;
+    };
+
+    const report = await cargoExitReport({
+      from: from || undefined,
+      to: to || undefined,
+      warehouseId: warehouseId || undefined,
+    });
+
     res.status(200).json(report);
     return;
   } catch (error) {
     console.error("Error al generar el reporte de salidas de cargas:", error);
-    res
-      .status(500)
-      .json({ error: "Error al generar el reporte de salidas de cargas" });
+    res.status(500).json({ error: "Error al generar el reporte de salidas de cargas" });
     return;
   }
 };
