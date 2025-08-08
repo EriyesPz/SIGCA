@@ -1,6 +1,4 @@
 /* eslint-disable react-hooks/rules-of-hooks */
-"use client";
-
 import type React from "react";
 import { useMemo, useState } from "react";
 
@@ -26,39 +24,48 @@ import {
 } from "@/components/ui/table";
 import { ReportFiltersComponent } from "./report-filter";
 import { ReportPreview } from "./report-preview";
-import { mockCargoExits } from "@/data/reports-data";
 import type { CargoEntryFilters as Filters } from "./types";
 import { generatePDF } from "@/utils/pdfExport";
 import { generateExcelReport } from "@/utils/excelExport";
+import { useCargoExitReport } from "@/lib/reports";
 
-/* ---------- helpers ---------- */
+/* ---------- helpers de UI para el chip de tipo ---------- */
+const exitColorMap = {
+  entrega:
+    "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-200 dark:border-green-600",
+  transferencia:
+    "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-200 dark:border-blue-600",
+  devolucion:
+    "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300 border-orange-200 dark:border-orange-600",
+} as const;
+
+const exitIconMap = {
+  entrega: <Package className="h-4 w-4" />,
+  transferencia: <Truck className="h-4 w-4" />,
+  devolucion: <LogOut className="h-4 w-4" />,
+} as const;
+
 const colorForExit = (t: string): string =>
-  ((
-    {
-      entrega:
-        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border-green-200 dark:border-green-600",
-      transferencia:
-        "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border-blue-200 dark:border-blue-600",
-      devolucion:
-        "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300 border-orange-200 dark:border-orange-600",
-    } as const
-  )[t as keyof typeof exitColorMap] ??
-  "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-600");
+  (exitColorMap as any)[t] ??
+  "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-600";
 
 const iconForExit = (t: string): React.ReactNode =>
-  ((
-    {
-      entrega: <Package className="h-4 w-4" />,
-      transferencia: <Truck className="h-4 w-4" />,
-      devolucion: <LogOut className="h-4 w-4" />,
-    } as const
-  )[t as keyof typeof exitIconMap] ?? <Package className="h-4 w-4" />);
+  (exitIconMap as any)[t] ?? <Package className="h-4 w-4" />;
+
+/* ---------- mapeo de Status -> tipo de salida para la UI ---------- */
+const mapStatusToExitType = (status?: string): "entrega" | "transferencia" | "devolucion" => {
+  const s = (status ?? "").toLowerCase();
+  if (s.includes("transfer")) return "transferencia";
+  if (s.includes("devol")) return "devolucion";
+  // por defecto tratamos las demás como entrega
+  return "entrega";
+};
 
 /* ---------- component ---------- */
 export const CargoExitsReport = () => {
   const [filters, setFilters] = useState<Filters>({
-    startDate: "2024-01-16",
-    endDate: "2024-01-18",
+    startDate: "", // fechas opcionales
+    endDate: "",
     trackingCode: "",
     status: "all",
     user: "all",
@@ -66,27 +73,72 @@ export const CargoExitsReport = () => {
     cargoType: "all",
   });
 
-  /* ---------- data ---------- */
+  /* ---------- llamada al backend ---------- */
+  const { data, isLoading, isError } = useCargoExitReport({
+    from: filters.startDate || undefined,
+    to: filters.endDate || undefined,
+    warehouseId: filters.warehouse !== "all" ? filters.warehouse : undefined,
+  });
+
+  /* ---------- transformar API → filas de la UI + filtros en cliente ---------- */
   const rows = useMemo(() => {
-    return mockCargoExits.filter((e) => {
-      const d = new Date(e.exitDate);
-      const start = new Date(filters.startDate);
-      const end = new Date(filters.endDate);
+    // data del backend:
+    // {
+    //   data: [{
+    //     id, trackingCode, description, exitDate, status,
+    //     receiver, destinationAirport, createdBy, deliveredBy,
+    //     ...otros
+    //   }],
+    //   total, totalWeightKg, totalWithDocuments
+    // }
+    const list = (data?.data ?? []) as any[];
 
-      const inRange = d >= start && d <= end;
-      const codeOk =
-        !filters.trackingCode ||
-        e.trackingCode
-          .toLowerCase()
-          .includes(filters.trackingCode.toLowerCase());
-      const userOk =
-        filters.user === "all" ||
-        e.verifiedBy === filters.user ||
-        e.deliveryResponsible.includes(filters.user);
-      return inRange && codeOk && userOk;
-    });
-  }, [filters]);
+    return list
+      .filter((e) => {
+        // filtro por tracking code
+        const codeOk =
+          !filters.trackingCode ||
+          (e.trackingCode ?? "")
+            .toLowerCase()
+            .includes(filters.trackingCode.toLowerCase());
 
+        // filtro por user (verificador/entrega/creadoPor)
+        const userOk =
+          filters.user === "all" ||
+          e.createdBy === filters.user ||
+          e.deliveredBy === filters.user;
+
+        // Si quieres filtrar por status en cliente:
+        const statusOk =
+          filters.status === "all" ||
+          (e.status ?? "").toLowerCase() === filters.status.toLowerCase();
+
+        // Si quieres filtrar por tipo de carga en cliente:
+        const cargoTypeOk =
+          filters.cargoType === "all" ||
+          (e.cargoType ?? "").toLowerCase() === filters.cargoType.toLowerCase();
+
+        return codeOk && userOk && statusOk && cargoTypeOk;
+      })
+      .map((e) => {
+        const exitType = mapStatusToExitType(e.status);
+        return {
+          id: e.id,
+          trackingCode: e.trackingCode ?? "",
+          cargoDescription: e.description ?? "",
+          exitDate: e.exitDate,
+          receiver: e.receiver ?? "",
+          destination: e.destinationAirport ?? "",
+          exitType, // "entrega" | "transferencia" | "devolucion"
+          verifiedBy: e.createdBy ?? "", // o ajusta si guardas otro campo para "verificado por"
+          deliveryResponsible: e.deliveredBy ?? "",
+          transportMethod: e.transportMethod ?? "", // si no lo tienes, quedará vacío
+          notes: e.notes ?? "", // idem
+        };
+      });
+  }, [data, filters]);
+
+  /* ---------- KPIs por tipo ---------- */
   const byType = useMemo(() => {
     return rows.reduce<Record<string, number>>((acc, r) => {
       acc[r.exitType] = (acc[r.exitType] || 0) + 1;
@@ -104,14 +156,19 @@ export const CargoExitsReport = () => {
   /* ---------- export ---------- */
   const resetFilters = () =>
     setFilters({
-      startDate: "2024-01-16",
-      endDate: "2024-01-18",
+      startDate: "",
+      endDate: "",
       trackingCode: "",
       status: "all",
       user: "all",
       warehouse: "all",
       cargoType: "all",
     });
+
+  const dateRangeLabel =
+    filters.startDate && filters.endDate
+      ? `${filters.startDate} - ${filters.endDate}`
+      : "Sin rango de fechas";
 
   const exportPDF = () => {
     generatePDF(
@@ -122,12 +179,14 @@ export const CargoExitsReport = () => {
         {
           header: "Fecha Salida",
           accessor: "exitDate",
-          render: (v) =>
-            new Date(v).toLocaleDateString("es-ES", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-            }),
+          render: (v: string) =>
+            v
+              ? new Date(v).toLocaleDateString("es-ES", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                })
+              : "—",
         },
         { header: "Receptor", accessor: "receiver" },
         { header: "Destino", accessor: "destination" },
@@ -135,16 +194,12 @@ export const CargoExitsReport = () => {
         { header: "Verificado Por", accessor: "verifiedBy" },
         { header: "Responsable Entrega", accessor: "deliveryResponsible" },
         { header: "Transporte", accessor: "transportMethod" },
-        {
-          header: "Notas",
-          accessor: "notes",
-          render: (v) => v || "—",
-        },
+        { header: "Notas", accessor: "notes", render: (v: string) => v || "—" },
       ],
       rows,
       `Total salidas: ${summary.total}\nEntregas: ${summary.entregas}\nTransferencias: ${summary.transferencias}\nDevoluciones: ${summary.devoluciones}`,
       "• Verifica las salidas por tipo.\n• Confirma las entregas y transferencias programadas.\n• Asegura trazabilidad del transporte y destino.",
-      `${filters.startDate} - ${filters.endDate}`
+      dateRangeLabel
     );
   };
 
@@ -165,7 +220,28 @@ export const CargoExitsReport = () => {
       "reporte_salidas_carga"
     );
 
-  /* ---------- ui ---------- */
+  /* ---------- estados de carga ---------- */
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+        <div className="mx-auto max-w-7xl">
+          <p className="text-muted-foreground">Cargando reporte…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+        <div className="mx-auto max-w-7xl">
+          <p className="text-red-600">Error al cargar el reporte.</p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ---------- UI ---------- */
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-200">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -187,7 +263,7 @@ export const CargoExitsReport = () => {
           title="Reporte de Salidas de Carga"
           data={rows}
           summary={summary}
-          dateRange={`${filters.startDate} - ${filters.endDate}`}
+          dateRange={dateRangeLabel}
           onDownloadPDF={exportPDF}
           onDownloadExcel={exportExcel}
         >
@@ -274,7 +350,9 @@ export const CargoExitsReport = () => {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
-                            {new Date(e.exitDate).toLocaleDateString("es-ES")}
+                            {e.exitDate
+                              ? new Date(e.exitDate).toLocaleDateString("es-ES")
+                              : "—"}
                           </div>
                         </TableCell>
 
@@ -282,14 +360,14 @@ export const CargoExitsReport = () => {
                           className="max-w-xs truncate"
                           title={e.receiver}
                         >
-                          {e.receiver}
+                          {e.receiver || "—"}
                         </TableCell>
 
                         <TableCell className="max-w-xs">
                           <div className="flex items-start gap-2">
                             <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
                             <div className="truncate" title={e.destination}>
-                              {e.destination}
+                              {e.destination || "—"}
                             </div>
                           </div>
                         </TableCell>
@@ -306,7 +384,9 @@ export const CargoExitsReport = () => {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{e.verifiedBy}</span>
+                            <span className="text-sm">
+                              {e.verifiedBy || "—"}
+                            </span>
                           </div>
                         </TableCell>
 
@@ -314,13 +394,15 @@ export const CargoExitsReport = () => {
                           className="max-w-xs truncate"
                           title={e.deliveryResponsible}
                         >
-                          {e.deliveryResponsible}
+                          {e.deliveryResponsible || "—"}
                         </TableCell>
 
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Truck className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{e.transportMethod}</span>
+                            <span className="text-sm">
+                              {e.transportMethod || "—"}
+                            </span>
                           </div>
                         </TableCell>
 
@@ -358,8 +440,7 @@ export const CargoExitsReport = () => {
                 })}
               </p>
               <p className="mt-1">
-                Sistema de Gestión de Almacén – {rows.length} salidas
-                registradas
+                Sistema de Gestión de Almacén – {rows.length} salidas registradas
               </p>
             </div>
           </CardContent>
@@ -395,15 +476,3 @@ const SummaryCard = ({
     </CardContent>
   </Card>
 );
-
-/* ---------- empty const maps to satisfy TS ---------- */
-const exitColorMap = {
-  entrega: "",
-  transferencia: "",
-  devolucion: "",
-} as const;
-const exitIconMap = {
-  entrega: null,
-  transferencia: null,
-  devolucion: null,
-} as const;
