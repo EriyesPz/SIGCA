@@ -186,3 +186,34 @@ export const useCargoAverageReport = (filters: CargoAverageFilters) => {
     enabled: true,
   });
 };
+
+export interface CargoReturnReentryFilters {
+  from?: string;       // YYYY-MM-DD (opcional)
+  to?: string;         // YYYY-MM-DD (opcional)
+  warehouseId?: string;
+}
+
+const fetchCargoReturnReentryReport = async (filters: CargoReturnReentryFilters) => {
+  const queryParams = new URLSearchParams();
+  if (filters.from) queryParams.append("from", filters.from);
+  if (filters.to) queryParams.append("to", filters.to);
+  if (filters.warehouseId) queryParams.append("warehouseId", filters.warehouseId);
+
+  const res = await fetch(
+    `${getApiUrl()}/reports/cargo-return-reentry?${queryParams.toString()}`
+  );
+
+  if (!res.ok) {
+    throw new Error(`Error fetching cargo return/reentry report: ${res.statusText}`);
+  }
+
+  return res.json();
+};
+
+export const useCargoReturnReentryReport = (filters: CargoReturnReentryFilters) => {
+  return useQuery({
+    queryKey: ["cargoReturnReentryReport", filters],
+    queryFn: () => fetchCargoReturnReentryReport(filters),
+    enabled: true,
+  });
+};

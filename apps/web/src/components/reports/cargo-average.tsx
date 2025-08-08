@@ -56,7 +56,6 @@ import { useCargoAverageReport } from "@/lib/reports";
 /* ---------------- helpers ---------------- */
 
 const toYMD = (s?: string) => (s ? new Date(s).toISOString().slice(0, 10) : undefined);
-const formatMoney = (n: number) => `S/ ${Number(n ?? 0).toLocaleString()}`;
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(n, max));
 
 type DetailRow = {

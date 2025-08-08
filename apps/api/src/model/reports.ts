@@ -482,12 +482,33 @@ export const distributionByLocationReport = async (
   };
 };
 
+type CargoReturnReentryParams = {
+  from?: string; // YYYY-MM-DD (opcional)
+  to?: string;   // YYYY-MM-DD (opcional)
+};
 
-export const cargoReturnReentryReport = async () => {
+
+export const cargoReturnReentryReport = async (
+  params: CargoReturnReentryParams = {}
+) => {
+  // Construir filtro de fecha opcional sobre ChangedAt
+  let dateFilter: any = {};
+  if (params.from || params.to) {
+    const gte = params.from ? startOfDay(new Date(params.from)) : undefined;
+    const lte = params.to ? endOfDay(new Date(params.to)) : undefined;
+    dateFilter = {
+      ChangedAt: {
+        ...(gte && { gte }),
+        ...(lte && { lte }),
+      },
+    };
+  }
+
   const cambios = await db.cargoStatusHistory.findMany({
     where: {
+      ...dateFilter,
       NewStatus: {
-        in: ["revision", "almacenado", "rechazado"], // nuevos estados relevantes
+        in: ["revision", "almacenado", "rechazado"], // estados relevantes
       },
       PreviousStatus: {
         not: null,
@@ -516,7 +537,9 @@ export const cargoReturnReentryReport = async () => {
   const data = cambios.map((record) => {
     const { PreviousStatus, NewStatus } = record;
 
-    let tipoCambio = "correccion";
+    let tipoCambio: "correccion" | "reingreso" | "devolucion" | "rechazo" =
+      "correccion";
+
     if (PreviousStatus === "entregado" && NewStatus === "almacenado") {
       tipoCambio = "reingreso";
     } else if (PreviousStatus === "liberado" && NewStatus === "revision") {
@@ -531,7 +554,7 @@ export const cargoReturnReentryReport = async () => {
       estadoAnterior: PreviousStatus,
       nuevoEstado: NewStatus,
       tipoCambio,
-      fechaCambio: record.ChangedAt.toLocaleDateString("es-HN"),
+      fechaCambio: record.ChangedAt.toISOString(), // mejor ISO para front; formatea en UI
       realizadoPor: record.Users?.Name ?? record.Users?.User ?? "Desconocido",
       motivo: record.Cargo?.DamageDescription ?? "Sin motivo registrado",
     };
@@ -548,6 +571,10 @@ export const cargoReturnReentryReport = async () => {
       devoluciones,
       reingresos,
       rechazos,
+      rango:
+        params.from || params.to
+          ? { from: params.from ?? null, to: params.to ?? null }
+          : null,
     },
     data,
   };

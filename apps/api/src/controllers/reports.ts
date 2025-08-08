@@ -121,12 +121,18 @@ export const getDistributionByLocationReport = async (
   }
 };
 
+type CargoReturnReentryParams = {
+  from?: string; // YYYY-MM-DD (opcional)
+  to?: string;   // YYYY-MM-DD (opcional)
+};
+
 export const getCargoReturnReentryReport = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    const report = await cargoReturnReentryReport();
+    const { from, to } = req.query as CargoReturnReentryParams;
+    const report = await cargoReturnReentryReport({ from, to });
     res.status(200).json(report);
   } catch (error) {
     console.error(
@@ -181,3 +187,4 @@ export const getDailyCargoByTypeReport = async (
       .json({ error: "Error al generar el reporte diario por tipo" });
   }
 };
+
