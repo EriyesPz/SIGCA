@@ -33,6 +33,8 @@ import {
   getCargoTransferReport,
   getDistributionByLocationReport,
   getCargoReturnReentryReport,
+  getAverageCargoStayReport,
+  getDailyCargoByTypeReport,
 } from "./controllers/reports";
 
 const router = Router();
@@ -63,5 +65,7 @@ router.get("/reports/cargo-exit", getCargoExitReport);
 router.get("/reports/cargo-transfer", getCargoTransferReport);
 router.get("/reports/distribution-by-location", getDistributionByLocationReport);
 router.get("/reports/cargo-return-reentry", getCargoReturnReentryReport);
+router.get("/reports/cargo-average", getAverageCargoStayReport)
+router.get("/reports/cargo-type", getDailyCargoByTypeReport)
 
 export { router };

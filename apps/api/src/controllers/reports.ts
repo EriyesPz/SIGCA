@@ -4,7 +4,9 @@ import {
   cargoExitReport,
   cargoTransferReport,
   distributionByLocationReport,
-  cargoReturnReentryReport
+  cargoReturnReentryReport,
+  averageCargoStayReport,
+  dailyCargoByTypeReport,
 } from "../model/reports";
 
 export const getCargoEntryReport = async (
@@ -65,7 +67,10 @@ export const getDistributionByLocationReport = async (
     res.status(200).json(report);
     return;
   } catch (error) {
-    console.error("Error al generar el reporte de distribución por ubicación:", error);
+    console.error(
+      "Error al generar el reporte de distribución por ubicación:",
+      error
+    );
     res.status(500).json({
       error: "Error al generar el reporte de distribución por ubicación",
     });
@@ -86,8 +91,47 @@ export const getCargoReturnReentryReport = async (
       error
     );
     res.status(500).json({
-      error:
-        "Error al generar el reporte de cargas devueltas o reingresadas",
+      error: "Error al generar el reporte de cargas devueltas o reingresadas",
     });
+  }
+};
+
+export const getAverageCargoStayReport = async (
+  _req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const report = await averageCargoStayReport();
+    res.status(200).json(report);
+    return;
+  } catch (error) {
+    console.error(
+      "Error al generar el reporte de permanencia promedio:",
+      error
+    );
+    res
+      .status(500)
+      .json({ error: "Error al generar el reporte de permanencia promedio" });
+    return;
+  }
+};
+
+export const getDailyCargoByTypeReport = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { from, to, warehouseId } = req.query as {
+      from?: string;
+      to?: string;
+      warehouseId?: string;
+    };
+    const report = await dailyCargoByTypeReport({ from, to, warehouseId });
+    res.status(200).json(report);
+  } catch (error) {
+    console.error("Error al generar el reporte diario por tipo:", error);
+    res
+      .status(500)
+      .json({ error: "Error al generar el reporte diario por tipo" });
   }
 };
