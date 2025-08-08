@@ -553,8 +553,28 @@ export const cargoReturnReentryReport = async () => {
   };
 };
 
-export const averageCargoStayReport = async () => {
+type AverageParams = {
+  from?: string;       // YYYY-MM-DD (opcional)
+  to?: string;         // YYYY-MM-DD (opcional)
+  warehouseId?: string; // opcional
+};
+
+export const averageCargoStayReport = async (params: AverageParams = {}) => {
+  const { from, to, warehouseId } = params;
+
+  // Filtro dinámico (fechas opcionales sobre EntryDate y warehouse opcional)
+  const where: any = {};
+  if (from && to) {
+    const gte = startOfDay(new Date(from));
+    const lte = endOfDay(new Date(to));
+    where.EntryDate = { gte, lte };
+  }
+  if (warehouseId) {
+    where.WarehouseId = warehouseId;
+  }
+
   const cargos = await db.cargo.findMany({
+    where,
     select: {
       Id: true,
       TrackingCode: true,
@@ -596,22 +616,29 @@ export const averageCargoStayReport = async () => {
 
   // Helpers de agregación
   const avg = (arr: number[]) =>
-    arr.length ? Number((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2)) : 0;
+    arr.length
+      ? Number(
+          (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2)
+        )
+      : 0;
 
-  const closedDays = details.filter(d => d.isClosed).map(d => d.daysInWarehouse);
-  const openDays   = details.filter(d => !d.isClosed).map(d => d.daysInWarehouse);
-  const allDays    = details.map(d => d.daysInWarehouse);
+  const closedDays = details.filter((d) => d.isClosed).map((d) => d.daysInWarehouse);
+  const openDays = details.filter((d) => !d.isClosed).map((d) => d.daysInWarehouse);
+  const allDays = details.map((d) => d.daysInWarehouse);
 
   // Agrupación por almacén
-  const byWarehouseMap = new Map<string, {
-    warehouseId: string | null;
-    warehouse: string | null;
-    count: number;
-    closedCount: number;
-    openCount: number;
-    avgDays: number; // se recalcula luego
-    _days: number[];
-  }>();
+  const byWarehouseMap = new Map<
+    string,
+    {
+      warehouseId: string | null;
+      warehouse: string | null;
+      count: number;
+      closedCount: number;
+      openCount: number;
+      avgDays: number; // se recalcula luego
+      _days: number[];
+    }
+  >();
 
   for (const d of details) {
     const key = d.warehouse.id ?? "null";
@@ -632,7 +659,7 @@ export const averageCargoStayReport = async () => {
     d.isClosed ? (g.closedCount += 1) : (g.openCount += 1);
   }
 
-  const byWarehouse = Array.from(byWarehouseMap.values()).map(g => ({
+  const byWarehouse = Array.from(byWarehouseMap.values()).map((g) => ({
     warehouseId: g.warehouseId,
     warehouse: g.warehouse,
     count: g.count,
@@ -641,25 +668,28 @@ export const averageCargoStayReport = async () => {
     avgDays: avg(g._days),
   }));
 
-  // Agrupación por categoría (CargoType)
-  const byCategoryMap = new Map<string, {
-    category: string | null;
-    count: number;
-    avgDays: number;
-    _days: number[];
-  }>();
+  // Agrupación por categoría
+  const byCategoryMap = new Map<
+    string,
+    { category: string | null; count: number; avgDays: number; _days: number[] }
+  >();
 
   for (const d of details) {
     const key = d.category ?? "Sin categoría";
     if (!byCategoryMap.has(key)) {
-      byCategoryMap.set(key, { category: d.category ?? "Sin categoría", count: 0, avgDays: 0, _days: [] });
+      byCategoryMap.set(key, {
+        category: d.category ?? "Sin categoría",
+        count: 0,
+        avgDays: 0,
+        _days: [],
+      });
     }
     const g = byCategoryMap.get(key)!;
     g.count += 1;
     g._days.push(d.daysInWarehouse);
   }
 
-  const byCategory = Array.from(byCategoryMap.values()).map(g => ({
+  const byCategory = Array.from(byCategoryMap.values()).map((g) => ({
     category: g.category,
     count: g.count,
     avgDays: avg(g._days),
@@ -670,16 +700,16 @@ export const averageCargoStayReport = async () => {
     totalCargos: details.length,
     closedCount: closedDays.length,
     openCount: openDays.length,
-    averageDaysOverall:    avg(allDays),
+    averageDaysOverall: avg(allDays),
     averageDaysClosedOnly: avg(closedDays),
-    averageDaysOpenOnly:   avg(openDays),
+    averageDaysOpenOnly: avg(openDays),
   };
 
   return {
     summary,
     byWarehouse,
     byCategory,
-    data: details, // detalle por carga
+    data: details,
   };
 };
 

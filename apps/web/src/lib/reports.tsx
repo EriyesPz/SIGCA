@@ -125,3 +125,64 @@ export const useDistributionByLocationReport = (
     enabled: true,
   });
 };
+
+
+export interface DailyCargoByTypeFilters {
+  from?: string;       // YYYY-MM-DD (opcional; si no, backend usa rango auto)
+  to?: string;         // YYYY-MM-DD (opcional)
+  warehouseId?: string;
+}
+
+const fetchDailyCargoByTypeReport = async (filters: DailyCargoByTypeFilters) => {
+  const queryParams = new URLSearchParams();
+  if (filters.from) queryParams.append("from", filters.from);
+  if (filters.to) queryParams.append("to", filters.to);
+  if (filters.warehouseId) queryParams.append("warehouseId", filters.warehouseId);
+
+  const res = await fetch(`${getApiUrl()}/reports/cargo-type?${queryParams.toString()}`);
+
+  if (!res.ok) {
+    throw new Error(`Error fetching daily cargo-by-type report: ${res.statusText}`);
+  }
+
+  return res.json();
+};
+
+export const useDailyCargoByTypeReport = (filters: DailyCargoByTypeFilters) => {
+  return useQuery({
+    queryKey: ["dailyCargoByTypeReport", filters],
+    queryFn: () => fetchDailyCargoByTypeReport(filters),
+    enabled: true,
+  });
+};
+
+export interface CargoAverageFilters {
+  from?: string;       // YYYY-MM-DD (opcional)
+  to?: string;         // YYYY-MM-DD (opcional)
+  warehouseId?: string;
+}
+
+const fetchCargoAverageReport = async (filters: CargoAverageFilters) => {
+  const queryParams = new URLSearchParams();
+  if (filters.from) queryParams.append("from", filters.from);
+  if (filters.to) queryParams.append("to", filters.to);
+  if (filters.warehouseId) queryParams.append("warehouseId", filters.warehouseId);
+
+  const res = await fetch(
+    `${getApiUrl()}/reports/cargo-average?${queryParams.toString()}`
+  );
+
+  if (!res.ok) {
+    throw new Error(`Error fetching cargo average report: ${res.statusText}`);
+  }
+
+  return res.json();
+};
+
+export const useCargoAverageReport = (filters: CargoAverageFilters) => {
+  return useQuery({
+    queryKey: ["cargoAverageReport", filters],
+    queryFn: () => fetchCargoAverageReport(filters),
+    enabled: true,
+  });
+};

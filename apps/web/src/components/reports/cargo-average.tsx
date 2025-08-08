@@ -1,4 +1,7 @@
-import { useState } from "react";
+/* eslint-disable react-hooks/rules-of-hooks */
+"use client";
+
+import { useMemo, useState } from "react";
 import {
   Filter,
   Download,
@@ -6,7 +9,7 @@ import {
   Search,
   Clock,
   Package,
-  Warehouse,
+  Warehouse as WarehouseIcon,
   BarChart3,
   TrendingUp,
   Eye,
@@ -48,359 +51,167 @@ import {
 } from "recharts";
 import { generatePDF } from "@/utils/pdfExport";
 import { generateExcelReport } from "@/utils/excelExport";
+import { useCargoAverageReport } from "@/lib/reports";
 
-interface CargaPermanencia {
-  codigo: string;
-  descripcion: string;
-  categoria: string;
-  peso: number;
-  cantidad: number;
-  fechaIngreso: string;
-  fechaSalida: string | null;
-  diasEnAlmacen: number;
-  estado: "En Almacén" | "Despachado" | "En Proceso" | "Retenido";
-  ubicacion: string;
-  motivoRetencion: string;
-  cliente: string;
-  valorMercancia: number;
-  costoAlmacenaje: number;
-  responsableAlmacen: string;
-  prioridad: "Alta" | "Media" | "Baja";
-  fechaVencimiento: string;
-  observaciones: string;
-  numeroGuia: string;
-  transportista: string;
-}
+/* ---------------- helpers ---------------- */
 
-const cargasPermanencia: CargaPermanencia[] = [
-  {
-    codigo: "ALM-2024-001",
-    descripcion: "Textiles importados - Camisetas de algodón x200 unidades",
-    categoria: "Textiles",
-    peso: 85.5,
-    cantidad: 200,
-    fechaIngreso: "10/1/2024",
-    fechaSalida: "18/1/2024",
-    diasEnAlmacen: 8,
-    estado: "Despachado",
-    ubicacion: "A1-2-3",
-    motivoRetencion: "Documentación comercial pendiente",
-    cliente: "Textiles del Norte SAC",
-    valorMercancia: 15000,
-    costoAlmacenaje: 240,
-    responsableAlmacen: "Carlos Mendoza",
-    prioridad: "Media",
-    fechaVencimiento: "25/1/2024",
-    observaciones: "Cliente regularizó documentos",
-    numeroGuia: "GR-2024-001",
-    transportista: "Transportes Rápidos SA",
-  },
-  {
-    codigo: "ALM-2024-002",
-    descripcion: "Electrónicos - Laptops Dell x50 unidades",
-    categoria: "Electrónicos",
-    peso: 125.0,
-    cantidad: 50,
-    fechaIngreso: "12/1/2024",
-    fechaSalida: null,
-    diasEnAlmacen: 9,
-    estado: "En Almacén",
-    ubicacion: "B3-1-5",
-    motivoRetencion: "Esperando autorización de importación",
-    cliente: "TechWorld Perú EIRL",
-    valorMercancia: 75000,
-    costoAlmacenaje: 675,
-    responsableAlmacen: "María González",
-    prioridad: "Alta",
-    fechaVencimiento: "30/1/2024",
-    observaciones: "Productos en zona de alta seguridad",
-    numeroGuia: "GR-2024-002",
-    transportista: "Global Logistics SAC",
-  },
-  {
-    codigo: "ALM-2024-003",
-    descripcion: "Alimentos procesados - Conservas de pescado x500 latas",
-    categoria: "Alimentos",
-    peso: 200.3,
-    cantidad: 500,
-    fechaIngreso: "8/1/2024",
-    fechaSalida: "20/1/2024",
-    diasEnAlmacen: 12,
-    estado: "Despachado",
-    ubicacion: "C2-3-1",
-    motivoRetencion: "Inspección sanitaria SENASA",
-    cliente: "Distribuidora Marina SA",
-    valorMercancia: 12500,
-    costoAlmacenaje: 300,
-    responsableAlmacen: "Luis Fernández",
-    prioridad: "Alta",
-    fechaVencimiento: "22/1/2024",
-    observaciones: "Certificado sanitario aprobado",
-    numeroGuia: "GR-2024-003",
-    transportista: "Cold Chain Express",
-  },
-  {
-    codigo: "ALM-2024-004",
-    descripcion: "Maquinaria industrial - Motores eléctricos x10 unidades",
-    categoria: "Maquinaria",
-    peso: 850.0,
-    cantidad: 10,
-    fechaIngreso: "5/1/2024",
-    fechaSalida: null,
-    diasEnAlmacen: 16,
-    estado: "Retenido",
-    ubicacion: "D1-1-1",
-    motivoRetencion: "Disputa comercial con proveedor",
-    cliente: "Industrias Manufactureras SAA",
-    valorMercancia: 95000,
-    costoAlmacenaje: 1520,
-    responsableAlmacen: "Ana Martínez",
-    prioridad: "Media",
-    fechaVencimiento: "28/1/2024",
-    observaciones: "En proceso legal - retención judicial",
-    numeroGuia: "GR-2024-004",
-    transportista: "Heavy Cargo Transport",
-  },
-  {
-    codigo: "ALM-2024-005",
-    descripcion: "Productos farmacéuticos - Antibióticos x100 cajas",
-    categoria: "Farmacéuticos",
-    peso: 45.8,
-    cantidad: 100,
-    fechaIngreso: "14/1/2024",
-    fechaSalida: "19/1/2024",
-    diasEnAlmacen: 5,
-    estado: "Despachado",
-    ubicacion: "E1-2-4",
-    motivoRetencion: "Verificación lote y vencimientos",
-    cliente: "Farmacias Unidas SA",
-    valorMercancia: 25000,
-    costoAlmacenaje: 125,
-    responsableAlmacen: "Roberto Silva",
-    prioridad: "Alta",
-    fechaVencimiento: "21/1/2024",
-    observaciones: "Despacho prioritario por fecha de vencimiento",
-    numeroGuia: "GR-2024-005",
-    transportista: "Pharma Logistics",
-  },
-  {
-    codigo: "ALM-2024-006",
-    descripcion: "Autopartes - Llantas Michelin x80 unidades",
-    categoria: "Autopartes",
-    peso: 960.0,
-    cantidad: 80,
-    fechaIngreso: "15/1/2024",
-    fechaSalida: null,
-    diasEnAlmacen: 6,
-    estado: "En Proceso",
-    ubicacion: "F2-1-3",
-    motivoRetencion: "Verificación de autenticidad",
-    cliente: "Automotriz Continental SAC",
-    valorMercancia: 48000,
-    costoAlmacenaje: 288,
-    responsableAlmacen: "Patricia Ramos",
-    prioridad: "Media",
-    fechaVencimiento: "29/1/2024",
-    observaciones: "Esperando certificado del fabricante",
-    numeroGuia: "GR-2024-006",
-    transportista: "Auto Transport Plus",
-  },
-  {
-    codigo: "ALM-2024-007",
-    descripcion: "Productos químicos - Pinturas industriales x30 tambores",
-    categoria: "Químicos",
-    peso: 750.0,
-    cantidad: 30,
-    fechaIngreso: "9/1/2024",
-    fechaSalida: null,
-    diasEnAlmacen: 12,
-    estado: "En Almacén",
-    ubicacion: "G1-3-2",
-    motivoRetencion: "Permiso de almacenamiento especial",
-    cliente: "Pinturas Industriales SA",
-    valorMercancia: 18000,
-    costoAlmacenaje: 540,
-    responsableAlmacen: "José Torres",
-    prioridad: "Baja",
-    fechaVencimiento: "02/2/2024",
-    observaciones: "Requiere zona especializada para químicos",
-    numeroGuia: "GR-2024-007",
-    transportista: "Chemical Safe Transport",
-  },
-  {
-    codigo: "ALM-2024-008",
-    descripcion: "Cosméticos importados - Productos de belleza x300 unidades",
-    categoria: "Cosméticos",
-    peso: 120.5,
-    cantidad: 300,
-    fechaIngreso: "16/1/2024",
-    fechaSalida: "21/1/2024",
-    diasEnAlmacen: 5,
-    estado: "Despachado",
-    ubicacion: "H2-2-1",
-    motivoRetencion: "Registro sanitario DIGEMID",
-    cliente: "Beauty Store Chain SA",
-    valorMercancia: 22000,
-    costoAlmacenaje: 110,
-    responsableAlmacen: "Elena Vargas",
-    prioridad: "Media",
-    fechaVencimiento: "26/1/2024",
-    observaciones: "Despacho normal tras aprobación",
-    numeroGuia: "GR-2024-008",
-    transportista: "Beauty Logistics",
-  },
-];
+const toYMD = (s?: string) => (s ? new Date(s).toISOString().slice(0, 10) : undefined);
+const formatMoney = (n: number) => `S/ ${Number(n ?? 0).toLocaleString()}`;
+const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(n, max));
+
+type DetailRow = {
+  id: string;
+  trackingCode: string | null;
+  description: string | null;
+  status: string | null;
+  entryDate: string | Date;
+  exitDate: string | Date | null;
+  warehouse: { id: string | null; name: string | null };
+  category: string | null;
+  daysInWarehouse: number;
+  isClosed: boolean;
+};
+
+/* ---------------- page ---------------- */
 
 export const CargoAverage = () => {
-  const [filtroFechaInicio, setFiltroFechaInicio] = useState("05/1/2024");
-  const [filtroFechaFin, setFiltroFechaFin] = useState("21/1/2024");
+  // filtros (opcionales)
+  const [from, setFrom] = useState<string>("");
+  const [to, setTo] = useState<string>("");
+  const [warehouse, setWarehouse] = useState<string>("");
+
+  // búsqueda & filtros de UI (cliente)
   const [filtroCodigo, setFiltroCodigo] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState("todos");
   const [filtroEstado, setFiltroEstado] = useState("todos");
-  const [] = useState("todos");
 
-  const cargasFiltradas = cargasPermanencia.filter((carga) => {
-    return (
-      filtroCodigo === "" ||
-      carga.codigo.toLowerCase().includes(filtroCodigo.toLowerCase())
-    );
+  // paginación
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // llamar backend
+  const { data, isLoading, error } = useCargoAverageReport({
+    from: toYMD(from),
+    to: toYMD(to),
+    warehouseId: warehouse || undefined,
   });
 
-  const handleDownloadPDF = () => {
-    const columns = [
-      "Código",
-      "Categoría",
-      "Días en Almacén",
-      "Costo",
-      "Ubicación",
-      "Estado",
-      "Responsable",
-    ];
+  const details: DetailRow[] = Array.isArray(data?.data) ? (data!.data as DetailRow[]) : [];
 
+  // opciones dinámicas para selects de categoría/estado
+  const categorias = useMemo(() => {
+    const set = new Set(details.map((d) => d.category ?? "Sin categoría"));
+    return ["todos", ...Array.from(set)];
+  }, [details]);
 
+  const estados = useMemo(() => {
+    const set = new Set(details.map((d) => d.status ?? "Sin estado"));
+    return ["todos", ...Array.from(set)];
+  }, [details]);
 
-    generatePDF(
-      "Reporte de Permanencia en Almacén",
-      columns.map((col) => ({
-        header: col,
-        accessor: col.toLowerCase().replace(/\s+/g, ""),
-      })),
-      cargasFiltradas.map((c) => ({
-        código: c.codigo,
-        categoría: c.categoria,
-        díasenalmacén: `${c.diasEnAlmacen} días`,
-        costo: `S/ ${c.costoAlmacenaje.toFixed(2)}`,
-        ubicación: c.ubicacion,
-        estado: c.estado,
-        responsable: c.responsableAlmacen,
-      })),
-      `Total de cargas analizadas: ${totalCargas}`,
-      undefined,
-      `${filtroFechaInicio} - ${filtroFechaFin}`
-    );
+  // filtros en cliente
+  const filtered = useMemo(() => {
+    const q = filtroCodigo.trim().toLowerCase();
+    return details.filter((d) => {
+      const codeOk = !q || (d.trackingCode ?? "").toLowerCase().includes(q);
+      const catOk = filtroCategoria === "todos" || (d.category ?? "Sin categoría") === filtroCategoria;
+      const statusOk = filtroEstado === "todos" || (d.status ?? "Sin estado") === filtroEstado;
+      return codeOk && catOk && statusOk;
+    });
+  }, [details, filtroCodigo, filtroCategoria, filtroEstado]);
+
+  // paginado
+  const totalRows = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+  const currentPage = clamp(page, 1, totalPages);
+  const start = (currentPage - 1) * pageSize;
+  const pageRows = filtered.slice(start, start + pageSize);
+
+  // KPIs (del backend si vienen; si no, derivamos)
+  const summary = data?.summary ?? {
+    totalCargos: details.length,
+    closedCount: details.filter((d) => d.isClosed).length,
+    openCount: details.filter((d) => !d.isClosed).length,
+    averageDaysOverall:
+      details.length
+        ? Number((details.reduce((a, b) => a + b.daysInWarehouse, 0) / details.length).toFixed(2))
+        : 0,
+    averageDaysClosedOnly: (() => {
+      const closed = details.filter((d) => d.isClosed).map((d) => d.daysInWarehouse);
+      return closed.length ? Number((closed.reduce((a, b) => a + b, 0) / closed.length).toFixed(2)) : 0;
+    })(),
+    averageDaysOpenOnly: (() => {
+      const open = details.filter((d) => !d.isClosed).map((d) => d.daysInWarehouse);
+      return open.length ? Number((open.reduce((a, b) => a + b, 0) / open.length).toFixed(2)) : 0;
+    })(),
   };
 
-  const handleDownloadExcel = () => {
-    generateExcelReport(
-      cargasFiltradas.map((c) => ({
-        Código: c.codigo,
-        Categoría: c.categoria,
-        "Fecha Ingreso": c.fechaIngreso,
-        "Fecha Salida": c.fechaSalida || "En almacén",
-        "Días en Almacén": c.diasEnAlmacen,
-        Estado: c.estado,
-        Ubicación: c.ubicacion,
-        "Costo Almacenaje": c.costoAlmacenaje,
-        Responsable: c.responsableAlmacen,
-      })),
-      "reporte-permanencia"
-    );
-  };
+  // Gráfico: promedio por categoría (usar data.byCategory si existe)
+  const chartDataCategoria =
+    data?.byCategory?.map((g: any) => ({
+      categoria: g.category ?? "Sin categoría",
+      promedioDias: Number(g.avgDays ?? 0),
+      totalCargas: Number(g.count ?? 0),
+    })) ??
+    (() => {
+      const map = new Map<string, { sum: number; count: number }>();
+      for (const d of details) {
+        const key = d.category ?? "Sin categoría";
+        if (!map.has(key)) map.set(key, { sum: 0, count: 0 });
+        const g = map.get(key)!;
+        g.sum += Number(d.daysInWarehouse ?? 0);
+        g.count += 1;
+      }
+      return Array.from(map.entries()).map(([categoria, v]) => ({
+        categoria,
+        promedioDias: v.count ? Math.round((v.sum / v.count) * 10) / 10 : 0,
+        totalCargas: v.count,
+      }));
+    })();
 
-  const totalCargas = cargasFiltradas.length;
-  const promedioEstadia =
-    cargasFiltradas.reduce((sum, carga) => sum + carga.diasEnAlmacen, 0) /
-    totalCargas;
-  const costoTotalAlmacenaje = cargasFiltradas.reduce(
-    (sum, carga) => sum + carga.costoAlmacenaje,
-    0
-  );
-  const cargasEnAlmacen = cargasFiltradas.filter(
-    (carga) => carga.estado === "En Almacén" || carga.estado === "Retenido"
-  ).length;
-
-  // Datos para gráficos
-  const datosPorCategoria = cargasFiltradas.reduce((acc, carga) => {
-    if (!acc[carga.categoria]) {
-      acc[carga.categoria] = { total: 0, dias: 0, count: 0 };
+  // Gráfico: distribución por rangos
+  const rangos = useMemo(() => {
+    const acc: Record<string, number> = {};
+    for (const d of details) {
+      const dias = Number(d.daysInWarehouse ?? 0);
+      let r = "";
+      if (dias <= 3) r = "1-3 días";
+      else if (dias <= 7) r = "4-7 días";
+      else if (dias <= 14) r = "8-14 días";
+      else r = "15+ días";
+      acc[r] = (acc[r] || 0) + 1;
     }
-    acc[carga.categoria].dias += carga.diasEnAlmacen;
-    acc[carga.categoria].count += 1;
-    acc[carga.categoria].total =
-      acc[carga.categoria].dias / acc[carga.categoria].count;
-    return acc;
-  }, {} as Record<string, { total: number; dias: number; count: number }>);
+    const total = details.length || 1;
+    return Object.entries(acc).map(([name, value]) => ({
+      name,
+      value,
+      porcentaje: ((value / total) * 100).toFixed(1),
+    }));
+  }, [details]);
 
-  const chartDataCategoria = Object.entries(datosPorCategoria).map(
-    ([categoria, data]) => ({
-      categoria: categoria,
-      promedioDias: Math.round(data.total * 10) / 10,
-      totalCargas: data.count,
-    })
-  );
+  // Gráfico: tendencia (por día de entryDate)
+  const chartDataTemporal = useMemo(() => {
+    const tmp = (details ?? [])
+      .map((d) => ({
+        day: new Date(d.entryDate).toISOString().slice(0, 10), // YYYY-MM-DD
+        days: Number(d.daysInWarehouse ?? 0),
+      }))
+      .sort((a, b) => (a.day < b.day ? -1 : 1));
 
-  // Datos temporales para tendencia
-  const datosTemporales = cargasFiltradas
-    .map((carga) => {
-      return {
-        fecha: carga.fechaIngreso,
-        dia: parseInt(carga.fechaIngreso.split("/")[0]),
-        diasEnAlmacen: carga.diasEnAlmacen,
-        costo: carga.costoAlmacenaje,
-      };
-    })
-    .sort((a, b) => a.dia - b.dia);
-
-  const chartDataTemporal = datosTemporales.reduce((acc, item) => {
-    const existe = acc.find((d) => d.dia === item.dia);
-    if (existe) {
-      existe.totalDias += item.diasEnAlmacen;
-      existe.totalCosto += item.costo;
-      existe.cantidad += 1;
-      existe.promedioDias = existe.totalDias / existe.cantidad;
-    } else {
-      acc.push({
-        dia: `${item.dia}/1`,
-        totalDias: item.diasEnAlmacen,
-        cantidad: 1,
-        promedioDias: item.diasEnAlmacen,
-        totalCosto: item.costo,
-      });
+    const map = new Map<string, { totalDias: number; cantidad: number }>();
+    for (const it of tmp) {
+      if (!map.has(it.day)) map.set(it.day, { totalDias: 0, cantidad: 0 });
+      const g = map.get(it.day)!;
+      g.totalDias += it.days;
+      g.cantidad += 1;
     }
-    return acc;
-  }, [] as any[]);
+    return Array.from(map.entries()).map(([day, v]) => ({
+      dia: day,
+      promedioDias: Number((v.totalDias / v.cantidad).toFixed(2)),
+    }));
+  }, [details]);
 
-  // Distribución por rangos de días
-  const rangosEstadia = cargasFiltradas.reduce((acc, carga) => {
-    const dias = carga.diasEnAlmacen;
-    let rango;
-    if (dias <= 3) rango = "1-3 días";
-    else if (dias <= 7) rango = "4-7 días";
-    else if (dias <= 14) rango = "8-14 días";
-    else rango = "15+ días";
-
-    acc[rango] = (acc[rango] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const chartDataRangos = Object.entries(rangosEstadia).map(
-    ([rango, cantidad]) => ({
-      name: rango,
-      value: cantidad,
-      porcentaje: ((cantidad / totalCargas) * 100).toFixed(1),
-    })
-  );
-
+  // Paleta para pie
   const COLORS = [
     "var(--chart-1)",
     "var(--chart-2)",
@@ -409,56 +220,109 @@ export const CargoAverage = () => {
     "var(--chart-5)",
   ];
 
-  const getEstadoBadge = (estado: string) => {
-    switch (estado) {
-      case "En Almacén":
-        return "default";
-      case "Despachado":
-        return "secondary";
-      case "En Proceso":
-        return "secondary";
-      case "Retenido":
-        return "destructive";
+  const getEstadoBadge = (estado?: string | null) => {
+    switch ((estado ?? "").toLowerCase()) {
+      case "en almacén":
+      case "en almacen":
+        return "default" as const;
+      case "despachado":
+        return "secondary" as const;
+      case "en proceso":
+        return "secondary" as const;
+      case "retenido":
+        return "destructive" as const;
       default:
-        return "default";
+        return "outline" as const;
     }
   };
 
-  const getPrioridadBadge = (prioridad: string) => {
-    switch (prioridad) {
-      case "Alta":
-        return "destructive";
-      case "Media":
-        return "default";
-      case "Baja":
-        return "secondary";
-      default:
-        return "default";
-    }
+  const reset = () => {
+    setFrom("");
+    setTo("");
+    setWarehouse("");
+    setFiltroCodigo("");
+    setFiltroCategoria("todos");
+    setFiltroEstado("todos");
+    setPage(1);
   };
 
-  const categoryColorMap: Record<string, string> = {
-    Textiles: "var(--chart-1)", // morado vibrante
-    Electrónicos: "var(--chart-2)", // verde azulado
-    Alimentos: "var(--chart-3)", // naranja cálido
-    Maquinaria: "var(--chart-4)", // violeta
-    Farmacéuticos: "var(--chart-5)", // rojo claro
+  const handleDownloadPDF = () => {
+    const columns = [
+      { header: "Código", accessor: "trackingCode" },
+      { header: "Categoría", accessor: "category" },
+      { header: "Días en Almacén", accessor: "daysInWarehouse" },
+      { header: "Estado", accessor: "status" },
+      { header: "Ubicación", accessor: "warehouse" },
+      { header: "Fecha Ingreso", accessor: "entryDate" },
+      { header: "Fecha Salida", accessor: "exitDate" },
+      { header: "Descripción", accessor: "description" },
+    ];
 
-    Autopartes: "#f59e0b", // amarillo anaranjado
-    Químicos: "#3b82f6", // azul fuerte
-    Cosméticos: "#ec4899", // rosa intenso
+    const exportRows = filtered.map((d) => ({
+      trackingCode: d.trackingCode ?? `CGX-${d.id.slice(0, 6)}`,
+      category: d.category ?? "Sin categoría",
+      daysInWarehouse: `${d.daysInWarehouse} días`,
+      status: d.status ?? "-",
+      warehouse: d.warehouse?.name ?? "-",
+      entryDate: new Date(d.entryDate).toLocaleDateString("es-ES"),
+      exitDate: d.exitDate ? new Date(d.exitDate).toLocaleDateString("es-ES") : "—",
+      description: d.description ?? "",
+    }));
+
+    generatePDF(
+      "Reporte de Permanencia en Almacén",
+      columns,
+      exportRows,
+      `Total de cargas: ${filtered.length}\nPromedio general: ${summary.averageDaysOverall} días\nCerradas: ${summary.closedCount} • Abiertas: ${summary.openCount}`,
+      undefined,
+      from && to ? `${toYMD(from)} - ${toYMD(to)}` : "Sin rango de fechas"
+    );
   };
+
+  const handleDownloadExcel = () => {
+    const rows = filtered.map((d) => ({
+      Código: d.trackingCode ?? `CGX-${d.id.slice(0, 6)}`,
+      Categoría: d.category ?? "Sin categoría",
+      "Fecha Ingreso": new Date(d.entryDate).toISOString(),
+      "Fecha Salida": d.exitDate ? new Date(d.exitDate).toISOString() : "",
+      "Días en Almacén": d.daysInWarehouse,
+      Estado: d.status ?? "-",
+      Almacén: d.warehouse?.name ?? "-",
+      Descripción: d.description ?? "",
+    }));
+    generateExcelReport(rows, "reporte-permanencia");
+  };
+
+  /* ---------- estados de carga ---------- */
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background text-foreground p-6">
+        <p className="text-muted-foreground">Cargando reporte…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background text-foreground p-6">
+        <p className="text-red-600">Error al cargar el reporte.</p>
+      </div>
+    );
+  }
+
+  /* ---------------- UI ---------------- */
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
+      {/* Header */}
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-6 mb-6 border border-border">
         <div className="flex items-center gap-3 mb-2">
           <Clock className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl text-foreground">Promedio de Permanencia</h1>
+          <h1 className="text-3xl">Promedio de Permanencia</h1>
         </div>
         <p className="text-muted-foreground">
-          Análisis detallado de tiempos de estadía y rotación de inventario en
-          almacén
+          Análisis de tiempos de estadía y rotación de inventario en almacén
         </p>
       </div>
 
@@ -468,12 +332,9 @@ export const CargoAverage = () => {
           <div className="flex items-center gap-3">
             <Timer className="h-5 w-5 text-primary" />
             <div>
-              <h3 className="text-card-foreground">
-                Reporte de Permanencia en Almacén
-              </h3>
+              <h3 className="text-card-foreground">Reporte de Permanencia en Almacén</h3>
               <p className="text-sm text-muted-foreground">
-                {totalCargas} cargas analizadas • {filtroFechaInicio} -{" "}
-                {filtroFechaFin}
+                {filtered.length} cargas visibles {from || to ? `• ${from || "?"} - ${to || "?"}` : ""}
               </p>
             </div>
           </div>
@@ -483,11 +344,11 @@ export const CargoAverage = () => {
               Vista previa
             </Button>
             <Button variant="default" size="sm" onClick={handleDownloadPDF}>
-              Generar reporte PDF
+              Generar PDF
             </Button>
             <Button variant="outline" size="sm" onClick={handleDownloadExcel}>
               <Download className="h-4 w-4 mr-2" />
-              Descargar Excel
+              Excel
             </Button>
           </div>
         </div>
@@ -497,52 +358,34 @@ export const CargoAverage = () => {
       <div className="bg-card rounded-lg p-6 mb-6 border border-border">
         <div className="flex items-center gap-3 mb-4">
           <Filter className="h-5 w-5 text-primary" />
-          <h3 className="text-card-foreground">
-            Filtros de Análisis de Permanencia
-          </h3>
+          <h3 className="text-card-foreground">Filtros</h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
           <div>
-            <label className="block text-sm mb-1 text-foreground">
-              Fecha Inicio
-            </label>
+            <label className="block text-sm mb-1">Fecha Inicio (opcional)</label>
             <div className="relative">
-              <Input
-                type="text"
-                value={filtroFechaInicio}
-                onChange={(e) => setFiltroFechaInicio(e.target.value)}
-                className="pl-8"
-              />
+              <Input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(1); }} className="pl-8" />
               <Calendar className="h-4 w-4 absolute left-2 top-3 text-muted-foreground" />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm mb-1 text-foreground">
-              Fecha Fin
-            </label>
+            <label className="block text-sm mb-1">Fecha Fin (opcional)</label>
             <div className="relative">
-              <Input
-                type="text"
-                value={filtroFechaFin}
-                onChange={(e) => setFiltroFechaFin(e.target.value)}
-                className="pl-8"
-              />
+              <Input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPage(1); }} className="pl-8" />
               <Calendar className="h-4 w-4 absolute left-2 top-3 text-muted-foreground" />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm mb-1 text-foreground">
-              Código de Carga
-            </label>
+          <div className="md:col-span-2">
+            <label className="block text-sm mb-1">Buscar por código</label>
             <div className="relative">
               <Input
                 type="text"
-                placeholder="Buscar por código..."
+                placeholder="Ej. TrackingCode"
                 value={filtroCodigo}
-                onChange={(e) => setFiltroCodigo(e.target.value)}
+                onChange={(e) => { setFiltroCodigo(e.target.value); setPage(1); }}
                 className="pl-8"
               />
               <Search className="h-4 w-4 absolute left-2 top-3 text-muted-foreground" />
@@ -550,45 +393,55 @@ export const CargoAverage = () => {
           </div>
 
           <div>
-            <label className="block text-sm mb-1 text-foreground">
-              Categoría
-            </label>
-            <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
+            <label className="block text-sm mb-1">Categoría</label>
+            <Select value={filtroCategoria} onValueChange={(v) => { setFiltroCategoria(v); setPage(1); }}>
               <SelectTrigger>
-                <SelectValue placeholder="Todas las categorías" />
+                <SelectValue placeholder="Todas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Todas las categorías</SelectItem>
-                <SelectItem value="textiles">Textiles</SelectItem>
-                <SelectItem value="electronicos">Electrónicos</SelectItem>
-                <SelectItem value="alimentos">Alimentos</SelectItem>
-                <SelectItem value="maquinaria">Maquinaria</SelectItem>
-                <SelectItem value="farmaceuticos">Farmacéuticos</SelectItem>
-                <SelectItem value="autopartes">Autopartes</SelectItem>
-                <SelectItem value="quimicos">Químicos</SelectItem>
-                <SelectItem value="cosmeticos">Cosméticos</SelectItem>
+                {categorias.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <label className="block text-sm mb-1 text-foreground">Estado</label>
-            <Select value={filtroEstado} onValueChange={setFiltroEstado}>
+            <label className="block text-sm mb-1">Estado</label>
+            <Select value={filtroEstado} onValueChange={(v) => { setFiltroEstado(v); setPage(1); }}>
               <SelectTrigger>
-                <SelectValue placeholder="Todos los estados" />
+                <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Todos los estados</SelectItem>
-                <SelectItem value="enalmacen">En Almacén</SelectItem>
-                <SelectItem value="despachado">Despachado</SelectItem>
-                <SelectItem value="enproceso">En Proceso</SelectItem>
-                <SelectItem value="retenido">Retenido</SelectItem>
+                {estados.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Filas por página</span>
+            <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+              <SelectTrigger className="w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[10, 20, 50, 100].map((n) => (
+                  <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="flex items-end">
-            <Button variant="outline">Limpiar Filtros</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={reset}>Limpiar Filtros</Button>
           </div>
         </div>
       </div>
@@ -603,7 +456,7 @@ export const CargoAverage = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Cargas</p>
-                <p className="text-2xl">{totalCargas}</p>
+                <p className="text-2xl">{summary.totalCargos}</p>
               </div>
             </div>
           </CardContent>
@@ -613,18 +466,11 @@ export const CargoAverage = () => {
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-chart-1/20 rounded-lg">
-                <Clock
-                  className="h-6 w-6"
-                  style={{ color: "hsl(var(--chart-1))" }}
-                />
+                <Clock className="h-6 w-6" style={{ color: "hsl(var(--chart-1))" }} />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">
-                  Promedio Estadía
-                </p>
-                <p className="text-2xl">
-                  {Math.round(promedioEstadia * 10) / 10} días
-                </p>
+                <p className="text-sm text-muted-foreground">Promedio Estadía (general)</p>
+                <p className="text-2xl">{summary.averageDaysOverall} días</p>
               </div>
             </div>
           </CardContent>
@@ -634,17 +480,12 @@ export const CargoAverage = () => {
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-chart-2/20 rounded-lg">
-                <Warehouse
-                  className="h-6 w-6"
-                  style={{ color: "hsl(var(--chart-2))" }}
-                />
+                <WarehouseIcon className="h-6 w-6" style={{ color: "hsl(var(--chart-2))" }} />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">
-                  Costo Total Almacenaje
-                </p>
+                <p className="text-sm text-muted-foreground">Cerradas / Abiertas</p>
                 <p className="text-2xl">
-                  S/ {costoTotalAlmacenaje.toLocaleString()}
+                  {summary.closedCount} / {summary.openCount}
                 </p>
               </div>
             </div>
@@ -655,16 +496,11 @@ export const CargoAverage = () => {
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-chart-3/20 rounded-lg">
-                <Timer
-                  className="h-6 w-6"
-                  style={{ color: "hsl(var(--chart-3))" }}
-                />
+                <Timer className="h-6 w-6" style={{ color: "hsl(var(--chart-3))" }} />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">
-                  Cargas en Almacén
-                </p>
-                <p className="text-2xl">{cargasEnAlmacen}</p>
+                <p className="text-sm text-muted-foreground">Promedio Abiertas</p>
+                <p className="text-2xl">{summary.averageDaysOpenOnly} días</p>
               </div>
             </div>
           </CardContent>
@@ -679,7 +515,7 @@ export const CargoAverage = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Gráfico de Promedio por Categoría */}
+          {/* Promedio por Categoría */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -690,52 +526,23 @@ export const CargoAverage = () => {
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={chartDataCategoria}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="hsl(var(--border))"
-                  />
-
-                  <XAxis
-                    dataKey="categoria"
-                    stroke="hsl(var(--muted-foreground))"
-                    tick={{ fill: "#fff" }}
-                    fontSize={12}
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                  />
-
-                  <YAxis
-                    stroke="hsl(var(--muted-foreground))"
-                    tick={{ fill: "#fff" }}
-                    fontSize={12}
-                    color="hsl(var(--muted-foreground))"
-                  />
-
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="categoria" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "hsl(var(--popover))",
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
                     }}
-                    labelStyle={{ color: "hsl(var(--popover-foreground))" }}
-                    itemStyle={{ color: "hsl(var(--popover-foreground))" }}
-                    cursor={{ fill: "hsl(var(--border) / 0.2)" }}
                   />
-
-                  <Bar dataKey="promedioDias" name="Promedio Días">
-                    {chartDataCategoria.map((item, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={categoryColorMap[item.categoria] || "#999"}
-                      />
-                    ))}
-                  </Bar>
+                  <Bar dataKey="promedioDias" name="Promedio Días" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
+          {/* Distribución por Rangos */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -747,7 +554,7 @@ export const CargoAverage = () => {
               <ResponsiveContainer width="100%" height={300}>
                 <RechartsPieChart>
                   <Pie
-                    data={chartDataRangos}
+                    data={rangos}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -756,11 +563,8 @@ export const CargoAverage = () => {
                     dataKey="value"
                     label={({ name, porcentaje }) => `${name}: ${porcentaje}%`}
                   >
-                    {chartDataRangos.map((_entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
+                    {rangos.map((_entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip
@@ -768,7 +572,6 @@ export const CargoAverage = () => {
                       backgroundColor: "hsl(var(--popover))",
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
-                      color: "#fff",
                     }}
                   />
                 </RechartsPieChart>
@@ -777,6 +580,7 @@ export const CargoAverage = () => {
           </Card>
         </div>
 
+        {/* Tendencia */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -787,27 +591,14 @@ export const CargoAverage = () => {
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartDataTemporal}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="hsl(var(--border))"
-                />
-                <XAxis
-                  dataKey="dia"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tick={{ fill: "#fff" }}
-                />
-                <YAxis
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tick={{ fill: "#fff" }}
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="dia" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--popover))",
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "8px",
-                    color: "hsl(var(--popover-foreground))",
                   }}
                 />
                 <Line
@@ -815,7 +606,7 @@ export const CargoAverage = () => {
                   dataKey="promedioDias"
                   stroke="hsl(var(--chart-1))"
                   strokeWidth={3}
-                  dot={{ fill: "hsl(var(--chart-1))", r: 4 }}
+                  dot={{ r: 3 }}
                   name="Promedio Días"
                 />
               </LineChart>
@@ -826,10 +617,39 @@ export const CargoAverage = () => {
 
       {/* Details Table */}
       <div className="bg-card rounded-lg overflow-hidden border border-border">
-        <div className="p-4 border-b border-border">
-          <h3 className="text-card-foreground">
-            Detalle de Permanencia por Carga
-          </h3>
+        <div className="p-4 border-b border-border flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <h3 className="text-card-foreground">Detalle de Permanencia por Carga</h3>
+
+          {/* Controles de paginación */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">
+              Página {currentPage} de {totalPages}
+            </span>
+            <div className="flex gap-1">
+              <Button variant="outline" size="sm" onClick={() => setPage(1)} disabled={currentPage === 1}>
+                «
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setPage(currentPage - 1)} disabled={currentPage === 1}>
+                Anterior
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Siguiente
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(totalPages)}
+                disabled={currentPage === totalPages}
+              >
+                »
+              </Button>
+            </div>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -843,87 +663,58 @@ export const CargoAverage = () => {
                 <TableHead>Fecha Salida</TableHead>
                 <TableHead>Días en Almacén</TableHead>
                 <TableHead>Estado</TableHead>
-                <TableHead>Ubicación</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Valor Mercancía</TableHead>
-                <TableHead>Costo Almacenaje</TableHead>
-                <TableHead>Prioridad</TableHead>
-                <TableHead>Responsable</TableHead>
-                <TableHead>Motivo Retención</TableHead>
-                <TableHead>Observaciones</TableHead>
+                <TableHead>Almacén</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {cargasFiltradas.map((carga) => (
-                <TableRow key={carga.codigo}>
-                  <TableCell className="text-primary">{carga.codigo}</TableCell>
-                  <TableCell className="max-w-64">
-                    {carga.descripcion}
+              {pageRows.map((d) => (
+                <TableRow key={d.id}>
+                  <TableCell className="text-primary font-mono text-xs">
+                    {d.trackingCode ?? `CGX-${d.id.slice(0, 6)}`}
                   </TableCell>
+                  <TableCell className="max-w-64">{d.description ?? "—"}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{carga.categoria}</Badge>
+                    <Badge variant="outline">{d.category ?? "Sin categoría"}</Badge>
                   </TableCell>
-                  <TableCell>{carga.fechaIngreso}</TableCell>
-                  <TableCell>{carga.fechaSalida || "En almacén"}</TableCell>
+                  <TableCell>{new Date(d.entryDate).toLocaleDateString("es-ES")}</TableCell>
+                  <TableCell>{d.exitDate ? new Date(d.exitDate).toLocaleDateString("es-ES") : "En almacén"}</TableCell>
                   <TableCell className="text-center">
-                    <Badge
-                      variant={
-                        carga.diasEnAlmacen > 10 ? "destructive" : "secondary"
-                      }
-                    >
-                      {carga.diasEnAlmacen} días
+                    <Badge variant={d.daysInWarehouse > 10 ? "destructive" : "secondary"}>
+                      {d.daysInWarehouse} días
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getEstadoBadge(carga.estado)}>
-                      {carga.estado}
-                    </Badge>
+                    <Badge variant={getEstadoBadge(d.status)}>{d.status ?? "-"}</Badge>
                   </TableCell>
-                  <TableCell>{carga.ubicacion}</TableCell>
-                  <TableCell className="min-w-48 text-xs">
-                    {carga.cliente}
-                  </TableCell>
-                  <TableCell>
-                    S/ {carga.valorMercancia.toLocaleString()}
-                  </TableCell>
-                  <TableCell>
-                    S/ {carga.costoAlmacenaje.toLocaleString()}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getPrioridadBadge(carga.prioridad)}>
-                      {carga.prioridad}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-xs">
-                      {carga.responsableAlmacen
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </div>
-                    <span className="text-xs">{carga.responsableAlmacen}</span>
-                  </TableCell>
-                  <TableCell className="max-w-48 text-xs">
-                    {carga.motivoRetencion}
-                  </TableCell>
-                  <TableCell
-                    className="max-w-64 text-xs"
-                    title={carga.observaciones}
-                  >
-                    {carga.observaciones.length > 50
-                      ? `${carga.observaciones.substring(0, 50)}...`
-                      : carga.observaciones}
-                  </TableCell>
+                  <TableCell>{d.warehouse?.name ?? "-"}</TableCell>
                 </TableRow>
               ))}
+
+              {pageRows.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-muted-foreground">
+                    No hay registros con los filtros actuales.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>
 
         <div className="p-4 border-t border-border text-center text-sm text-muted-foreground">
-          <p>Reporte generado el 21 de julio de 2025, 11:30</p>
           <p>
-            Sistema de Análisis de Permanencia - {totalCargas} cargas procesadas
+            Reporte generado el{" "}
+            {new Date().toLocaleDateString("es-ES", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
+          <p>
+            Sistema de Análisis de Permanencia — {filtered.length} cargas visibles (total:{" "}
+            {summary.totalCargos})
           </p>
         </div>
       </div>

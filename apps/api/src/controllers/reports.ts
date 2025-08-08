@@ -140,18 +140,21 @@ export const getCargoReturnReentryReport = async (
 };
 
 export const getAverageCargoStayReport = async (
-  _req: Request,
+  req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    const report = await averageCargoStayReport();
+    const { from, to, warehouseId } = req.query as {
+      from?: string;
+      to?: string;
+      warehouseId?: string;
+    };
+
+    const report = await averageCargoStayReport({ from, to, warehouseId });
     res.status(200).json(report);
     return;
   } catch (error) {
-    console.error(
-      "Error al generar el reporte de permanencia promedio:",
-      error
-    );
+    console.error("Error al generar el reporte de permanencia promedio:", error);
     res
       .status(500)
       .json({ error: "Error al generar el reporte de permanencia promedio" });
