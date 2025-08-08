@@ -13,6 +13,33 @@ type ExitReportParams = {
   warehouseId?: string;
 };
 
+type DateFilters = { from?: string; to?: string };
+
+const buildDateWhere = (params?: DateFilters) => {
+  if (!params) return undefined;
+  const { from, to } = params;
+
+  let gte: Date | undefined;
+  let lte: Date | undefined;
+
+  if (from) {
+    const df = new Date(from);
+    if (!isNaN(df.getTime())) gte = startOfDay(df);
+  }
+  if (to) {
+    const dt = new Date(to);
+    if (!isNaN(dt.getTime())) lte = endOfDay(dt);
+  }
+
+  if (!gte && !lte) return undefined;
+
+  // Prisma acepta objetos parciales para gte/lte
+  return {
+    ...(gte ? { gte } : {}),
+    ...(lte ? { lte } : {}),
+  };
+};
+
 const startOfDay = (d: Date) =>
   new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0);
 const endOfDay = (d: Date) =>
@@ -237,8 +264,12 @@ export const cargoExitReport = async (params: ExitReportParams = {}) => {
   };
 };
 
-export const cargoTransferReport = async () => {
+export const cargoTransferReport = async (params?: DateFilters) => {
+  // where opcional por TransferDate
+  const transferDateWhere = buildDateWhere(params);
+
   const transfers = await db.transfers.findMany({
+    where: transferDateWhere ? { TransferDate: transferDateWhere } : undefined,
     include: {
       Cargo: {
         select: {
@@ -256,71 +287,61 @@ export const cargoTransferReport = async () => {
       Warehouse_Transfers_FromWarehouseIdToWarehouse: true,
       Warehouse_Transfers_ToWarehouseIdToWarehouse: true,
     },
-    orderBy: {
-      TransferDate: "desc",
-    },
+    orderBy: { TransferDate: "desc" },
   });
 
   let totalWeightKg = 0;
 
-  // Obtener todos los IDs de racks, niveles y columnas únicos para optimizar las consultas
+  // Reunir IDs únicos para resolver nombres/códigos de racks/levels/columns en lote
   const rackIds = new Set<string>();
   const levelIds = new Set<string>();
   const columnIds = new Set<string>();
 
-  transfers.forEach((transfer) => {
-    if (transfer.FromRackId) rackIds.add(transfer.FromRackId);
-    if (transfer.ToRackId) rackIds.add(transfer.ToRackId);
-    if (transfer.FromLevelId) levelIds.add(transfer.FromLevelId);
-    if (transfer.ToLevelId) levelIds.add(transfer.ToLevelId);
-    if (transfer.FromColumnId) columnIds.add(transfer.FromColumnId);
-    if (transfer.ToColumnId) columnIds.add(transfer.ToColumnId);
-  });
+  for (const t of transfers) {
+    if (t.FromRackId) rackIds.add(t.FromRackId);
+    if (t.ToRackId) rackIds.add(t.ToRackId);
+    if (t.FromLevelId) levelIds.add(t.FromLevelId);
+    if (t.ToLevelId) levelIds.add(t.ToLevelId);
+    if (t.FromColumnId) columnIds.add(t.FromColumnId);
+    if (t.ToColumnId) columnIds.add(t.ToColumnId);
+  }
 
-  // Consultar todos los racks, niveles y columnas necesarios
-  const racks = await db.racks.findMany({
-    where: { Id: { in: Array.from(rackIds) } },
-    select: { Id: true, Name: true },
-  });
+  const [racks, levels, columns] = await Promise.all([
+    rackIds.size
+      ? db.racks.findMany({
+          where: { Id: { in: Array.from(rackIds) } },
+          select: { Id: true, Name: true },
+        })
+      : Promise.resolve([]),
+    levelIds.size
+      ? db.rackLevels.findMany({
+          where: { Id: { in: Array.from(levelIds) } },
+          select: { Id: true, LevelNumber: true },
+        })
+      : Promise.resolve([]),
+    columnIds.size
+      ? db.rackColumns.findMany({
+          where: { Id: { in: Array.from(columnIds) } },
+          select: { Id: true, ColumnCode: true },
+        })
+      : Promise.resolve([]),
+  ]);
 
-  const levels = await db.rackLevels.findMany({
-    where: { Id: { in: Array.from(levelIds) } },
-    select: { Id: true, LevelNumber: true },
-  });
-
-  const columns = await db.rackColumns.findMany({
-    where: { Id: { in: Array.from(columnIds) } },
-    select: { Id: true, ColumnCode: true },
-  });
-
-  // Crear mapas para acceso rápido
-  const rackMap = new Map(racks.map((rack) => [rack.Id, rack]));
-  const levelMap = new Map(levels.map((level) => [level.Id, level]));
-  const columnMap = new Map(columns.map((column) => [column.Id, column]));
+  const rackMap = new Map(racks.map((r) => [r.Id, r]));
+  const levelMap = new Map(levels.map((l) => [l.Id, l]));
+  const columnMap = new Map(columns.map((c) => [c.Id, c]));
 
   const data = transfers.map((transfer) => {
     const cargo = transfer.Cargo;
     if (cargo?.WeightKg) totalWeightKg += cargo.WeightKg;
 
-    // Obtener detalles del rack, nivel y columna de origen
-    const fromRack = transfer.FromRackId
-      ? rackMap.get(transfer.FromRackId)
-      : null;
-    const fromLevel = transfer.FromLevelId
-      ? levelMap.get(transfer.FromLevelId)
-      : null;
-    const fromColumn = transfer.FromColumnId
-      ? columnMap.get(transfer.FromColumnId)
-      : null;
+    const fromRack = transfer.FromRackId ? rackMap.get(transfer.FromRackId) : null;
+    const fromLevel = transfer.FromLevelId ? levelMap.get(transfer.FromLevelId) : null;
+    const fromColumn = transfer.FromColumnId ? columnMap.get(transfer.FromColumnId) : null;
 
-    // Obtener detalles del rack, nivel y columna de destino
     const toRack = transfer.ToRackId ? rackMap.get(transfer.ToRackId) : null;
-    const toLevel = transfer.ToLevelId
-      ? levelMap.get(transfer.ToLevelId)
-      : null;
-    const toColumn = transfer.ToColumnId
-      ? columnMap.get(transfer.ToColumnId)
-      : null;
+    const toLevel = transfer.ToLevelId ? levelMap.get(transfer.ToLevelId) : null;
+    const toColumn = transfer.ToColumnId ? columnMap.get(transfer.ToColumnId) : null;
 
     return {
       transferId: transfer.Id,
@@ -368,6 +389,11 @@ export const cargoTransferReport = async () => {
     data,
     total: data.length,
     totalWeightKg,
+    // rango aplicado para referencia (útil en el frontend)
+    range: {
+      from: params?.from || null,
+      to: params?.to || null,
+    },
   };
 };
 

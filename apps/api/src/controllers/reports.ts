@@ -56,7 +56,9 @@ export const getCargoTransferReport = async (
   res: Response
 ): Promise<void> => {
   try {
-    const report = await cargoTransferReport();
+    const { from, to } = req.query as { from?: string; to?: string };
+
+    const report = await cargoTransferReport({ from, to });
     res.status(200).json(report);
     return;
   } catch (error) {
@@ -67,7 +69,6 @@ export const getCargoTransferReport = async (
     return;
   }
 };
-
 export const getDistributionByLocationReport = async (
   req: Request,
   res: Response

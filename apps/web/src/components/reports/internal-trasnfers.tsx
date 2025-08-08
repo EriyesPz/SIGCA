@@ -1,6 +1,4 @@
 /* eslint-disable react-hooks/rules-of-hooks */
-"use client";
-
 import type React from "react";
 import { useMemo, useState } from "react";
 
@@ -25,17 +23,20 @@ import {
 } from "@/components/ui/table";
 import { ReportFiltersComponent } from "./report-filter";
 import { ReportPreview } from "./report-preview";
-import { mockInternalTransfers } from "@/data/reports-data";
 import type { CargoEntryFilters as ReportFiltersType } from "./types";
 import { generatePDF } from "@/utils/pdfExport";
 import { generateExcelReport } from "@/utils/excelExport";
+import { useCargoTransferReport } from "@/lib/reports";
+
+/* helpers */
+const toYMD = (d?: string) => (d ? new Date(d).toISOString().slice(0, 10) : undefined);
 
 /* ░░░ COMPONENTE PRINCIPAL ░░░ */
 export const InternalTransfersReport = () => {
   /* ---------- state ---------- */
   const [filters, setFilters] = useState<ReportFiltersType>({
-    startDate: "2024-01-16",
-    endDate: "2024-01-18",
+    startDate: "", // ← fechas opcionales
+    endDate: "",
     trackingCode: "",
     status: "all",
     user: "all",
@@ -43,34 +44,75 @@ export const InternalTransfersReport = () => {
     cargoType: "all",
   });
 
-  /* ---------- data ---------- */
-  const filteredTransfers = useMemo(() => {
-    return mockInternalTransfers.filter((t) => {
-      const d = new Date(t.transferDate);
-      const start = new Date(filters.startDate);
-      const end = new Date(filters.endDate);
+  // Llamada real al backend (from/to opcionales)
+  const { data: apiData, isLoading, error } = useCargoTransferReport({
+    from: toYMD(filters.startDate),
+    to: toYMD(filters.endDate),
+    // warehouseId: si quieres consumirlo del filtro, pásalo aquí
+  });
 
-      const inRange = d >= start && d <= end;
+  // Normalizamos el shape que usa la UI
+  // Backend -> cargoTransferReport():
+  // {
+  //   transferId, transferDate, notes,
+  //   cargo: { trackingCode, description, ... },
+  //   fromLocation: { warehouse, rackName, levelNumber, columnCode },
+  //   toLocation:   { warehouse, rackName, levelNumber, columnCode },
+  //   transferredBy
+  // }
+  const rows = useMemo(() => {
+    const list = apiData?.data ?? [];
+    return list.map((t: any) => ({
+      id: t.transferId,
+      trackingCode: t.cargo?.trackingCode ?? "",
+      cargoDescription: t.cargo?.description ?? "",
+      transferDate: t.transferDate,
+      previousLocation: {
+        warehouse: t.fromLocation?.warehouse ?? "Sin almacén",
+        rack: t.fromLocation?.rackName ?? "-",
+        level: t.fromLocation?.levelNumber ?? "-",
+        column: t.fromLocation?.columnCode ?? "-",
+      },
+      newLocation: {
+        warehouse: t.toLocation?.warehouse ?? "Sin almacén",
+        rack: t.toLocation?.rackName ?? "-",
+        level: t.toLocation?.levelNumber ?? "-",
+        column: t.toLocation?.columnCode ?? "-",
+      },
+      transferredBy: t.transferredBy ?? "-",
+      reason: t.transferReason ?? "-", // si no existe en backend, quedará "-"
+      notes: t.notes ?? "",
+    }));
+  }, [apiData]);
+
+  /* ---------- filtros en cliente extra (tracking/user) ---------- */
+  const filteredTransfers = useMemo(() => {
+    return rows.filter((t: any) => {
+      // Fecha: solo si el usuario puso ambas fechas en UI
+      const inRange =
+        !filters.startDate || !filters.endDate
+          ? true
+          : new Date(t.transferDate) >= new Date(filters.startDate) &&
+            new Date(t.transferDate) <= new Date(filters.endDate);
+
       const codeOk =
         !filters.trackingCode ||
-        t.trackingCode
-          .toLowerCase()
-          .includes(filters.trackingCode.toLowerCase());
+        t.trackingCode.toLowerCase().includes(filters.trackingCode.toLowerCase());
+
       const userOk = filters.user === "all" || t.transferredBy === filters.user;
 
       return inRange && codeOk && userOk;
     });
-  }, [filters]);
+  }, [rows, filters]);
 
   const summary = useMemo(
     () => ({
       totalTraslados: filteredTransfers.length,
-      usuariosActivos: new Set(filteredTransfers.map((t) => t.transferredBy))
-        .size,
-      cargasUnicas: new Set(filteredTransfers.map((t) => t.trackingCode)).size,
+      usuariosActivos: new Set(filteredTransfers.map((t: any) => t.transferredBy)).size,
+      cargasUnicas: new Set(filteredTransfers.map((t: any) => t.trackingCode)).size,
       almacenesInvolucrados: new Set([
-        ...filteredTransfers.map((t) => t.previousLocation.warehouse),
-        ...filteredTransfers.map((t) => t.newLocation.warehouse),
+        ...filteredTransfers.map((t: any) => t.previousLocation.warehouse),
+        ...filteredTransfers.map((t: any) => t.newLocation.warehouse),
       ]).size,
     }),
     [filteredTransfers]
@@ -79,8 +121,8 @@ export const InternalTransfersReport = () => {
   /* ---------- handlers ---------- */
   const resetFilters = () =>
     setFilters({
-      startDate: "2024-01-16",
-      endDate: "2024-01-18",
+      startDate: "",
+      endDate: "",
       trackingCode: "",
       status: "all",
       user: "all",
@@ -127,24 +169,46 @@ export const InternalTransfersReport = () => {
       filteredTransfers,
       `Total traslados: ${summary.totalTraslados}\nUsuarios activos: ${summary.usuariosActivos}\nCargas únicas: ${summary.cargasUnicas}\nAlmacenes involucrados: ${summary.almacenesInvolucrados}`,
       "• Verifica el motivo de cada traslado.\n• Confirma que la ubicación destino esté habilitada.\n• Revisa notas manuales para seguimiento operativo.",
-      `${filters.startDate} - ${filters.endDate}`
+      filters.startDate && filters.endDate
+        ? `${filters.startDate} - ${filters.endDate}`
+        : "Sin rango de fechas"
     );
   };
 
   const exportExcel = () =>
     generateExcelReport(
-      filteredTransfers.map((t) => ({
+      filteredTransfers.map((t: any) => ({
         "Código de Carga": t.trackingCode,
         Descripción: t.cargoDescription,
         "Fecha Traslado": t.transferDate,
         "Ubicación Anterior": `${t.previousLocation.warehouse} - ${t.previousLocation.rack}-${t.previousLocation.level}-${t.previousLocation.column}`,
         "Nueva Ubicación": `${t.newLocation.warehouse} - ${t.newLocation.rack}-${t.newLocation.level}-${t.newLocation.column}`,
         "Trasladado Por": t.transferredBy,
-        Motivo: t.reason,
-        Notas: t.notes || "",
+        Motivo: t.reason ?? "",
+        Notas: t.notes ?? "",
       })),
       "reporte_traslados_internos"
     );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+        <div className="mx-auto max-w-7xl">
+          <p className="text-muted-foreground">Cargando reporte…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+        <div className="mx-auto max-w-7xl">
+          <p className="text-red-600">Error al cargar el reporte.</p>
+        </div>
+      </div>
+    );
+  }
 
   /* ---------- ui ---------- */
   return (
@@ -168,7 +232,11 @@ export const InternalTransfersReport = () => {
           title="Reporte de Traslados Internos"
           data={filteredTransfers}
           summary={summary}
-          dateRange={`${filters.startDate} - ${filters.endDate}`}
+          dateRange={
+            filters.startDate && filters.endDate
+              ? `${filters.startDate} - ${filters.endDate}`
+              : "Sin rango de fechas"
+          }
           onDownloadPDF={exportPDF}
           onDownloadExcel={exportExcel}
         >
@@ -190,42 +258,25 @@ export const InternalTransfersReport = () => {
                 }
                 bg="blue"
                 label="Total Traslados"
-                value={filteredTransfers.length}
+                value={summary.totalTraslados}
               />
               <SummaryCard
-                icon={
-                  <User className="h-6 w-6 text-green-600 dark:text-green-400" />
-                }
+                icon={<User className="h-6 w-6 text-green-600 dark:text-green-400" />}
                 bg="green"
                 label="Usuarios Activos"
-                value={
-                  new Set(filteredTransfers.map((t) => t.transferredBy)).size
-                }
+                value={summary.usuariosActivos}
               />
               <SummaryCard
-                icon={
-                  <MapPin className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                }
+                icon={<MapPin className="h-6 w-6 text-purple-600 dark:text-purple-400" />}
                 bg="purple"
                 label="Cargas Únicas"
-                value={
-                  new Set(filteredTransfers.map((t) => t.trackingCode)).size
-                }
+                value={summary.cargasUnicas}
               />
               <SummaryCard
-                icon={
-                  <MapPin className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                }
+                icon={<MapPin className="h-6 w-6 text-orange-600 dark:text-orange-400" />}
                 bg="orange"
                 label="Almacenes"
-                value={
-                  new Set([
-                    ...filteredTransfers.map(
-                      (t) => t.previousLocation.warehouse
-                    ),
-                    ...filteredTransfers.map((t) => t.newLocation.warehouse),
-                  ]).size
-                }
+                value={summary.almacenesInvolucrados}
               />
             </div>
 
@@ -252,7 +303,7 @@ export const InternalTransfersReport = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredTransfers.map((t) => (
+                    {filteredTransfers.map((t: any) => (
                       <TableRow
                         key={t.id}
                         className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
@@ -268,9 +319,7 @@ export const InternalTransfersReport = () => {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
-                            {new Date(t.transferDate).toLocaleDateString(
-                              "es-ES"
-                            )}
+                            {new Date(t.transferDate).toLocaleDateString("es-ES")}
                           </div>
                         </TableCell>
 
@@ -344,8 +393,8 @@ export const InternalTransfersReport = () => {
                 })}
               </p>
               <p className="mt-1">
-                Sistema de Gestión de Almacén – {filteredTransfers.length}{" "}
-                traslados registrados
+                Sistema de Gestión de Almacén – {filteredTransfers.length} traslados
+                registrados
               </p>
             </div>
           </CardContent>
@@ -373,11 +422,8 @@ const SummaryCard = ({
       <CardContent className="p-6">
         <div className="flex items-center gap-4">
           {/* Tailwind no permite clases dinámicas arbitrarias durante el build,
-              así que usamos estilo inline para el fondo oscuro               */}
-          <div
-            className={`rounded-lg p-3 ${bgLight}`}
-            style={{ backgroundColor: `var(--tw-${bg}-100)` }}
-          >
+              así que usamos estilo inline para el fondo oscuro */}
+          <div className={`rounded-lg p-3 ${bgLight}`} style={{ backgroundColor: `var(--tw-${bg}-100)` }}>
             {icon}
           </div>
           <div>
@@ -397,7 +443,7 @@ const LocationTag = ({
 }: {
   color: "red" | "green";
   warehouse: string;
-  rack: { rack: string; level: number; column: number };
+  rack: { rack: string | number; level: string | number; column: string | number };
 }) => {
   const pinColor = color === "red" ? "text-red-500" : "text-green-500";
   return (

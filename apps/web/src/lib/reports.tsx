@@ -58,3 +58,34 @@ export const useCargoExitReport = (filters: CargoExitFilters) => {
     enabled: true,
   });
 };
+
+export interface CargoTransferFilters {
+  from?: string;       // YYYY-MM-DD (opcional)
+  to?: string;         // YYYY-MM-DD (opcional)
+  warehouseId?: string;
+}
+
+const fetchCargoTransferReport = async (filters: CargoTransferFilters) => {
+  const queryParams = new URLSearchParams();
+  if (filters.from) queryParams.append("from", filters.from);
+  if (filters.to) queryParams.append("to", filters.to);
+  if (filters.warehouseId) queryParams.append("warehouseId", filters.warehouseId);
+
+  const res = await fetch(
+    `${getApiUrl()}/reports/cargo-transfer?${queryParams.toString()}`
+  );
+
+  if (!res.ok) {
+    throw new Error(`Error fetching cargo transfer report: ${res.statusText}`);
+  }
+
+  return res.json();
+};
+
+export const useCargoTransferReport = (filters: CargoTransferFilters) => {
+  return useQuery({
+    queryKey: ["cargoTransferReport", filters],
+    queryFn: () => fetchCargoTransferReport(filters),
+    enabled: true,
+  });
+};
