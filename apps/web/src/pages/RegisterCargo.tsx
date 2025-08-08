@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type JSX } from "react";
 import {
   Card,
   CardContent,
@@ -38,17 +38,33 @@ import {
   Phone,
   Eye,
   Code,
+  CheckCircle2,
+  Info,
 } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
 import { DocumentUpload } from "@/components/cargo/document-upload";
 import type { DocumentsCargo, RegisterCargo } from "@/types/cargo";
 import { useRegisterCargo } from "@/lib/cargo";
 import { useCookies } from "react-cookie";
 import { CargoPreviewExtended } from "@/components/cargo/cargo-preview-extend";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+type DialogKind = "info" | "error" | "success";
+
 export const CargoRegistrationWizard = () => {
   const [isSubmittingCargo, setIsSubmittingCargo] = useState(false);
   const [cookies] = useCookies(["userId"]);
+  const mutation = useRegisterCargo();
 
   const [cargoData, setCargoData] = useState<RegisterCargo>({
     trackingCode: "",
@@ -81,36 +97,144 @@ export const CargoRegistrationWizard = () => {
     createdBy: "user_001",
   });
 
+  // inline field errors (red borders & under-field messages)
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const mutation = useRegisterCargo();
+
+  // global dialogs (validation summary / success / error)
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialog, setDialog] = useState<{ kind: DialogKind; title: string; body?: string | JSX.Element }>({
+    kind: "info",
+    title: "",
+    body: "",
+  });
+
+  // confirm submit dialog
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const openDialog = (kind: DialogKind, title: string, body?: string | JSX.Element) => {
+    setDialog({ kind, title, body });
+    setDialogOpen(true);
+  };
+
+  const emailOk = (v?: string) => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  const phoneOk = (v?: string) => !v || v.replace(/\D/g, "").length >= 7;
 
   const validateCargo = () => {
-    const newErrors: Record<string, string> = {};
-    if (!(cargoData.description ?? "").trim())
-      newErrors.description = "La descripción es requerida";
-    if (cargoData.weightKg <= 0)
-      newErrors.weightKg = "El peso debe ser mayor a 0";
-    if (cargoData.quantity <= 0)
-      newErrors.quantity = "La cantidad debe ser mayor a 0";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const e: Record<string, string> = {};
+    const errs: string[] = [];
+
+    // requireds
+    if (!(cargoData.trackingCode ?? "").trim()) {
+      e.trackingCode = "El código de seguimiento es requerido";
+      errs.push("• Código de seguimiento es requerido.");
+    }
+    if (!(cargoData.description ?? "").trim()) {
+      e.description = "La descripción es requerida";
+      errs.push("• Descripción es requerida.");
+    }
+    if (!cargoData.weightKg || cargoData.weightKg <= 0) {
+      e.weightKg = "El peso debe ser mayor a 0";
+      errs.push("• Peso (kg) debe ser mayor a 0.");
+    }
+    if (!cargoData.quantity || cargoData.quantity <= 0) {
+      e.quantity = "La cantidad debe ser mayor a 0";
+      errs.push("• Cantidad debe ser mayor a 0.");
+    }
+
+    // conditional
+    if (cargoData.isPerishable && !(cargoData.temperatureRequirement ?? "").trim()) {
+      e.temperatureRequirement = "Indica el requerimiento de temperatura";
+      errs.push("• Requerimiento de temperatura es obligatorio para perecederos.");
+    }
+    if (cargoData.isHighValue && (!cargoData.declaredValue || cargoData.declaredValue <= 0)) {
+      e.declaredValue = "El valor declarado debe ser mayor a 0";
+      errs.push("• Valor declarado (> 0) es obligatorio para alto valor.");
+    }
+
+    // dates
+    if (cargoData.departureDate && cargoData.arrivalDate) {
+      if (cargoData.departureDate > cargoData.arrivalDate) {
+        e.departureDate = "La salida no puede ser posterior a la llegada";
+        e.arrivalDate = "La llegada no puede ser anterior a la salida";
+        errs.push("• La fecha de salida no puede ser posterior a la fecha de llegada.");
+      }
+    }
+
+    // dimensions (if any dimension provided, all must be >0)
+    const len = cargoData.dimensions?.length;
+    const wid = cargoData.dimensions?.width;
+    const hei = cargoData.dimensions?.height;
+    const anyDim = [len, wid, hei].some((v) => v !== undefined && v !== null && v !== 0);
+    if (anyDim) {
+      if (!len || len <= 0) {
+        e.length = "Largo debe ser mayor a 0";
+        errs.push("• Largo debe ser mayor a 0.");
+      }
+      if (!wid || wid <= 0) {
+        e.width = "Ancho debe ser mayor a 0";
+        errs.push("• Ancho debe ser mayor a 0.");
+      }
+      if (!hei || hei <= 0) {
+        e.height = "Alto debe ser mayor a 0";
+        errs.push("• Alto debe ser mayor a 0.");
+      }
+    }
+
+    // contact formats (optional but validated if present)
+    if (!emailOk(cargoData.shipper?.email)) {
+      e.shipperEmail = "Correo del remitente no es válido";
+      errs.push("• Correo del remitente no es válido.");
+    }
+    if (!emailOk(cargoData.consignee?.email)) {
+      e.consigneeEmail = "Correo del destinatario no es válido";
+      errs.push("• Correo del destinatario no es válido.");
+    }
+    if (!phoneOk(cargoData.shipper?.phone)) {
+      e.shipperPhone = "Teléfono del remitente inválido (mín. 7 dígitos)";
+      errs.push("• Teléfono del remitente inválido (mín. 7 dígitos).");
+    }
+    if (!phoneOk(cargoData.consignee?.phone)) {
+      e.consigneePhone = "Teléfono del destinatario inválido (mín. 7 dígitos)";
+      errs.push("• Teléfono del destinatario inválido (mín. 7 dígitos).");
+    }
+
+    setErrors(e);
+    if (errs.length > 0) {
+      openDialog(
+        "error",
+        "Revisa los campos",
+        <div className="text-sm space-y-2">
+          <p className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-600" />
+            Se encontraron problemas en el formulario:
+          </p>
+          <ul className="list-disc pl-6 space-y-1">
+            {errs.map((m, i) => (
+              <li key={i}>{m}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+    return errs.length === 0;
   };
 
   const handleCargoSubmit = async () => {
+    const userId = cookies.userId;
+    if (!userId) {
+      openDialog("error", "Error de sesión", "Inicia sesión para registrar la carga.");
+      return;
+    }
     if (!validateCargo()) return;
+
+    setConfirmOpen(true); // open confirm dialog
+  };
+
+  const actuallySubmit = async () => {
+    setConfirmOpen(false);
     setIsSubmittingCargo(true);
-
     try {
-      const userId = cookies.userId;
-
-      if (!userId) {
-        toast({
-          title: "Error de sesión",
-          description: "Por favor, inicia sesión para registrar la carga.",
-          variant: "destructive",
-        });
-        return;
-      }
+      const userId = cookies.userId!;
 
       const transformedDocuments = cargoData.documents.map((doc) => ({
         fileUrl: doc.preview || "https://example.com/fallback.pdf",
@@ -127,15 +251,7 @@ export const CargoRegistrationWizard = () => {
         },
       }));
 
-      // Omitimos llaves foráneas
-      const {
-        warehouseId,
-        rackId,
-        levelId,
-        columnId,
-        createdBy,
-        ...cargoToSend
-      } = cargoData;
+      const { warehouseId, rackId, levelId, columnId, createdBy, ...cargoToSend } = cargoData;
 
       const cargoInput = {
         ...cargoToSend,
@@ -145,10 +261,11 @@ export const CargoRegistrationWizard = () => {
 
       await mutation.mutateAsync(cargoInput);
 
-      toast({
-        title: "¡Carga registrada exitosamente!",
-        description: `Código: ${cargoData.trackingCode} ha sido registrado`,
-      });
+      openDialog(
+        "success",
+        "¡Carga registrada!",
+        `Código: ${cargoData.trackingCode || "(sin código)"} ha sido registrada correctamente.`
+      );
 
       setCargoData({
         flightNumber: "",
@@ -189,12 +306,13 @@ export const CargoRegistrationWizard = () => {
         },
         documents: [],
       });
-    } catch (error) {
-      toast({
-        title: "Error al registrar carga",
-        description: "Hubo un problema al guardar la información",
-        variant: "destructive",
-      });
+      setErrors({});
+    } catch (error: any) {
+      openDialog(
+        "error",
+        "Error al registrar carga",
+        error?.message || "Hubo un problema al guardar la información."
+      );
     } finally {
       setIsSubmittingCargo(false);
     }
@@ -202,11 +320,10 @@ export const CargoRegistrationWizard = () => {
 
   const updateCargoData = (updates: Partial<RegisterCargo>) => {
     setCargoData((prev) => ({ ...prev, ...updates }));
-    const newErrors = { ...errors };
-    Object.keys(updates).forEach((key) => {
-      delete newErrors[key];
-    });
-    setErrors(newErrors);
+    // clean field errors if updated
+    const copy = { ...errors };
+    Object.keys(updates).forEach((k) => delete copy[k]);
+    setErrors(copy);
   };
 
   const handleDocumentsChange = (documents: DocumentsCargo[]) => {
@@ -219,18 +336,17 @@ export const CargoRegistrationWizard = () => {
         {/* Header */}
         <div className="mb-8">
           <Card className="shadow-lg">
-            <CardContent className="">
+            <CardContent>
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center">
-                  <Package className="w-8 h-8 text-blue-700 dark:text-white " />
+                  <Package className="w-8 h-8 text-blue-700 dark:text-white" />
                 </div>
                 <div>
                   <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
                     Sistema de Gestión de Carga
                   </h1>
                   <p className="text-gray-600 dark:text-gray-400 text-lg">
-                    Registra nuevas cargas y asigna ubicaciones de almacén de
-                    forma independiente
+                    Registra nuevas cargas y asigna ubicaciones de almacén de forma independiente
                   </p>
                 </div>
               </div>
@@ -242,7 +358,7 @@ export const CargoRegistrationWizard = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Information */}
             <Card className="shadow-lg">
-              <CardHeader className="">
+              <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-xl">
                   <Package className="w-6 h-6 text-blue-600" />
                   Información Básica de Carga
@@ -250,58 +366,41 @@ export const CargoRegistrationWizard = () => {
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Código de Seguimiento */}
+                  {/* Código de Seguimiento (required) */}
                   <div className="space-y-1">
-                    <Label
-                      htmlFor="airWaybillNumber"
-                      className="flex items-center gap-2 text-base font-medium"
-                    >
+                    <Label htmlFor="trackingCode" className="flex items-center gap-2 text-base font-medium">
                       <Hash className="w-4 h-4 text-blue-600" />
                       Código de Seguimiento *
                     </Label>
                     <Input
-                      id="airWaybillNumber"
+                      id="trackingCode"
                       type="text"
-                      value={cargoData.airWaybillNumber}
-                      onChange={(e) =>
-                        updateCargoData({ airWaybillNumber: e.target.value })
-                      }
-                      placeholder="AWB123456"
-                      className={
-                        errors.airWaybillNumber ? "border-red-500" : ""
-                      }
+                      value={cargoData.trackingCode}
+                      onChange={(e) => updateCargoData({ trackingCode: e.target.value })}
+                      placeholder="TRK-123456"
+                      className={errors.trackingCode ? "border-red-500" : ""}
                     />
-                    {errors.airWaybillNumber && (
+                    {errors.trackingCode && (
                       <p className="text-sm text-red-600 flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
-                        {errors.airWaybillNumber}
+                        {errors.trackingCode}
                       </p>
                     )}
                   </div>
 
-                  {/* Número de Guía Aérea */}
+                  {/* House AWB */}
                   <div className="space-y-1">
-                    <Label
-                      htmlFor="houseAirWaybillNumber"
-                      className="flex items-center gap-2 text-base font-medium"
-                    >
+                    <Label htmlFor="houseAirWaybillNumber" className="flex items-center gap-2 text-base font-medium">
                       <Hash className="w-4 h-4 text-blue-600" />
-                      Número de Guía Aérea
+                      Número de Guía Aérea (House)
                     </Label>
                     <Input
                       id="houseAirWaybillNumber"
                       type="text"
                       value={cargoData.houseAirWaybillNumber}
-                      onChange={(e) =>
-                        updateCargoData({
-                          houseAirWaybillNumber: e.target.value,
-                        })
-                      }
+                      onChange={(e) => updateCargoData({ houseAirWaybillNumber: e.target.value })}
                       placeholder="HWB123456"
-                      className={
-                        errors.houseAirWaybillNumber ? "border-red-500" : ""
-                      }
-                      required
+                      className={errors.houseAirWaybillNumber ? "border-red-500" : ""}
                     />
                     {errors.houseAirWaybillNumber && (
                       <p className="text-sm text-red-600 flex items-center gap-1">
@@ -311,29 +410,19 @@ export const CargoRegistrationWizard = () => {
                     )}
                   </div>
 
-                  {/* Número de Guía Maestra */}
+                  {/* Master AWB */}
                   <div className="space-y-1">
-                    <Label
-                      htmlFor="masterAirWaybillNumber"
-                      className="flex items-center gap-2 text-base font-medium"
-                    >
+                    <Label htmlFor="masterAirWaybillNumber" className="flex items-center gap-2 text-base font-medium">
                       <Hash className="w-4 h-4 text-blue-600" />
-                      Número de Guía Maestra
+                      Número de Guía Maestra (Master)
                     </Label>
                     <Input
                       id="masterAirWaybillNumber"
                       type="text"
                       value={cargoData.masterAirWaybillNumber}
-                      onChange={(e) =>
-                        updateCargoData({
-                          masterAirWaybillNumber: e.target.value,
-                        })
-                      }
+                      onChange={(e) => updateCargoData({ masterAirWaybillNumber: e.target.value })}
                       placeholder="MAWB123456"
-                      className={
-                        errors.masterAirWaybillNumber ? "border-red-500" : ""
-                      }
-                      required
+                      className={errors.masterAirWaybillNumber ? "border-red-500" : ""}
                     />
                     {errors.masterAirWaybillNumber && (
                       <p className="text-sm text-red-600 flex items-center gap-1">
@@ -343,12 +432,9 @@ export const CargoRegistrationWizard = () => {
                     )}
                   </div>
 
-                  {/* Número de Manifiesto */}
+                  {/* Manifiesto */}
                   <div className="space-y-1">
-                    <Label
-                      htmlFor="manifestNumber"
-                      className="flex items-center gap-2 text-base font-medium"
-                    >
+                    <Label htmlFor="manifestNumber" className="flex items-center gap-2 text-base font-medium">
                       <Hash className="w-4 h-4 text-blue-600" />
                       Número de Manifiesto
                     </Label>
@@ -356,12 +442,9 @@ export const CargoRegistrationWizard = () => {
                       id="manifestNumber"
                       type="text"
                       value={cargoData.manifestNumber}
-                      onChange={(e) =>
-                        updateCargoData({ manifestNumber: e.target.value })
-                      }
+                      onChange={(e) => updateCargoData({ manifestNumber: e.target.value })}
                       placeholder="MANIFEST123456"
                       className={errors.manifestNumber ? "border-red-500" : ""}
-                      required
                     />
                     {errors.manifestNumber && (
                       <p className="text-sm text-red-600 flex items-center gap-1">
@@ -374,10 +457,7 @@ export const CargoRegistrationWizard = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="weight"
-                      className="flex items-center gap-2 text-base font-medium"
-                    >
+                    <Label htmlFor="weight" className="flex items-center gap-2 text-base font-medium">
                       <Weight className="w-4 h-4 text-blue-600" />
                       Peso (kg) *
                     </Label>
@@ -387,13 +467,9 @@ export const CargoRegistrationWizard = () => {
                       step="0.1"
                       min="0"
                       value={cargoData.weightKg || ""}
-                      onChange={(e) =>
-                        updateCargoData({
-                          weightKg: Number.parseFloat(e.target.value) || 0,
-                        })
-                      }
+                      onChange={(e) => updateCargoData({ weightKg: Number.parseFloat(e.target.value) || 0 })}
                       placeholder="0.0"
-                      className={`${errors.weightKg ? "border-red-500" : ""}`}
+                      className={errors.weightKg ? "border-red-500" : ""}
                     />
                     {errors.weightKg && (
                       <p className="text-sm text-red-600 flex items-center gap-1">
@@ -405,20 +481,16 @@ export const CargoRegistrationWizard = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="quantity" className="text-base font-medium">
-                      Cantidad *
+                      Cantidad * 
                     </Label>
                     <Input
                       id="quantity"
                       type="number"
                       min="1"
                       value={cargoData.quantity || ""}
-                      onChange={(e) =>
-                        updateCargoData({
-                          quantity: Number.parseInt(e.target.value) || 1,
-                        })
-                      }
+                      onChange={(e) => updateCargoData({ quantity: Number.parseInt(e.target.value) || 1 })}
                       placeholder="1"
-                      className={`${errors.quantity ? "border-red-500" : ""}`}
+                      className={errors.quantity ? "border-red-500" : ""}
                     />
                     {errors.quantity && (
                       <p className="text-sm text-red-600 flex items-center gap-1">
@@ -429,24 +501,15 @@ export const CargoRegistrationWizard = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="entryDate"
-                      className="flex items-center gap-2 text-base font-medium"
-                    >
+                    <Label htmlFor="entryDate" className="flex items-center gap-2 text-base font-medium">
                       <Calendar className="w-4 h-4 text-blue-600" />
                       Fecha de Entrada
                     </Label>
                     <Input
                       id="entryDate"
                       type="datetime-local"
-                      value={
-                        cargoData.entryDate?.toISOString().slice(0, 16) || ""
-                      }
-                      onChange={(e) =>
-                        updateCargoData({
-                          entryDate: new Date(e.target.value),
-                        })
-                      }
+                      value={cargoData.entryDate?.toISOString().slice(0, 16) || ""}
+                      onChange={(e) => updateCargoData({ entryDate: new Date(e.target.value) })}
                     />
                   </div>
 
@@ -460,19 +523,13 @@ export const CargoRegistrationWizard = () => {
                       step="0.01"
                       min="0"
                       value={cargoData.volumenm3 || ""}
-                      onChange={(e) =>
-                        updateCargoData({
-                          volumenm3:
-                            Number.parseFloat(e.target.value) || undefined,
-                        })
-                      }
+                      onChange={(e) => updateCargoData({ volumenm3: Number.parseFloat(e.target.value) || undefined })}
                       placeholder="0.00"
                     />
                   </div>
                 </div>
 
                 {/* Dimensiones */}
-
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="length" className="text-base font-medium">
@@ -486,15 +543,18 @@ export const CargoRegistrationWizard = () => {
                       value={cargoData.dimensions?.length || ""}
                       onChange={(e) =>
                         updateCargoData({
-                          dimensions: {
-                            ...cargoData.dimensions,
-                            length:
-                              Number.parseFloat(e.target.value) || undefined,
-                          },
+                          dimensions: { ...cargoData.dimensions, length: Number.parseFloat(e.target.value) || undefined },
                         })
                       }
                       placeholder="0.0"
+                      className={errors.length ? "border-red-500" : ""}
                     />
+                    {errors.length && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.length}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -509,15 +569,18 @@ export const CargoRegistrationWizard = () => {
                       value={cargoData.dimensions?.width || ""}
                       onChange={(e) =>
                         updateCargoData({
-                          dimensions: {
-                            ...cargoData.dimensions,
-                            width:
-                              Number.parseFloat(e.target.value) || undefined,
-                          },
+                          dimensions: { ...cargoData.dimensions, width: Number.parseFloat(e.target.value) || undefined },
                         })
                       }
                       placeholder="0.0"
+                      className={errors.width ? "border-red-500" : ""}
                     />
+                    {errors.width && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.width}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -532,33 +595,31 @@ export const CargoRegistrationWizard = () => {
                       value={cargoData.dimensions?.height || ""}
                       onChange={(e) =>
                         updateCargoData({
-                          dimensions: {
-                            ...cargoData.dimensions,
-                            height:
-                              Number.parseFloat(e.target.value) || undefined,
-                          },
+                          dimensions: { ...cargoData.dimensions, height: Number.parseFloat(e.target.value) || undefined },
                         })
                       }
                       placeholder="0.0"
+                      className={errors.height ? "border-red-500" : ""}
                     />
+                    {errors.height && (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.height}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 {/* Description */}
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="description"
-                    className="flex items-center gap-2 text-base font-medium"
-                  >
+                  <Label htmlFor="description" className="flex items-center gap-2 text-base font-medium">
                     <FileText className="w-4 h-4 text-blue-600" />
                     Descripción *
                   </Label>
                   <Textarea
                     id="description"
                     value={cargoData.description}
-                    onChange={(e) =>
-                      updateCargoData({ description: e.target.value })
-                    }
+                    onChange={(e) => updateCargoData({ description: e.target.value })}
                     placeholder="Describe el contenido de la carga..."
                     rows={4}
                     className={errors.description ? "border-red-500" : ""}
@@ -571,29 +632,22 @@ export const CargoRegistrationWizard = () => {
                   )}
                 </div>
 
-                {/* Checkboxes */}
+                {/* Flags */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
                     <div className="flex items-center space-x-3">
                       <Checkbox
                         id="isPerishable"
                         checked={cargoData.isPerishable}
-                        onCheckedChange={(checked) =>
-                          updateCargoData({ isPerishable: !!checked })
-                        }
+                        onCheckedChange={(checked) => updateCargoData({ isPerishable: !!checked })}
                         className="w-5 h-5"
                       />
-                      <Label
-                        htmlFor="isPerishable"
-                        className="flex items-center gap-2 font-medium"
-                      >
+                      <Label htmlFor="isPerishable" className="flex items-center gap-2 font-medium">
                         <Snowflake className="w-5 h-5 text-blue-600" />
                         Perecedero
                       </Label>
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 ml-8">
-                      Requiere refrigeración
-                    </p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 ml-8">Requiere refrigeración</p>
                   </div>
 
                   <div className="bg-red-50 dark:bg-red-950 rounded-lg p-4 border border-red-200 dark:border-red-800">
@@ -601,22 +655,15 @@ export const CargoRegistrationWizard = () => {
                       <Checkbox
                         id="isHazardousMaterial"
                         checked={cargoData.isHazardous}
-                        onCheckedChange={(checked) =>
-                          updateCargoData({ isHazardous: !!checked })
-                        }
+                        onCheckedChange={(checked) => updateCargoData({ isHazardous: !!checked })}
                         className="w-5 h-5"
                       />
-                      <Label
-                        htmlFor="isHazardousMaterial"
-                        className="flex items-center gap-2 font-medium"
-                      >
+                      <Label htmlFor="isHazardousMaterial" className="flex items-center gap-2 font-medium">
                         <Shield className="w-5 h-5 text-red-600" />
                         Material Peligroso
                       </Label>
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 ml-8">
-                      Manejo especial requerido
-                    </p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 ml-8">Manejo especial requerido</p>
                   </div>
 
                   <div className="bg-green-50 dark:bg-green-950 rounded-lg p-4 border border-green-200 dark:border-green-800">
@@ -624,22 +671,15 @@ export const CargoRegistrationWizard = () => {
                       <Checkbox
                         id="isHighValue"
                         checked={cargoData.isHighValue}
-                        onCheckedChange={(checked) =>
-                          updateCargoData({ isHighValue: !!checked })
-                        }
+                        onCheckedChange={(checked) => updateCargoData({ isHighValue: !!checked })}
                         className="w-5 h-5"
                       />
-                      <Label
-                        htmlFor="isHighValue"
-                        className="flex items-center gap-2 font-medium"
-                      >
+                      <Label htmlFor="isHighValue" className="flex items-center gap-2 font-medium">
                         <DollarSign className="w-5 h-5 text-green-600" />
                         Alto Valor
                       </Label>
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 ml-8">
-                      Seguridad adicional
-                    </p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 ml-8">Seguridad adicional</p>
                   </div>
                 </div>
 
@@ -648,10 +688,7 @@ export const CargoRegistrationWizard = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
                     {cargoData.isHighValue && (
                       <div className="space-y-2">
-                        <Label
-                          htmlFor="declaredValueUSD"
-                          className="flex items-center gap-2"
-                        >
+                        <Label htmlFor="declaredValueUSD" className="flex items-center gap-2">
                           <DollarSign className="w-4 h-4 text-green-600" />
                           Valor Declarado (USD)
                         </Label>
@@ -661,38 +698,38 @@ export const CargoRegistrationWizard = () => {
                           step="0.01"
                           min="0"
                           value={cargoData.declaredValue || ""}
-                          onChange={(e) =>
-                            updateCargoData({
-                              declaredValue:
-                                Number.parseFloat(e.target.value) || undefined,
-                            })
-                          }
+                          onChange={(e) => updateCargoData({ declaredValue: Number.parseFloat(e.target.value) || undefined })}
                           placeholder="0.00"
-                          className="h-12"
+                          className={errors.declaredValue ? "border-red-500 h-12" : "h-12"}
                         />
+                        {errors.declaredValue && (
+                          <p className="text-sm text-red-600 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            {errors.declaredValue}
+                          </p>
+                        )}
                       </div>
                     )}
 
                     {cargoData.isPerishable && (
                       <div className="space-y-2">
-                        <Label
-                          htmlFor="temperatureRequirement"
-                          className="flex items-center gap-2"
-                        >
+                        <Label htmlFor="temperatureRequirement" className="flex items-center gap-2">
                           <Thermometer className="w-4 h-4 text-blue-600" />
                           Requerimiento de Temperatura
                         </Label>
                         <Input
                           id="temperatureRequirement"
                           value={cargoData.temperatureRequirement || ""}
-                          onChange={(e) =>
-                            updateCargoData({
-                              temperatureRequirement: e.target.value,
-                            })
-                          }
+                          onChange={(e) => updateCargoData({ temperatureRequirement: e.target.value })}
                           placeholder="2-8°C"
-                          className="h-12"
+                          className={errors.temperatureRequirement ? "border-red-500 h-12" : "h-12"}
                         />
+                        {errors.temperatureRequirement && (
+                          <p className="text-sm text-red-600 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            {errors.temperatureRequirement}
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -700,12 +737,8 @@ export const CargoRegistrationWizard = () => {
 
                 {/* Flight Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Número de Vuelo */}
                   <div className="space-y-1">
-                    <Label
-                      htmlFor="flightNumber"
-                      className="flex items-center gap-2 text-base font-medium"
-                    >
+                    <Label htmlFor="flightNumber" className="flex items-center gap-2 text-base font-medium">
                       <Plane className="w-4 h-4 text-blue-600" />
                       Número de Vuelo
                     </Label>
@@ -713,9 +746,7 @@ export const CargoRegistrationWizard = () => {
                       id="flightNumber"
                       type="text"
                       value={cargoData.flightNumber}
-                      onChange={(e) =>
-                        updateCargoData({ flightNumber: e.target.value })
-                      }
+                      onChange={(e) => updateCargoData({ flightNumber: e.target.value })}
                       placeholder="HND321"
                       className={errors.flightNumber ? "border-red-500" : ""}
                     />
@@ -727,26 +758,16 @@ export const CargoRegistrationWizard = () => {
                     )}
                   </div>
 
-                  {/* Fecha de Vuelo */}
                   <div className="space-y-1">
-                    <Label
-                      htmlFor="flightDate"
-                      className="flex items-center gap-2 text-base font-medium"
-                    >
+                    <Label htmlFor="flightDate" className="flex items-center gap-2 text-base font-medium">
                       <Calendar className="w-4 h-4 text-blue-600" />
                       Fecha de Vuelo
                     </Label>
                     <Input
                       id="flightDate"
                       type="datetime-local"
-                      value={
-                        cargoData.flightDate?.toISOString().slice(0, 16) || ""
-                      }
-                      onChange={(e) =>
-                        updateCargoData({
-                          flightDate: new Date(e.target.value),
-                        })
-                      }
+                      value={cargoData.flightDate?.toISOString().slice(0, 16) || ""}
+                      onChange={(e) => updateCargoData({ flightDate: new Date(e.target.value) })}
                     />
                     {errors.flightDate && (
                       <p className="text-sm text-red-600 flex items-center gap-1">
@@ -756,12 +777,8 @@ export const CargoRegistrationWizard = () => {
                     )}
                   </div>
 
-                  {/* Aeropuerto de Origen */}
                   <div className="space-y-1">
-                    <Label
-                      htmlFor="originAirport"
-                      className="flex items-center gap-2 text-base font-medium"
-                    >
+                    <Label htmlFor="originAirport" className="flex items-center gap-2 text-base font-medium">
                       <PlaneTakeoff className="w-4 h-4 text-blue-600" />
                       Aeropuerto de Origen
                     </Label>
@@ -769,9 +786,7 @@ export const CargoRegistrationWizard = () => {
                       id="originAirport"
                       type="text"
                       value={cargoData.originAirport}
-                      onChange={(e) =>
-                        updateCargoData({ originAirport: e.target.value })
-                      }
+                      onChange={(e) => updateCargoData({ originAirport: e.target.value })}
                       placeholder="MIA"
                       className={errors.originAirport ? "border-red-500" : ""}
                     />
@@ -783,12 +798,8 @@ export const CargoRegistrationWizard = () => {
                     )}
                   </div>
 
-                  {/* Aeropuerto de Destino */}
                   <div className="space-y-1">
-                    <Label
-                      htmlFor="destinationAirport"
-                      className="flex items-center gap-2 text-base font-medium"
-                    >
+                    <Label htmlFor="destinationAirport" className="flex items-center gap-2 text-base font-medium">
                       <PlaneLanding className="w-4 h-4 text-blue-600" />
                       Aeropuerto de Destino
                     </Label>
@@ -796,15 +807,9 @@ export const CargoRegistrationWizard = () => {
                       id="destinationAirport"
                       type="text"
                       value={cargoData.destinationAirport}
-                      onChange={(e) =>
-                        updateCargoData({
-                          destinationAirport: e.target.value,
-                        })
-                      }
+                      onChange={(e) => updateCargoData({ destinationAirport: e.target.value })}
                       placeholder="TGU"
-                      className={
-                        errors.destinationAirport ? "border-red-500" : ""
-                      }
+                      className={errors.destinationAirport ? "border-red-500" : ""}
                     />
                     {errors.destinationAirport && (
                       <p className="text-sm text-red-600 flex items-center gap-1">
@@ -814,12 +819,8 @@ export const CargoRegistrationWizard = () => {
                     )}
                   </div>
 
-                  {/* Estado de Aduanas */}
                   <div className="space-y-1">
-                    <Label
-                      htmlFor="customsStatus"
-                      className="flex items-center gap-2 text-base font-medium"
-                    >
+                    <Label htmlFor="customsStatus" className="flex items-center gap-2 text-base font-medium">
                       <ShieldCheck className="w-4 h-4 text-blue-600" />
                       Estado de Aduanas
                     </Label>
@@ -827,9 +828,7 @@ export const CargoRegistrationWizard = () => {
                       id="customsStatus"
                       type="text"
                       value={cargoData.customsStatus}
-                      onChange={(e) =>
-                        updateCargoData({ customsStatus: e.target.value })
-                      }
+                      onChange={(e) => updateCargoData({ customsStatus: e.target.value })}
                       placeholder="Pending"
                       className={errors.customsStatus ? "border-red-500" : ""}
                     />
@@ -841,12 +840,8 @@ export const CargoRegistrationWizard = () => {
                     )}
                   </div>
 
-                  {/* Número de Declaración Aduanera */}
                   <div className="space-y-1">
-                    <Label
-                      htmlFor="customsDeclarationNumber"
-                      className="flex items-center gap-2 text-base font-medium"
-                    >
+                    <Label htmlFor="customsDeclarationNumber" className="flex items-center gap-2 text-base font-medium">
                       <FileText className="w-4 h-4 text-blue-600" />
                       Nº Declaración Aduanera
                     </Label>
@@ -854,15 +849,9 @@ export const CargoRegistrationWizard = () => {
                       id="customsDeclarationNumber"
                       type="text"
                       value={cargoData.customsDeclarationNumber}
-                      onChange={(e) =>
-                        updateCargoData({
-                          customsDeclarationNumber: e.target.value,
-                        })
-                      }
+                      onChange={(e) => updateCargoData({ customsDeclarationNumber: e.target.value })}
                       placeholder="DECL-78910"
-                      className={
-                        errors.customsDeclarationNumber ? "border-red-500" : ""
-                      }
+                      className={errors.customsDeclarationNumber ? "border-red-500" : ""}
                     />
                     {errors.customsDeclarationNumber && (
                       <p className="text-sm text-red-600 flex items-center gap-1">
@@ -872,12 +861,8 @@ export const CargoRegistrationWizard = () => {
                     )}
                   </div>
 
-                  {/* Número de Póliza de Seguro */}
                   <div className="space-y-1">
-                    <Label
-                      htmlFor="insurancePolicyNumber"
-                      className="flex items-center gap-2 text-base font-medium"
-                    >
+                    <Label htmlFor="insurancePolicyNumber" className="flex items-center gap-2 text-base font-medium">
                       <Shield className="w-4 h-4 text-blue-600" />
                       Nº de Póliza de Seguro
                     </Label>
@@ -885,15 +870,9 @@ export const CargoRegistrationWizard = () => {
                       id="insurancePolicyNumber"
                       type="text"
                       value={cargoData.insurancePolicyNumber}
-                      onChange={(e) =>
-                        updateCargoData({
-                          insurancePolicyNumber: e.target.value,
-                        })
-                      }
+                      onChange={(e) => updateCargoData({ insurancePolicyNumber: e.target.value })}
                       placeholder="INS-456789"
-                      className={
-                        errors.insurancePolicyNumber ? "border-red-500" : ""
-                      }
+                      className={errors.insurancePolicyNumber ? "border-red-500" : ""}
                     />
                     {errors.insurancePolicyNumber && (
                       <p className="text-sm text-red-600 flex items-center gap-1">
@@ -903,27 +882,16 @@ export const CargoRegistrationWizard = () => {
                     )}
                   </div>
 
-                  {/* Fecha de Salida */}
                   <div className="space-y-1">
-                    <Label
-                      htmlFor="departureDate"
-                      className="flex items-center gap-2 text-base font-medium"
-                    >
+                    <Label htmlFor="departureDate" className="flex items-center gap-2 text-base font-medium">
                       <Clock className="w-4 h-4 text-blue-600" />
                       Fecha de Salida
                     </Label>
                     <Input
                       id="departureDate"
                       type="datetime-local"
-                      value={
-                        cargoData.departureDate?.toISOString().slice(0, 16) ||
-                        ""
-                      }
-                      onChange={(e) =>
-                        updateCargoData({
-                          departureDate: new Date(e.target.value),
-                        })
-                      }
+                      value={cargoData.departureDate?.toISOString().slice(0, 16) || ""}
+                      onChange={(e) => updateCargoData({ departureDate: new Date(e.target.value) })}
                     />
                     {errors.departureDate && (
                       <p className="text-sm text-red-600 flex items-center gap-1">
@@ -933,26 +901,16 @@ export const CargoRegistrationWizard = () => {
                     )}
                   </div>
 
-                  {/* Fecha de Llegada */}
                   <div className="space-y-1">
-                    <Label
-                      htmlFor="arrivalDate"
-                      className="flex items-center gap-2 text-base font-medium"
-                    >
+                    <Label htmlFor="arrivalDate" className="flex items-center gap-2 text-base font-medium">
                       <Clock className="w-4 h-4 text-blue-600" />
                       Fecha de Llegada
                     </Label>
                     <Input
                       id="arrivalDate"
                       type="datetime-local"
-                      value={
-                        cargoData.arrivalDate?.toISOString().slice(0, 16) || ""
-                      }
-                      onChange={(e) =>
-                        updateCargoData({
-                          arrivalDate: new Date(e.target.value),
-                        })
-                      }
+                      value={cargoData.arrivalDate?.toISOString().slice(0, 16) || ""}
+                      onChange={(e) => updateCargoData({ arrivalDate: new Date(e.target.value) })}
                     />
                     {errors.arrivalDate && (
                       <p className="text-sm text-red-600 flex items-center gap-1">
@@ -962,18 +920,13 @@ export const CargoRegistrationWizard = () => {
                     )}
                   </div>
                 </div>
-                {/* Remitente */}
 
+                {/* Remitente */}
                 <div className="space-y-6">
                   <h2 className="text-xl font-semibold">Remitente</h2>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Nombre */}
                     <div className="space-y-1">
-                      <Label
-                        htmlFor="shipperName"
-                        className="flex items-center gap-2 font-medium"
-                      >
+                      <Label htmlFor="shipperName" className="flex items-center gap-2 font-medium">
                         <User className="w-4 h-4" />
                         Nombre
                       </Label>
@@ -981,24 +934,13 @@ export const CargoRegistrationWizard = () => {
                         id="shipperName"
                         type="text"
                         value={cargoData.shipper?.name || ""}
-                        onChange={(e) =>
-                          updateCargoData({
-                            shipper: {
-                              ...cargoData.shipper,
-                              name: e.target.value || undefined,
-                            },
-                          })
-                        }
+                        onChange={(e) => updateCargoData({ shipper: { ...cargoData.shipper, name: e.target.value || undefined } })}
                         placeholder="Nombre del remitente"
                       />
                     </div>
 
-                    {/* Correo */}
                     <div className="space-y-1">
-                      <Label
-                        htmlFor="shipperEmail"
-                        className="flex items-center gap-2 font-medium"
-                      >
+                      <Label htmlFor="shipperEmail" className="flex items-center gap-2 font-medium">
                         <Mail className="w-4 h-4 text-blue-600" />
                         Correo Electrónico
                       </Label>
@@ -1006,24 +948,20 @@ export const CargoRegistrationWizard = () => {
                         id="shipperEmail"
                         type="email"
                         value={cargoData.shipper?.email || ""}
-                        onChange={(e) =>
-                          updateCargoData({
-                            shipper: {
-                              ...cargoData.shipper,
-                              email: e.target.value || undefined,
-                            },
-                          })
-                        }
+                        onChange={(e) => updateCargoData({ shipper: { ...cargoData.shipper, email: e.target.value || undefined } })}
                         placeholder="Correo del remitente"
+                        className={errors.shipperEmail ? "border-red-500" : ""}
                       />
+                      {errors.shipperEmail && (
+                        <p className="text-sm text-red-600 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {errors.shipperEmail}
+                        </p>
+                      )}
                     </div>
 
-                    {/* Teléfono */}
                     <div className="space-y-1">
-                      <Label
-                        htmlFor="shipperPhone"
-                        className="flex items-center gap-2 font-medium"
-                      >
+                      <Label htmlFor="shipperPhone" className="flex items-center gap-2 font-medium">
                         <Phone className="w-4 h-4 text-blue-600" />
                         Teléfono
                       </Label>
@@ -1031,24 +969,20 @@ export const CargoRegistrationWizard = () => {
                         id="shipperPhone"
                         type="tel"
                         value={cargoData.shipper?.phone || ""}
-                        onChange={(e) =>
-                          updateCargoData({
-                            shipper: {
-                              ...cargoData.shipper,
-                              phone: e.target.value || undefined,
-                            },
-                          })
-                        }
+                        onChange={(e) => updateCargoData({ shipper: { ...cargoData.shipper, phone: e.target.value || undefined } })}
                         placeholder="Teléfono del remitente"
+                        className={errors.shipperPhone ? "border-red-500" : ""}
                       />
+                      {errors.shipperPhone && (
+                        <p className="text-sm text-red-600 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {errors.shipperPhone}
+                        </p>
+                      )}
                     </div>
 
-                    {/* Dirección */}
                     <div className="space-y-1">
-                      <Label
-                        htmlFor="shipperAddress"
-                        className="flex items-center gap-2 font-medium"
-                      >
+                      <Label htmlFor="shipperAddress" className="flex items-center gap-2 font-medium">
                         <MapPin className="w-4 h-4 text-blue-600" />
                         Dirección
                       </Label>
@@ -1056,24 +990,13 @@ export const CargoRegistrationWizard = () => {
                         id="shipperAddress"
                         type="text"
                         value={cargoData.shipper?.address || ""}
-                        onChange={(e) =>
-                          updateCargoData({
-                            shipper: {
-                              ...cargoData.shipper,
-                              address: e.target.value || undefined,
-                            },
-                          })
-                        }
+                        onChange={(e) => updateCargoData({ shipper: { ...cargoData.shipper, address: e.target.value || undefined } })}
                         placeholder="Dirección del remitente"
                       />
                     </div>
 
-                    {/* Empresa */}
                     <div className="space-y-1 md:col-span-2">
-                      <Label
-                        htmlFor="shipperCompany"
-                        className="flex items-center gap-2 font-medium"
-                      >
+                      <Label htmlFor="shipperCompany" className="flex items-center gap-2 font-medium">
                         <Building className="w-4 h-4 text-blue-600" />
                         Empresa
                       </Label>
@@ -1081,29 +1004,19 @@ export const CargoRegistrationWizard = () => {
                         id="shipperCompany"
                         type="text"
                         value={cargoData.shipper?.company || ""}
-                        onChange={(e) =>
-                          updateCargoData({
-                            shipper: {
-                              ...cargoData.shipper,
-                              company: e.target.value || undefined,
-                            },
-                          })
-                        }
+                        onChange={(e) => updateCargoData({ shipper: { ...cargoData.shipper, company: e.target.value || undefined } })}
                         placeholder="Empresa del remitente"
                       />
                     </div>
                   </div>
                 </div>
+
+                {/* Destinatario */}
                 <div className="space-y-6">
                   <h2 className="text-xl font-semibold">Destinatario</h2>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Nombre */}
                     <div className="space-y-1">
-                      <Label
-                        htmlFor="consigneeName"
-                        className="flex items-center gap-2 font-medium"
-                      >
+                      <Label htmlFor="consigneeName" className="flex items-center gap-2 font-medium">
                         <User className="w-4 h-4 text-blue-600" />
                         Nombre
                       </Label>
@@ -1111,24 +1024,13 @@ export const CargoRegistrationWizard = () => {
                         id="consigneeName"
                         type="text"
                         value={cargoData.consignee?.name || ""}
-                        onChange={(e) =>
-                          updateCargoData({
-                            consignee: {
-                              ...cargoData.consignee,
-                              name: e.target.value || undefined,
-                            },
-                          })
-                        }
+                        onChange={(e) => updateCargoData({ consignee: { ...cargoData.consignee, name: e.target.value || undefined } })}
                         placeholder="Nombre del destinatario"
                       />
                     </div>
 
-                    {/* Correo */}
                     <div className="space-y-1">
-                      <Label
-                        htmlFor="consigneeEmail"
-                        className="flex items-center gap-2 font-medium"
-                      >
+                      <Label htmlFor="consigneeEmail" className="flex items-center gap-2 font-medium">
                         <Mail className="w-4 h-4 text-blue-600" />
                         Correo Electrónico
                       </Label>
@@ -1136,24 +1038,20 @@ export const CargoRegistrationWizard = () => {
                         id="consigneeEmail"
                         type="email"
                         value={cargoData.consignee?.email || ""}
-                        onChange={(e) =>
-                          updateCargoData({
-                            consignee: {
-                              ...cargoData.consignee,
-                              email: e.target.value || undefined,
-                            },
-                          })
-                        }
+                        onChange={(e) => updateCargoData({ consignee: { ...cargoData.consignee, email: e.target.value || undefined } })}
                         placeholder="Correo del destinatario"
+                        className={errors.consigneeEmail ? "border-red-500" : ""}
                       />
+                      {errors.consigneeEmail && (
+                        <p className="text-sm text-red-600 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {errors.consigneeEmail}
+                        </p>
+                      )}
                     </div>
 
-                    {/* Teléfono */}
                     <div className="space-y-1">
-                      <Label
-                        htmlFor="consigneePhone"
-                        className="flex items-center gap-2 font-medium"
-                      >
+                      <Label htmlFor="consigneePhone" className="flex items-center gap-2 font-medium">
                         <Phone className="w-4 h-4 text-blue-600" />
                         Teléfono
                       </Label>
@@ -1161,24 +1059,20 @@ export const CargoRegistrationWizard = () => {
                         id="consigneePhone"
                         type="tel"
                         value={cargoData.consignee?.phone || ""}
-                        onChange={(e) =>
-                          updateCargoData({
-                            consignee: {
-                              ...cargoData.consignee,
-                              phone: e.target.value || undefined,
-                            },
-                          })
-                        }
+                        onChange={(e) => updateCargoData({ consignee: { ...cargoData.consignee, phone: e.target.value || undefined } })}
                         placeholder="Teléfono del destinatario"
+                        className={errors.consigneePhone ? "border-red-500" : ""}
                       />
+                      {errors.consigneePhone && (
+                        <p className="text-sm text-red-600 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {errors.consigneePhone}
+                        </p>
+                      )}
                     </div>
 
-                    {/* Dirección */}
                     <div className="space-y-1">
-                      <Label
-                        htmlFor="consigneeAddress"
-                        className="flex items-center gap-2 font-medium"
-                      >
+                      <Label htmlFor="consigneeAddress" className="flex items-center gap-2 font-medium">
                         <MapPin className="w-4 h-4 text-blue-600" />
                         Dirección
                       </Label>
@@ -1186,24 +1080,13 @@ export const CargoRegistrationWizard = () => {
                         id="consigneeAddress"
                         type="text"
                         value={cargoData.consignee?.address || ""}
-                        onChange={(e) =>
-                          updateCargoData({
-                            consignee: {
-                              ...cargoData.consignee,
-                              address: e.target.value || undefined,
-                            },
-                          })
-                        }
+                        onChange={(e) => updateCargoData({ consignee: { ...cargoData.consignee, address: e.target.value || undefined } })}
                         placeholder="Dirección del destinatario"
                       />
                     </div>
 
-                    {/* Empresa */}
                     <div className="space-y-1 md:col-span-2">
-                      <Label
-                        htmlFor="consigneeCompany"
-                        className="flex items-center gap-2 font-medium"
-                      >
+                      <Label htmlFor="consigneeCompany" className="flex items-center gap-2 font-medium">
                         <Building className="w-4 h-4 text-blue-600" />
                         Empresa
                       </Label>
@@ -1211,24 +1094,13 @@ export const CargoRegistrationWizard = () => {
                         id="consigneeCompany"
                         type="text"
                         value={cargoData.consignee?.company || ""}
-                        onChange={(e) =>
-                          updateCargoData({
-                            consignee: {
-                              ...cargoData.consignee,
-                              company: e.target.value || undefined,
-                            },
-                          })
-                        }
+                        onChange={(e) => updateCargoData({ consignee: { ...cargoData.consignee, company: e.target.value || undefined } })}
                         placeholder="Empresa del destinatario"
                       />
                     </div>
 
-                    {/* Persona de contacto */}
                     <div className="space-y-1 md:col-span-2">
-                      <Label
-                        htmlFor="consigneeContact"
-                        className="flex items-center gap-2 font-medium"
-                      >
+                      <Label htmlFor="consigneeContact" className="flex items-center gap-2 font-medium">
                         <User className="w-4 h-4 text-blue-600" />
                         Persona de Contacto
                       </Label>
@@ -1236,14 +1108,7 @@ export const CargoRegistrationWizard = () => {
                         id="consigneeContact"
                         type="text"
                         value={cargoData.consignee?.contact || ""}
-                        onChange={(e) =>
-                          updateCargoData({
-                            consignee: {
-                              ...cargoData.consignee,
-                              contact: e.target.value || undefined,
-                            },
-                          })
-                        }
+                        onChange={(e) => updateCargoData({ consignee: { ...cargoData.consignee, contact: e.target.value || undefined } })}
                         placeholder="Persona de contacto"
                       />
                     </div>
@@ -1253,10 +1118,7 @@ export const CargoRegistrationWizard = () => {
             </Card>
 
             {/* Document Upload */}
-            <DocumentUpload
-              documents={cargoData.documents}
-              onDocumentsChange={handleDocumentsChange}
-            />
+            <DocumentUpload documents={cargoData.documents} onDocumentsChange={handleDocumentsChange} />
           </div>
 
           {/* Sidebar */}
@@ -1268,17 +1130,11 @@ export const CargoRegistrationWizard = () => {
               <CardContent>
                 <Tabs defaultValue="preview" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger
-                      value="preview"
-                      className="flex items-center gap-1"
-                    >
+                    <TabsTrigger value="preview" className="flex items-center gap-1">
                       <Eye className="w-3 h-3" />
                       Vista
                     </TabsTrigger>
-                    <TabsTrigger
-                      value="json"
-                      className="flex items-center gap-1"
-                    >
+                    <TabsTrigger value="json" className="flex items-center gap-1">
                       <Code className="w-3 h-3" />
                       JSON
                     </TabsTrigger>
@@ -1293,13 +1149,10 @@ export const CargoRegistrationWizard = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Submit fixed button */}
           <div className="fixed bottom-6 right-6 z-50">
-            <Button
-              onClick={handleCargoSubmit}
-              disabled={isSubmittingCargo}
-              size="lg"
-              className=""
-            >
+            <Button onClick={handleCargoSubmit} disabled={isSubmittingCargo} size="lg">
               {isSubmittingCargo ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-3" />
@@ -1315,6 +1168,44 @@ export const CargoRegistrationWizard = () => {
           </div>
         </div>
       </div>
+
+      {/* Confirm submit dialog */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar registro</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Deseas registrar esta carga con la información proporcionada?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={actuallySubmit}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Feedback dialog (success / error / info) */}
+      <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader className="space-y-2">
+            <div className="flex items-center gap-2">
+              {dialog.kind === "success" ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+              ) : dialog.kind === "error" ? (
+                <AlertCircle className="w-5 h-5 text-red-600" />
+              ) : (
+                <Info className="w-5 h-5 text-blue-600" />
+              )}
+              <AlertDialogTitle>{dialog.title}</AlertDialogTitle>
+            </div>
+            {dialog.body ? <AlertDialogDescription>{dialog.body}</AlertDialogDescription> : null}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setDialogOpen(false)}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
