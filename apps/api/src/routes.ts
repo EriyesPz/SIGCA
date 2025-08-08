@@ -19,7 +19,11 @@ import {
   transferCargoController,
   deliverCargoController,
 } from "./controllers/cargo";
-import { listUsers } from "./controllers/users";
+import { listUsers, createUserWithRolesController,
+  addRolesToUserController,
+  replaceUserRolesController,
+  getUserDetailsController,
+  getUserPermissionsController, } from "./controllers/users";
 import {
   allPermisions,
   allRoles,
@@ -67,5 +71,10 @@ router.get("/reports/distribution-by-location", getDistributionByLocationReport)
 router.get("/reports/cargo-return-reentry", getCargoReturnReentryReport);
 router.get("/reports/cargo-average", getAverageCargoStayReport)
 router.get("/reports/cargo-type", getDailyCargoByTypeReport)
+router.post("/users", createUserWithRolesController);
+router.post("/users/:userId/roles", addRolesToUserController);
+router.put("/users/:userId/roles", replaceUserRolesController);
+router.get("/users/:userId", getUserDetailsController);
+router.get("/users/:userId/permissions", getUserPermissionsController);
 
 export { router };
