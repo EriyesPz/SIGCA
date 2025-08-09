@@ -46,6 +46,10 @@ interface LocationsTableProps {
   setSelectedWarehouse?: (id: string) => void;
   filterStatus: string; // lo usa el backend cuando estás en server paging
   setFilterStatus: (status: string) => void;
+
+  // 🔎 NUEVO: búsqueda controlada desde el padre
+  searchTerm: string;
+  onSearchChange: (v: string) => void;
 }
 
 export const LocationsTable = ({
@@ -61,20 +65,23 @@ export const LocationsTable = ({
   setSelectedWarehouse,
   filterStatus,
   setFilterStatus,
+  searchTerm,
+  onSearchChange,
 }: LocationsTableProps) => {
   const [sortField, setSortField] = useState<string>("id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [searchTerm, setSearchTerm] = useState("");
 
   // 👉 En global (sin almacén seleccionado) usamos paginación del servidor
   const serverPaging = viewMode === "all" && selectedWarehouse === "all";
 
-  // Resetear a página 1 cuando cambian filtros locales SOLO si paginamos en cliente
+  // Reset a página 1 cuando cambian filtros locales SOLO si paginamos en cliente
   useEffect(() => {
     if (!serverPaging) {
       onPageChange(1);
     }
-  }, [selectedWarehouse, searchTerm, filterStatus]); // eslint-disable-line
+    // searchTerm lo controla el padre y él mismo resetea la página
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedWarehouse, filterStatus]);
 
   const allLocations = useMemo(() => {
     return Object.entries(warehouseLocations).flatMap(
@@ -113,7 +120,8 @@ export const LocationsTable = ({
         location.rackName?.toLowerCase().includes(term) ||
         location.trackingCode?.toLowerCase().includes(term) ||
         location.description?.toLowerCase().includes(term) ||
-        location.houseAirWaybillNumber?.toLowerCase().includes(term);
+        location.houseAirWaybillNumber?.toLowerCase().includes(term) ||
+        location.airWaybillNumber?.toLowerCase().includes(term); // AWB
 
       const matchesWarehouse =
         viewMode === "all"
@@ -224,20 +232,10 @@ export const LocationsTable = ({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder={
-                serverPaging
-                  ? "Buscar (solo funciona por almacén)"
-                  : "Buscar ubicaciones..."
-              }
+              placeholder="Buscar por tracking, AWB o HAWB…"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full sm:w-64"
-              disabled={serverPaging} // evita confusiones en global
-              title={
-                serverPaging
-                  ? "Para buscar y filtrar en cliente, selecciona un almacén."
-                  : undefined
-              }
+              onChange={(e) => onSearchChange(e.target.value)} // 👈 padre controla (backend/cliente)
+              className="pl-10 w-full sm:w-72"
             />
           </div>
 
@@ -260,7 +258,7 @@ export const LocationsTable = ({
             </Select>
           )}
 
-          {/* Este select sigue funcionando: en serverPaging el valor se manda al backend vía hook */}
+          {/* En serverPaging, el backend ya filtra por status (hook) */}
           <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Estados" />

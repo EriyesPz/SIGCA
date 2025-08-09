@@ -26,6 +26,7 @@ export const getAllLocations = async (
                     select: {
                       Id: true,
                       TrackingCode: true,
+                      QRCode: true,
                       Status: true,
                       Description: true,
                       AirWaybillNumber: true,
@@ -66,6 +67,7 @@ export const getAllLocations = async (
             column: column.ColumnCode ?? null,
             isOccupied: !!cargo,
             trackingCode: cargo?.TrackingCode ?? null,
+            qr: cargo?.QrCode ?? null,
             status: computedStatus,
             description: cargo?.Description ?? null,
             airWaybillNumber: cargo?.AirWaybillNumber ?? null,

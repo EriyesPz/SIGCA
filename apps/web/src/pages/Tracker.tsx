@@ -17,6 +17,7 @@ export const WarehouseLocationTracker = () => {
 
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [cargoQuery, setCargoQuery] = useState<string>(""); // 🔎 búsqueda global/cliente
 
   // Extras que vienen del backend:
   type BackendExtras = {
@@ -42,6 +43,7 @@ export const WarehouseLocationTracker = () => {
   const [selectedRack] = useState<SelectedRack | null>(null);
   const [isRackModalOpen, setIsRackModalOpen] = useState(false);
 
+  // 🔁 Global (server paging): el backend soporta status + q
   const {
     data: pagedData,
     isLoading: isPagedLoading,
@@ -49,9 +51,11 @@ export const WarehouseLocationTracker = () => {
   } = useLocations(
     page,
     limit,
-    filterStatus as "all" | LocationStatus | undefined
+    filterStatus as "all" | LocationStatus | undefined,
+    cargoQuery // 👈 se envía como ?q= al backend
   );
 
+  // 📦 Por almacén (client paging)
   const {
     data: warehouseData,
     isLoading: isWarehouseLoading,
@@ -92,7 +96,7 @@ export const WarehouseLocationTracker = () => {
       description: loc.description,
       isOccupied: loc.status === "almacenado" || loc.status === "reservado",
 
-      // 👇👇👇 AÑADIDOS (vienen del backend)
+      // AÑADIDOS (vienen del backend)
       airWaybillNumber: loc.airWaybillNumber ?? null,
       houseAirWaybillNumber: loc.houseAirWaybillNumber ?? null,
       masterAirWaybillNumber: loc.masterAirWaybillNumber ?? null,
@@ -116,9 +120,10 @@ export const WarehouseLocationTracker = () => {
 
   const error = isFilteringByWarehouse ? warehouseError : pagedError;
 
+  // Resetear a página 1 si cambian filtros o la búsqueda
   useEffect(() => {
-    setPage(1); // Resetear a página 1 si cambia el filtro
-  }, [selectedWarehouse, filterStatus]);
+    setPage(1);
+  }, [selectedWarehouse, filterStatus, cargoQuery]);
 
   // Fuente plana de datos originales del backend (para extra fields)
   const flatLocations = isFilteringByWarehouse
@@ -186,6 +191,8 @@ export const WarehouseLocationTracker = () => {
             setFilterStatus={setFilterStatus}
             viewMode="all"
             onLocationClick={handleLocationClick}
+            searchTerm={cargoQuery} // 🔎 pasa query a la tabla
+            onSearchChange={setCargoQuery} // 🔁 actualiza query (backend/cliente)
           />
         </div>
 
