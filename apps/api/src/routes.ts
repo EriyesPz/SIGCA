@@ -19,11 +19,15 @@ import {
   transferCargoController,
   deliverCargoController,
 } from "./controllers/cargo";
-import { listUsers, createUserWithRolesController,
+import {
+  listUsers,
+  createUserWithRolesController,
   addRolesToUserController,
   replaceUserRolesController,
   getUserDetailsController,
-  getUserPermissionsController, } from "./controllers/users";
+  getUserPermissionsController,
+  patchUserController
+} from "./controllers/users";
 import {
   allPermisions,
   allRoles,
@@ -67,14 +71,18 @@ router.get("/dashboard", getDashboardData);
 router.get("/reports/cargo-entry", getCargoEntryReport);
 router.get("/reports/cargo-exit", getCargoExitReport);
 router.get("/reports/cargo-transfer", getCargoTransferReport);
-router.get("/reports/distribution-by-location", getDistributionByLocationReport);
+router.get(
+  "/reports/distribution-by-location",
+  getDistributionByLocationReport
+);
 router.get("/reports/cargo-return-reentry", getCargoReturnReentryReport);
-router.get("/reports/cargo-average", getAverageCargoStayReport)
-router.get("/reports/cargo-type", getDailyCargoByTypeReport)
+router.get("/reports/cargo-average", getAverageCargoStayReport);
+router.get("/reports/cargo-type", getDailyCargoByTypeReport);
 router.post("/users", createUserWithRolesController);
 router.post("/users/:userId/roles", addRolesToUserController);
 router.put("/users/:userId/roles", replaceUserRolesController);
 router.get("/users/:userId", getUserDetailsController);
 router.get("/users/:userId/permissions", getUserPermissionsController);
+router.patch("/users/:userId", patchUserController);
 
 export { router };

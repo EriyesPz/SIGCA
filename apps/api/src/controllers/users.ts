@@ -7,6 +7,7 @@ import {
   replaceUserRoles,
   getEffectivePermissionsForUser,
   getUserWithRolesAndPermissions,
+  updateUserAndRoles,
 } from "../model/user";
 
 /* ================== Schemas ================== */
@@ -21,6 +22,50 @@ const createUserWithRolesSchema = z.object({
 const rolesArraySchema = z.object({
   roles: z.array(z.string().min(1)).min(1, "At least one role is required"),
 });
+
+const patchUserSchema = z
+  .object({
+    Email: z.string().email().optional(),
+    Name: z.string().nullable().optional(),
+    User: z.string().optional(),
+    Password: z.string().min(6).nullable().optional(),
+    IsActive: z.boolean().optional(),
+    Avatar: z.string().url().nullable().optional(),
+
+    roleOps: z
+      .object({
+        setRoleIds: z.array(z.string().min(1)).optional(),
+        addRoleIds: z.array(z.string().min(1)).optional(),
+        removeRoleIds: z.array(z.string().min(1)).optional(),
+      })
+      .optional(),
+  })
+  .superRefine((val, ctx) => {
+    const dataKeys: (keyof typeof val)[] = [
+      "Email",
+      "Name",
+      "User",
+      "Password",
+      "IsActive",
+      "Avatar",
+    ];
+    const hasData = dataKeys.some((k) => val[k] !== undefined);
+    const r = val.roleOps;
+    const hasRoleOps =
+      !!r &&
+      Boolean(
+        (r.setRoleIds && r.setRoleIds.length) ||
+          (r.addRoleIds && r.addRoleIds.length) ||
+          (r.removeRoleIds && r.removeRoleIds.length)
+      );
+
+    if (!hasData && !hasRoleOps) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Provide at least one user field or a role operation",
+      });
+    }
+  });
 
 /* ================== Controllers ================== */
 
@@ -145,6 +190,50 @@ export const getUserPermissionsController = async (
     const perms = await getEffectivePermissionsForUser(userId);
     res.status(200).json(perms);
   } catch {
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const patchUserController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.params.userId;
+    const parsed = patchUserSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ message: parsed.error.flatten() });
+      return;
+    }
+
+    const { roleOps, ...data } = parsed.data;
+
+    const updated = await updateUserAndRoles(
+      { id: userId }, // identificamos por Id en la ruta
+      data,
+      roleOps
+    );
+
+    if (!updated) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    res.status(200).json(updated);
+  } catch (error: any) {
+    // Mensajes “amigables” desde el modelo
+    if (String(error?.message || "").startsWith("Role(s) not found")) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+    if (String(error?.message || "").startsWith("Conflicto de unique")) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+    if (String(error?.message || "").includes("Usuario no encontrado")) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
     res.status(500).json({ message: "Internal server error" });
   }
 };

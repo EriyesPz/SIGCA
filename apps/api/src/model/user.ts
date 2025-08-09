@@ -32,6 +32,7 @@ export async function getUsers() {
       User: true,
       IsActive: true,
       CreatedAt: true,
+      Avatar: true,
       UserRoles: {
         select: {
           Roles: {
@@ -63,6 +64,7 @@ export async function getUsers() {
     User: user.User,
     IsActive: user.IsActive,
     CreatedAt: user.CreatedAt,
+    Avatar: user.Avatar,
     Roles: user.UserRoles.map((ur) => ({Name: ur.Roles.Name, Id: ur.Roles.Id})),
     LastSessionAt: user.Sessions[0]?.CreatedAt ?? null,
     LastSessionIp: user.Sessions[0]?.IpAddress ?? null,
@@ -205,6 +207,141 @@ type Tx = Parameters<typeof db.$transaction>[0] extends (arg: infer A) => any
   ? A
   : never;
 
+
+export type UpdateUserInput = {
+  Email?: string;
+  Name?: string | null;
+  User?: string;
+  Password?: string | null;
+  IsActive?: boolean;
+  Avatar?: string | null;
+};
+
+/** Operaciones opcionales sobre roles */
+export type RoleOps = {
+  /** Reemplaza TODOS los roles por estos IDs (puede ser [] para dejarlos sin roles) */
+  setRoleIds?: string[];
+  /** Agrega estos roles (ignora si ya existen) */
+  addRoleIds?: string[];
+  /** Quita estos roles si existen */
+  removeRoleIds?: string[];
+};
+
+type UpdateUserWhere = { id?: string; email?: string };
+
+/**
+ * Actualiza parcialmente un usuario y opcionalmente edita sus roles.
+ * - Identifica por `id` o `email` (uno de los dos).
+ * - Si se provee `roleOps.setRoleIds`, reemplaza todos los roles.
+ * - Si no se provee `setRoleIds`, se aplican `addRoleIds` y/o `removeRoleIds`.
+ * - Devuelve el usuario con Roles y Permisos efectivos.
+ */
+export async function updateUserAndRoles(
+  where: UpdateUserWhere,
+  data: UpdateUserInput = {},
+  roleOps?: RoleOps
+) {
+  if (!where?.id && !where?.email) {
+    throw new Error("Debes proporcionar where.id o where.email");
+  }
+  if (where.id && where.email) {
+    throw new Error("Proporciona solo un identificador: id O email");
+  }
+  if (!data && !roleOps) {
+    throw new Error("No hay cambios para aplicar");
+  }
+
+  // Limpia undefineds para el update de Prisma
+  const prismaData: Record<string, any> = {};
+  if (data.Email !== undefined) prismaData.Email = data.Email;
+  if (data.Name !== undefined) prismaData.Name = data.Name;
+  if (data.User !== undefined) prismaData.User = data.User;
+  if (data.Password !== undefined) prismaData.Password = data.Password;
+  if (data.IsActive !== undefined) prismaData.IsActive = data.IsActive;
+  if (data.Avatar !== undefined) prismaData.Avatar = data.Avatar;
+
+  try {
+    return await db.$transaction(async (tx) => {
+      // 1) Resolver el usuario (y su Id) por id o email
+      const user = await tx.users.findUnique({
+        where: where.id ? { Id: where.id } : { Email: where.email! },
+        select: { Id: true },
+      });
+      if (!user) throw new Error("Usuario no encontrado con el identificador proporcionado");
+
+      // 2) Actualizar campos (si se enviaron)
+      if (Object.keys(prismaData).length > 0) {
+        await tx.users.update({
+          where: { Id: user.Id },
+          data: prismaData,
+          select: { Id: true }, // mínimo
+        });
+      }
+
+      // 3) Operaciones de roles (opcionales)
+      if (roleOps) {
+        // helper que valida que los roles existan
+        const assertRolesExist = async (roleIds: string[]) => {
+          if (!roleIds?.length) return;
+          const found = await tx.roles.findMany({
+            where: { Id: { in: roleIds } },
+            select: { Id: true },
+          });
+          const setFound = new Set(found.map(r => r.Id));
+          const missing = roleIds.filter(id => !setFound.has(id));
+          if (missing.length) {
+            throw new Error(`Role(s) not found: ${missing.join(", ")}`);
+          }
+        };
+
+        if (roleOps.setRoleIds !== undefined) {
+          // Reemplazo total
+          const setIds = roleOps.setRoleIds ?? [];
+          await assertRolesExist(setIds);
+
+          await tx.userRoles.deleteMany({ where: { UserId: user.Id } });
+          if (setIds.length) {
+            await tx.userRoles.createMany({
+              data: setIds.map(roleId => ({ UserId: user.Id, RoleId: roleId })),
+              skipDuplicates: true,
+            });
+          }
+        } else {
+          // Agregar y/o remover
+          if (roleOps.addRoleIds?.length) {
+            await assertRolesExist(roleOps.addRoleIds);
+            await tx.userRoles.createMany({
+              data: roleOps.addRoleIds.map(roleId => ({ UserId: user.Id, RoleId: roleId })),
+              skipDuplicates: true,
+            });
+          }
+          if (roleOps.removeRoleIds?.length) {
+            await tx.userRoles.deleteMany({
+              where: {
+                UserId: user.Id,
+                RoleId: { in: roleOps.removeRoleIds },
+              },
+            });
+          }
+        }
+      }
+
+      // 4) Devolver el usuario con roles y permisos efectivos
+      // Si ya tienes este helper en tu módulo, úsalo:
+      return getUserWithRolesAndPermissionsTx(tx as any, user.Id);
+    });
+  } catch (err: any) {
+    if (err?.code === "P2002") {
+      const target = Array.isArray(err?.meta?.target) ? err.meta.target.join(", ") : err?.meta?.target;
+      throw new Error(`Conflicto de unique en campo(s): ${target || "desconocido"}`);
+    }
+    if (err?.code === "P2025") {
+      throw new Error("Usuario no encontrado con el identificador proporcionado");
+    }
+    throw err;
+  }
+}
+
 async function getUserWithRolesAndPermissionsTx(tx: Tx, userId: string) {
   const user = await tx.users.findUnique({
     where: { Id: userId },
@@ -224,9 +361,7 @@ async function getUserWithRolesAndPermissionsTx(tx: Tx, userId: string) {
               Description: true,
               RolePermissions: {
                 select: {
-                  Permissions: {
-                    select: { Id: true, Name: true, Description: true },
-                  },
+                  Permissions: { select: { Id: true, Name: true, Description: true } },
                 },
               },
             },
@@ -235,10 +370,8 @@ async function getUserWithRolesAndPermissionsTx(tx: Tx, userId: string) {
       },
     },
   });
-
   if (!user) return null;
 
-  // Normalizar: roles + permisos deduplicados
   const roles = user.UserRoles.map((ur) => ({
     Id: ur.Roles.Id,
     Name: ur.Roles.Name,

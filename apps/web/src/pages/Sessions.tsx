@@ -335,7 +335,9 @@ export const Sessions = () => {
                                 ? "pointer-events-none opacity-50"
                                 : ""
                             }
-                          />
+                          >
+                            Anterior
+                          </PaginationPrevious>
                         </PaginationItem>
 
                         {getPageNumbers().map((number, index) => (
@@ -371,7 +373,9 @@ export const Sessions = () => {
                                 ? "pointer-events-none opacity-50"
                                 : ""
                             }
-                          />
+                          >
+                            Siguiente
+                          </PaginationNext>
                         </PaginationItem>
                       </PaginationContent>
                     </Pagination>

@@ -4,7 +4,11 @@ import { getApiUrl } from "./client";
 
 /* ================== Tipos ================== */
 export type Role = { Id: string; Name: string; Description?: string | null };
-export type Permission = { Id: string; Name: string; Description?: string | null };
+export type Permission = {
+  Id: string;
+  Name: string;
+  Description?: string | null;
+};
 
 export type UserListItem = {
   Id: string;
@@ -150,6 +154,55 @@ export const useReplaceUserRoles = () => {
     mutationFn: ({ userId, roles }: { userId: string; roles: string[] }) =>
       replaceUserRoles(userId, roles),
     onSuccess: (updated) => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      qc.invalidateQueries({ queryKey: ["user", updated.Id] });
+      qc.invalidateQueries({ queryKey: ["user:permissions", updated.Id] });
+    },
+  });
+};
+
+export type RoleOpsInput = {
+  /** Reemplaza TODOS los roles por estos IDs (puede ser [] para dejarlos sin roles) */
+  setRoleIds?: string[];
+  /** Agrega estos roles (ignora duplicados) */
+  addRoleIds?: string[];
+  /** Quita estos roles si existen */
+  removeRoleIds?: string[];
+};
+
+export type PatchUserInput = {
+  Email?: string;
+  Name?: string | null;
+  User?: string;
+  Password?: string | null; // ya con hash si aplica
+  IsActive?: boolean;
+  Avatar?: string | null;
+  roleOps?: RoleOpsInput;
+};
+
+/** Llama a PATCH /users/:userId con los campos opcionales y/o roleOps */
+export const patchUser = async (
+  userId: string,
+  data: PatchUserInput
+): Promise<UserFull> => {
+  // limpiamos undefineds para que el backend no reciba claves vacías
+  const clean: Record<string, any> = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (v !== undefined) clean[k] = v;
+  }
+  return request<UserFull>(`${getApiUrl()}/users/${userId}`, {
+    method: "PATCH",
+    body: JSON.stringify(clean),
+  });
+};
+
+export const usePatchUser = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, data }: { userId: string; data: PatchUserInput }) =>
+      patchUser(userId, data),
+    onSuccess: (updated) => {
+      // refrescar lista y detalles/permissions del usuario afectado
       qc.invalidateQueries({ queryKey: ["users"] });
       qc.invalidateQueries({ queryKey: ["user", updated.Id] });
       qc.invalidateQueries({ queryKey: ["user:permissions", updated.Id] });
