@@ -17,6 +17,7 @@ import { DeliverCargoPage } from '@/pages/DeliverCargo';
 import { ListUsers } from "@/pages/ListUsers";
 import { Sessions } from "@/pages/Sessions";
 import { RolesPermissions } from "@/pages/RolesPermisions";
+import { WarehouseTracker } from "./Tracker-Warehouse";
 
 export const router = createBrowserRouter([
   {
@@ -62,6 +63,10 @@ export const router = createBrowserRouter([
       {
         path: "tracker",
         element: <ProtectedRoute><WarehouseLocationTracker /></ProtectedRoute>
+      },
+      {
+        path: "tracker/almacenes",
+        element: <ProtectedRoute><WarehouseTracker></WarehouseTracker></ProtectedRoute>
       },
       {
         path: "register-cargo",

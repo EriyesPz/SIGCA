@@ -7,6 +7,24 @@ export const allWarehouses = async () => {
       select: {
         Id: true,
         Name: true,
+        Code: true,
+        _count: {
+          select: { Racks: true }, // cuenta racks
+        },
+        Racks: {
+          select: {
+            _count: {
+              select: { RackLevels: true }, // cuenta niveles por rack
+            },
+            RackLevels: {
+              select: {
+                _count: {
+                  select: { RackColumns: true }, // cuenta columnas por nivel
+                },
+              },
+            },
+          },
+        },
       },
       where: {
         IsActive: true,
@@ -17,12 +35,29 @@ export const allWarehouses = async () => {
       throw new Error("No active warehouses found");
     }
 
-    return warehouses;
+    return warehouses.map(w => {
+      const levelsCount = w.Racks.reduce((acc, rack) => acc + rack._count.RackLevels, 0);
+      const columnsCount = w.Racks.reduce(
+        (acc, rack) =>
+          acc + rack.RackLevels.reduce((acc2, level) => acc2 + level._count.RackColumns, 0),
+        0
+      );
+
+      return {
+        Id: w.Id,
+        Name: w.Name,
+        Code: w.Code,
+        racksCount: w._count.Racks,
+        levelsCount,
+        columnsCount,
+      };
+    });
   } catch (error) {
     console.error("Error fetching warehouses:", error);
     throw new Error("Failed to fetch warehouses");
   }
 };
+
 
 export const assignCargoLocation = async ({
   id,
