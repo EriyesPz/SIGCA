@@ -15,20 +15,23 @@ export const getLocations = async (
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
-    const { data, total } = await getAllLocations(page, limit);
+    // filtros opcionales
+    const statusParam = (req.query.status as string) || "all";
+    const q = (req.query.q as string) || "";
 
-    if (!data || data.length === 0) {
-      res.status(404).json({ message: "No locations found" });
-      return;
-    }
+    // Validar status si viene
+    const status =
+      statusParam !== "all" ? (statusParam as LocationStatus) : "all";
 
+    const { data, total } = await getAllLocations(page, limit, { status, q });
+
+    // 👉 NUNCA 404 por lista vacía; devuelve 200 con data=[]
     res.status(200).json({ data, total, page, limit });
   } catch (error) {
     console.error(`Error al mostrar las ubicaciones ${error}`);
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
 export const getLocationsWarehouse = async (
   req: Request,
   res: Response

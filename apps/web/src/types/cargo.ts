@@ -185,7 +185,7 @@ export type TransferCargoType = CargoIdentifier & {
   toLevelId?: string;
   fromColumnId?: string;
   toColumnId?: string;
-  movedBy: string;
+  movedBy?: string;
   transferReason?: string;
 }
 

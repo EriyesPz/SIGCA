@@ -73,8 +73,9 @@ export const RegisterCargoWarehouse = () => {
   });
   const { mutateAsync: getCargo } = useGetCargo();
   const { mutateAsync: assign } = useAssignCargoLocation();
-  const [cookies] = useCookies(["userId"]);
+  const [cookies] = useCookies(["userId", "userName"]);
   const userId = cookies.userId as string | undefined;
+  const userName = cookies.userName as string | undefined
   const [searchValue, setSearchValue] = useState("");
   const [searchError, setSearchError] = useState("");
 
@@ -501,13 +502,13 @@ export const RegisterCargoWarehouse = () => {
                               Ancho:
                             </span>{" "}
                             <span className="font-medium">
-                              {cargoData?.dimensions?.width ?? "—"} cm
+                              {cargoData?.dimensions?.Width ?? "—"} cm
                             </span>
                           </p>
                           <p>
                             <span className="text-muted-foreground">Alto:</span>{" "}
                             <span className="font-medium">
-                              {cargoData?.dimensions?.height ?? "—"} cm
+                              {cargoData?.dimensions?.Height ?? "—"} cm
                             </span>
                           </p>
                           <p>
@@ -515,7 +516,7 @@ export const RegisterCargoWarehouse = () => {
                               Largo:
                             </span>{" "}
                             <span className="font-medium">
-                              {cargoData?.dimensions?.length ?? "—"} cm
+                              {cargoData?.dimensions?.Length ?? "—"} cm
                             </span>
                           </p>
                         </div>
@@ -604,7 +605,7 @@ export const RegisterCargoWarehouse = () => {
               <CardContent className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Usuario:</span>
-                  <span className="font-medium">{userId || "—"}</span>
+                  <span className="font-medium">{userName || "—"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Carga:</span>

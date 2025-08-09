@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { MapPin, Calendar, User, Truck, Clock, ChevronRight, Copy } from "lucide-react";
+import { MapPin, Calendar, User, Truck, Clock, Copy } from "lucide-react";
 import { statusConfig } from "@/components/common/status-config";
 
 interface LocationDetailsModalProps {
@@ -232,20 +232,6 @@ export const LocationDetailsModal = ({ isOpen, onClose, selectedLocation }: Loca
               <Separator />
             </>
           )}
-
-          {/* Acciones */}
-          <section className="space-y-2 pt-2">
-            <Button className="w-full">
-              Actualizar estado
-              <ChevronRight className="ml-2 w-4 h-4" />
-            </Button>
-            {selectedLocation?.trackingCode && (
-              <Button variant="outline" className="w-full">
-                <Truck className="mr-2 w-4 h-4" />
-                Rastrear envío
-              </Button>
-            )}
-          </section>
         </div>
       </SheetContent>
     </Sheet>

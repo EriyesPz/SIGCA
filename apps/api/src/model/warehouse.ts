@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { AssignLocation } from "../types/cargo";
+import { AssignLocation, CargoStatus } from "../types/cargo";
 
 export const allWarehouses = async () => {
   try {
@@ -74,6 +74,7 @@ export const assignCargoLocation = async ({
         RackId: rackId,
         LevelId: levelId,
         ColumnId: columnId,
+        Status: CargoStatus.ALMACENADO,
       },
     });
 

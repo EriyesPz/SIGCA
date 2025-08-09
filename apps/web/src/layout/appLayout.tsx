@@ -35,7 +35,6 @@ import {
   PackagePlus,
   MoveHorizontal,
   Truck,
-  SearchCheck,
   ShieldCheck
 } from "lucide-react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
@@ -152,15 +151,6 @@ export const AppLayout = () => {
                       >
                         <Truck className="mr-0.5 ml-0" />
                         Salida de Carga
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton
-                        onClick={() => navigate("/almacen/inspeccion-carga")}
-                        isActive={location.pathname === "/almacen/inspeccion-carga"}
-                      >
-                        <SearchCheck  className="mr-0.5 ml-0" />
-                        Inspección de Carga
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                   </SidebarMenuSub>

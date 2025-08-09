@@ -1,8 +1,18 @@
 import { db } from "./db";
 import { LocationStatus } from "../types/locations";
 
-export const getAllLocations = async (page = 1, limit = 10) => {
+type GetAllOptions = {
+  status?: LocationStatus | "all";
+  q?: string; // búsqueda simple
+};
+
+export const getAllLocations = async (
+  page = 1,
+  limit = 10,
+  opts: GetAllOptions = {}
+) => {
   const skip = (page - 1) * limit;
+  const { status = "all", q = "" } = opts;
 
   const warehouses = await db.warehouse.findMany({
     include: {
@@ -23,12 +33,10 @@ export const getAllLocations = async (page = 1, limit = 10) => {
                       MasterAirWaybillNumber: true,
                       ManifestNumber: true,
                       WeightKg: true,
-                      DimensionsCm: true
-
+                      DimensionsCm: true,
+                      EntryDate: true,
                     },
-                    orderBy: {
-                      EntryDate: "asc",
-                    },
+                    orderBy: { EntryDate: "asc" },
                     take: 1,
                   },
                 },
@@ -38,9 +46,7 @@ export const getAllLocations = async (page = 1, limit = 10) => {
         },
       },
     },
-    orderBy: {
-      Name: "asc",
-    },
+    orderBy: { Name: "asc" },
   });
 
   const allLocations = warehouses.flatMap((warehouse: any) =>
@@ -48,6 +54,10 @@ export const getAllLocations = async (page = 1, limit = 10) => {
       rack.RackLevels.flatMap((level: any) =>
         level.RackColumns.map((column: any) => {
           const cargo = column.Cargos[0];
+          const computedStatus = cargo
+            ? LocationStatus.ALMACENADO
+            : LocationStatus.DISPONIBLE;
+
           return {
             warehouse: warehouse.Name,
             rack: rack.Name,
@@ -56,7 +66,7 @@ export const getAllLocations = async (page = 1, limit = 10) => {
             column: column.ColumnCode ?? null,
             isOccupied: !!cargo,
             trackingCode: cargo?.TrackingCode ?? null,
-            status: cargo ? LocationStatus.ALMACENADO : LocationStatus.DISPONIBLE,
+            status: computedStatus,
             description: cargo?.Description ?? null,
             airWaybillNumber: cargo?.AirWaybillNumber ?? null,
             houseAirWaybillNumber: cargo?.HouseAirWaybillNumber ?? null,
@@ -70,8 +80,38 @@ export const getAllLocations = async (page = 1, limit = 10) => {
     )
   );
 
-  const total = allLocations.length;
-  const paginated = allLocations.slice(skip, skip + limit);
+  // Filtro por status si llega algo distinto a 'all'
+  let filtered = allLocations;
+  if (status !== "all") {
+    filtered = filtered.filter((l) => l.status === status);
+  }
+
+  // Búsqueda sencilla (opcional)
+  const query = q.trim().toLowerCase();
+  if (query) {
+    filtered = filtered.filter((l) => {
+      const haystack = [
+        l.trackingCode,
+        l.description,
+        l.warehouse,
+        l.rack,
+        l.houseAirWaybillNumber,
+        l.airWaybillNumber,
+        l.masterAirWaybillNumber,
+        l.manifestNumber,
+        l.rackCode,
+        l.column,
+        l.level?.toString(),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }
+
+  const total = filtered.length;
+  const paginated = filtered.slice(skip, skip + limit);
 
   return { data: paginated, total };
 };

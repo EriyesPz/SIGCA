@@ -5,14 +5,14 @@ import { LocationStatus } from "@/components/common/locations";
 const getLocations = async (
   page: number = 1,
   limit: number = 10,
-  status: LocationStatus | "all" = "all"
+  status: LocationStatus | "all" = "all",
+  q: string = ""
 ) => {
   const url = new URL(`${getApiUrl()}/locations`);
   url.searchParams.set("page", String(page));
   url.searchParams.set("limit", String(limit));
-  if (status !== "all") {
-    url.searchParams.set("status", status);
-  }
+  if (status !== "all") url.searchParams.set("status", status);
+  if (q.trim()) url.searchParams.set("q", q.trim());
 
   const r = await fetch(url.toString());
   if (!r.ok) throw new Error("Error fetching locations");
@@ -51,11 +51,12 @@ const getLocationsByStatus = async (status: LocationStatus) => {
 export const useLocations = (
   page: number = 1,
   limit: number = 10,
-  status: LocationStatus | "all" = "all"
+  status: LocationStatus | "all" = "all",
+  q: string = ""
 ) =>
   useQuery({
-    queryKey: ["locations", page, limit, status],
-    queryFn: () => getLocations(page, limit, status),
+    queryKey: ["locations", page, limit, status, q],
+    queryFn: () => getLocations(page, limit, status, q),
   });
 
 export const useLocationsByWarehouse = (warehouse: string) =>

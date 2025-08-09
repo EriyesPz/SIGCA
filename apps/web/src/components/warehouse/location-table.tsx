@@ -1,5 +1,6 @@
+// components/warehouse/location-table.tsx
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Badge,
   Button,
@@ -38,12 +39,12 @@ interface LocationsTableProps {
   ) => void;
   page: number;
   limit: number;
-  totalCount: number;
+  totalCount: number; // viene del backend para server paging
   onPageChange: (newPage: number) => void;
   viewMode?: "all";
   selectedWarehouse?: string;
   setSelectedWarehouse?: (id: string) => void;
-  filterStatus: string;
+  filterStatus: string; // lo usa el backend cuando estás en server paging
   setFilterStatus: (status: string) => void;
 }
 
@@ -65,73 +66,113 @@ export const LocationsTable = ({
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [searchTerm, setSearchTerm] = useState("");
 
+  // 👉 En global (sin almacén seleccionado) usamos paginación del servidor
+  const serverPaging = viewMode === "all" && selectedWarehouse === "all";
+
+  // Resetear a página 1 cuando cambian filtros locales SOLO si paginamos en cliente
   useEffect(() => {
-    onPageChange(1);
-  }, [selectedWarehouse, searchTerm, filterStatus]);
+    if (!serverPaging) {
+      onPageChange(1);
+    }
+  }, [selectedWarehouse, searchTerm, filterStatus]); // eslint-disable-line
 
-  const allLocations = Object.entries(warehouseLocations).flatMap(
-    ([warehouseId, warehouse]: [string, any]) =>
-      Object.entries(warehouse.racks).flatMap(([, rack]: [string, any]) =>
-        rack.locations.map((location: any) => ({
-          ...location,
-          warehouseId,
-          warehouseName: warehouse.name,
-          rackId: rack.id,
-          rackName: rack.name,
-          warehouse,
-          rack,
-        }))
-      )
-  );
+  const allLocations = useMemo(() => {
+    return Object.entries(warehouseLocations).flatMap(
+      ([warehouseId, warehouse]: [string, any]) =>
+        Object.entries(warehouse.racks).flatMap(([, rack]: [string, any]) =>
+          rack.locations.map((location: any) => ({
+            ...location,
+            warehouseId,
+            warehouseName: warehouse.name,
+            rackId: rack.id,
+            rackName: rack.name,
+            warehouse,
+            rack,
+          }))
+        )
+    );
+  }, [warehouseLocations]);
 
-  const filteredLocations = allLocations.filter((location) => {
-    const matchesStatus =
-      filterStatus === "all" || location.status === filterStatus;
-
-    const matchesSearch =
-      searchTerm === "" ||
-      location.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      location.warehouseName
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      location.rackName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      location.trackingCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      location.description?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesWarehouse =
-      viewMode === "all"
-        ? selectedWarehouse === "all" ||
-          location.warehouseId === selectedWarehouse
-        : true;
-
-    return matchesStatus && matchesSearch && matchesWarehouse;
-  });
-
-  const sortedLocations = [...filteredLocations].sort((a, b) => {
-    let aValue = a[sortField];
-    let bValue = b[sortField];
-
-    if (sortField === "position") {
-      aValue = `L${a.level}C${a.column}`;
-      bValue = `L${b.level}C${b.column}`;
+  // Filtros/Búsqueda locales SOLO en client paging (cuando hay almacén seleccionado)
+  const filteredLocations = useMemo(() => {
+    if (serverPaging) {
+      // En server paging no tocamos la lista (ya viene filtrada/paginada por el back)
+      return allLocations;
     }
 
-    if (aValue == null) aValue = "";
-    if (bValue == null) bValue = "";
+    const term = searchTerm.trim().toLowerCase();
 
-    if (typeof aValue === "string") aValue = aValue.toLowerCase();
-    if (typeof bValue === "string") bValue = bValue.toLowerCase();
+    return allLocations.filter((location) => {
+      const matchesStatus =
+        filterStatus === "all" || location.status === filterStatus;
 
-    return sortDirection === "asc"
-      ? aValue > bValue
-        ? 1
-        : -1
-      : aValue < bValue
-      ? 1
-      : -1;
-  });
+      const matchesSearch =
+        term === "" ||
+        location.id?.toLowerCase().includes(term) ||
+        location.warehouseName?.toLowerCase().includes(term) ||
+        location.rackName?.toLowerCase().includes(term) ||
+        location.trackingCode?.toLowerCase().includes(term) ||
+        location.description?.toLowerCase().includes(term) ||
+        location.houseAirWaybillNumber?.toLowerCase().includes(term);
 
-  const currentPageLocations = sortedLocations;
+      const matchesWarehouse =
+        viewMode === "all"
+          ? selectedWarehouse === "all" ||
+            location.warehouseId === selectedWarehouse
+          : true;
+
+      return matchesStatus && matchesSearch && matchesWarehouse;
+    });
+  }, [
+    allLocations,
+    serverPaging,
+    filterStatus,
+    searchTerm,
+    selectedWarehouse,
+    viewMode,
+  ]);
+
+  const sortedLocations = useMemo(() => {
+    const list = [...filteredLocations];
+    return list.sort((a, b) => {
+      let aValue = (a as any)[sortField];
+      let bValue = (b as any)[sortField];
+
+      if (sortField === "position") {
+        aValue = `L${a.level}C${a.column}`;
+        bValue = `L${b.level}C${b.column}`;
+      }
+
+      if (aValue == null) aValue = "";
+      if (bValue == null) bValue = "";
+
+      if (typeof aValue === "string") aValue = aValue.toLowerCase();
+      if (typeof bValue === "string") bValue = bValue.toLowerCase();
+
+      if (aValue === bValue) return 0;
+      if (sortDirection === "asc") return aValue > bValue ? 1 : -1;
+      return aValue < bValue ? 1 : -1;
+    });
+  }, [filteredLocations, sortField, sortDirection]);
+
+  // 👇 Paginación: server vs client
+  const currentPageLocations = useMemo(() => {
+    if (serverPaging) {
+      // Ya viene una sola página desde el backend
+      return sortedLocations;
+    }
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    return sortedLocations.slice(start, end);
+  }, [serverPaging, sortedLocations, page, limit]);
+
+  // 👇 Total pages: server vs client
+  const totalPages = useMemo(() => {
+    if (serverPaging) {
+      return Math.max(1, Math.ceil(totalCount / limit));
+    }
+    return Math.max(1, Math.ceil(filteredLocations.length / limit));
+  }, [serverPaging, totalCount, limit, filteredLocations.length]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -163,16 +204,19 @@ export const LocationsTable = ({
     </TableHead>
   );
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
-
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex items-center gap-2">
           <Package className="w-5 h-5 text-blue-600" />
           <span className="font-medium">
-            {filteredLocations.length} Ubicación
-            {filteredLocations.length !== 1 ? "es" : ""}
+            {serverPaging
+              ? `${totalCount} Ubicacione${
+                  totalCount !== 1 ? "s" : ""
+                } (totales)`
+              : `${filteredLocations.length} Ubicacione${
+                  filteredLocations.length !== 1 ? "s" : ""
+                }`}
           </span>
         </div>
 
@@ -180,10 +224,20 @@ export const LocationsTable = ({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Buscar ubicaciones..."
+              placeholder={
+                serverPaging
+                  ? "Buscar (solo funciona por almacén)"
+                  : "Buscar ubicaciones..."
+              }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 w-full sm:w-64"
+              disabled={serverPaging} // evita confusiones en global
+              title={
+                serverPaging
+                  ? "Para buscar y filtrar en cliente, selecciona un almacén."
+                  : undefined
+              }
             />
           </div>
 
@@ -206,6 +260,7 @@ export const LocationsTable = ({
             </Select>
           )}
 
+          {/* Este select sigue funcionando: en serverPaging el valor se manda al backend vía hook */}
           <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Estados" />
@@ -236,7 +291,9 @@ export const LocationsTable = ({
                 <SortableHeader field="rackName">Rack</SortableHeader>
                 <SortableHeader field="position">Posición</SortableHeader>
                 <SortableHeader field="status">Estado</SortableHeader>
-                <SortableHeader field="houseAirWaybillNumber">Guía</SortableHeader>
+                <SortableHeader field="houseAirWaybillNumber">
+                  Guía
+                </SortableHeader>
                 <SortableHeader field="trackingCode">Tracking</SortableHeader>
                 <SortableHeader field="description">Descripción</SortableHeader>
                 <TableHead className="w-20">Acciones</TableHead>

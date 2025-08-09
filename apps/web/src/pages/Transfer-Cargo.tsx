@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import { motion } from "framer-motion";
 import {
   Card,
   CardContent,
@@ -15,7 +16,28 @@ import {
   SelectValue,
   Badge,
   Textarea,
+  Separator,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  Skeleton,
 } from "@/components/ui";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Package,
   Save,
@@ -29,6 +51,8 @@ import {
   PanelTopClose,
   Rows3,
   Columns3,
+  Info,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { type CargoIdentifier } from "@/types/cargo";
@@ -54,6 +78,7 @@ export const TransferCargo = () => {
   const [searchValue, setSearchValue] = useState("");
   const [searchError, setSearchError] = useState("");
   const [transferReason, setTransferReason] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [location, setLocation] = useState({
     warehouseId: "",
     rackId: "",
@@ -62,7 +87,7 @@ export const TransferCargo = () => {
     level: 0,
     column: "",
   });
-  const { mutateAsync: transferCargo } = useTransferCargo();
+  const { mutateAsync: transferCargo, isPending: isTransferring } = useTransferCargo() as any;
   const [cookies] = useCookies(["userId"]);
 
   const userId = cookies.userId;
@@ -95,10 +120,15 @@ export const TransferCargo = () => {
   const handleSearch = async () => {
     setLoading(true);
     try {
+      if (!searchValue.trim()) {
+        setSearchError("Ingresa un valor para buscar.");
+        setLoading(false);
+        return;
+      }
       const updatedIdentifier = {
         ...identifier,
         [searchType]: searchValue.trim(),
-      };
+      } as CargoIdentifier;
 
       const result = await getCargo(updatedIdentifier);
 
@@ -115,12 +145,15 @@ export const TransferCargo = () => {
         setValue("status", result.cargo.status || "");
         setValue("documents", result.cargo.documents || []);
         setValue("createdBy", result.cargo.createdBy || userId);
+      } else {
+        setCargoData(null);
+        setSearchError("No se encontró ninguna carga con ese valor.");
       }
     } catch (error) {
       console.error("Error fetching cargo data:", error);
       toast({
         title: "Error",
-        description: "Failed to fetch cargo data. Please try again.",
+        description: "No se pudo obtener la información. Intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -128,23 +161,19 @@ export const TransferCargo = () => {
     }
   };
 
+  const canSubmit = useMemo(() => {
+    return (
+      !!cargoData &&
+      !!location.warehouseId &&
+      !!location.rackId &&
+      !!location.levelId &&
+      !!location.columnId &&
+      transferReason.trim().length >= 10
+    );
+  }, [cargoData, location, transferReason]);
+
   const handleTransfer = async () => {
     if (!cargoData) return;
-
-    // Validaciones básicas
-    if (
-      !location.warehouseId ||
-      !location.rackId ||
-      !location.levelId ||
-      !location.columnId
-    ) {
-      toast({
-        title: "Ubicación incompleta",
-        description: "Debes seleccionar una nueva ubicación completa.",
-        variant: "destructive",
-      });
-      return;
-    }
 
     try {
       await transferCargo({
@@ -169,6 +198,7 @@ export const TransferCargo = () => {
       setCargoData(null);
       setTransferReason("");
       setSearchValue("");
+      setLocation({ warehouseId: "", rackId: "", levelId: "", columnId: "", level: 0, column: "" });
     } catch (error) {
       console.error("❌ Transferencia fallida:", error);
       toast({
@@ -185,18 +215,22 @@ export const TransferCargo = () => {
       qrcode: "Código QR",
       airWaybillNumber: "AWB Number",
       houseAirWaybillNumber: "House AWB Number",
-    };
+    } as const;
     return labels[searchType];
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString("es-ES", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    try {
+      return new Date(dateString).toLocaleString("es-ES", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "-";
+    }
   };
 
   const handleLocationChange = (
@@ -223,315 +257,313 @@ export const TransferCargo = () => {
     setValue("columnId", columnId || "");
   };
 
+  const StatusBadges = () => (
+    <div className="flex flex-wrap items-center gap-2">
+      {cargoData?.status ? (
+        <Badge variant="outline" className="border-green-500/40 text-green-700 dark:text-green-300">
+          {cargoData.status}
+        </Badge>
+      ) : null}
+      {cargoData?.isPerishable ? (
+        <Badge variant="secondary" className="bg-orange-500/10 text-orange-700 dark:text-orange-300">
+          Perecedero
+        </Badge>
+      ) : (
+        <Badge variant="secondary" className="bg-slate-500/10 text-slate-600 dark:text-slate-300">No perecedero</Badge>
+      )}
+    </div>
+  );
+
+  const InfoRow = ({ label, value, icon: Icon }: { label: string; value: any; icon?: any }) => (
+    <div>
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <div className="flex items-center mt-1 gap-2">
+        {Icon ? <Icon className="w-4 h-4 text-muted-foreground" /> : null}
+        <span className="font-medium">{value ?? "-"}</span>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen p-4 sm:p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto max-w-7xl">
         <header className="space-y-2">
           <div className="flex items-center gap-3">
-            <ArrowRightLeft className="w-8 h-8" />
-            <h1 className="text-3xl font-bold">Transferir Carga</h1>
+            <div className="rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 p-2">
+              <ArrowRightLeft className="h-7 w-7 text-primary" />
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight">Transferir Carga</h1>
+            <Badge className="ml-1 flex items-center gap-1" variant="secondary">
+              <Sparkles className="h-3 w-3" /> Mejorado
+            </Badge>
           </div>
-          <p className="text-muted-foreground">
-            Transfiera la carga a una nueva ubicación.
-          </p>
+          <p className="text-muted-foreground">Transfiera la carga a una nueva ubicación de forma segura y con confirmación.</p>
         </header>
 
-        <div className="">
-          {/* Card de búsqueda */}
-          <Card className="mt-6 w-full max-w-4xl mx-auto">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Search className="w-5 h-5" />
-                Búsqueda de carga
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">
-                    Tipo de búsqueda
-                  </Label>
-                  <Select
-                    value={searchType}
-                    onValueChange={(value: any) => setSearchType(value)}
-                  >
-                    <SelectTrigger className="h-10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="trackingCode">
-                        Código de Tracking
-                      </SelectItem>
-                      <SelectItem value="qrcode">Código QR</SelectItem>
-                      <SelectItem value="airWaybillNumber">
-                        AWB Number
-                      </SelectItem>
-                      <SelectItem value="houseAirWaybillNumber">
-                        House AWB Number
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="col-span-1 sm:col-span-2 space-y-2">
-                  <Label className="text-sm font-medium">Valor a buscar</Label>
-                  <Input
-                    placeholder={`Ingresa el ${getSearchTypeLabel().toLowerCase()}...`}
-                    value={searchValue}
-                    onChange={(e) => setSearchValue(e.target.value)}
-                    className="h-10"
-                    onKeyUp={(e) => {
-                      if (e.key === "Enter") handleSearch();
-                    }}
-                  />
-                </div>
-                <div className="col-span-1 sm:col-span-2">
-                  <Button
-                    onClick={handleSearch}
-                    disabled={loading}
-                    className="w-full h-10"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                        Buscando...
-                      </>
-                    ) : (
-                      <>
-                        <Search className="w-4 h-4 mr-2" />
-                        Buscar
-                      </>
-                    )}
-                  </Button>
-                </div>
+        {/* Búsqueda */}
+        <Card className="mt-6 w-full max-w-5xl mx-auto border-muted-foreground/10 shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Search className="h-5 w-5" /> Búsqueda de carga
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Tipo de búsqueda</Label>
+                <Select value={searchType} onValueChange={(v: any) => setSearchType(v)}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Selecciona un tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="trackingCode">Código de Tracking</SelectItem>
+                    <SelectItem value="qrcode">Código QR</SelectItem>
+                    <SelectItem value="airWaybillNumber">AWB Number</SelectItem>
+                    <SelectItem value="houseAirWaybillNumber">House AWB Number</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+              <div className="sm:col-span-2 space-y-2">
+                <Label className="text-sm font-medium">Valor a buscar</Label>
+                <Input
+                  placeholder={`Ingresa el ${getSearchTypeLabel().toLowerCase()}...`}
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  className="h-10"
+                  onKeyUp={(e) => {
+                    if (e.key === "Enter") handleSearch();
+                  }}
+                />
+              </div>
+              <div className="sm:col-span-3 flex gap-3">
+                <Button onClick={handleSearch} disabled={loading} className="h-10 flex-1">
+                  {loading ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Buscando...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="mr-2 h-4 w-4" /> Buscar
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="h-10"
+                  onClick={() => {
+                    setSearchValue("");
+                    setSearchError("");
+                    setCargoData(null);
+                  }}
+                >
+                  Limpiar
+                </Button>
+              </div>
+            </div>
 
-              {searchError && (
-                <div className="flex items-center space-x-2 text-destructive text-sm p-3 bg-destructive/10 rounded-lg border border-destructive/20">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>{searchError}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            {searchError && (
+              <Alert variant="destructive" className="border-destructive/30">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{searchError}</AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Información de carga */}
-          {cargoData && (
-            <Card className="mt-6 w-full max-w-4xl mx-auto">
-
+        {/* Información de carga */}
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+          {loading ? (
+            <Card className="mt-6 w-full max-w-5xl mx-auto">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" /> Información de Carga
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[...Array(6)].map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-xl" />
+                ))}
+              </CardContent>
+            </Card>
+          ) : cargoData ? (
+            <Card className="mt-6 w-full max-w-5xl mx-auto">
               <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3">
-                  <div className="p-2 bg-green-500/10 rounded-lg">
-                    <Package className="w-5 h-5 text-green-600" />
+                <CardTitle className="flex flex-wrap items-center gap-3">
+                  <div className="rounded-lg bg-emerald-500/10 p-2">
+                    <Package className="h-5 w-5 text-emerald-600" />
                   </div>
                   <span>Información de Carga</span>
-                  <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900 dark:text-green-300">
-                    Encontrada
-                  </Badge>
+                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900 dark:text-emerald-300">Encontrada</Badge>
+                  <StatusBadges />
                 </CardTitle>
               </CardHeader>
 
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {/* Columna 1 */}
-                  <div className="space-y-4 rounded-lg p-2">
-                    <div>
-                      <Label className="text-sm text-muted-foreground">
-                        Ubicación Actual
-                      </Label>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-muted-foreground">
-                        Almacén
-                      </Label>
-                      <span className="font-medium inline-flex items-center gap-2">
-                        <Warehouse className="w-4 h-4 mt-1" />
-                        <p className="font-medium mt-1">
-                          {cargoData.warehouse}
-                        </p>
-                      </span>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-muted-foreground">
-                        Rack
-                      </Label>
-                      <span className="font-medium inline-flex items-center gap-2">
-                        <PanelTopClose className="w-4 h-4 mt-1 " />
-                        <p className="font-medium mt-1">{cargoData.rack}</p>
-                      </span>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-muted-foreground">
-                        Nivel
-                      </Label>
-                      <span className="font-medium inline-flex items-center gap-2">
-                        <Rows3 className="w-4 h-4 mt-1" />
-                        <p className="font-medium mt-1">{cargoData.level}</p>
-                      </span>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-muted-foreground">
-                        Columna
-                      </Label>
-                      <span className="font-medium inline-flex items-center gap-2">
-                        <Columns3 className="mr-1 w-4 h-4" />
-                        <p className="font-medium mt-1">{cargoData.column}</p>
-                      </span>
-                    </div>
-                  </div>
-                  <div className="space-y-6">
-                    <div>
-                      <Label className="text-sm text-muted-foreground">
-                        Descripción
-                      </Label>
-                      <p className="font-medium mt-1">
-                        {cargoData.description}
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <Label className="text-sm text-muted-foreground">
-                          Cantidad
-                        </Label>
-                        <div className="flex items-center mt-1 gap-2">
-                          <Hash className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium">
-                            {cargoData.quantity} unidades
-                          </span>
-                        </div>
-                      </div>
-                      <div>
-                        <Label className="text-sm text-muted-foreground">
-                          Peso
-                        </Label>
-                        <div className="flex items-center mt-1 gap-2">
-                          <Weight className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium">
-                            {cargoData.weightKg} kg
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-muted-foreground">
-                        Volumen
-                      </Label>
-                      <p className="font-medium mt-1">
-                        {cargoData.volumeM3} m³
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-muted-foreground">
-                        Fecha de Entrada
-                      </Label>
-                      <div className="flex items-center mt-1 gap-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">
-                          {formatDate(cargoData.entryDate)}
-                        </span>
-                      </div>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {/* Columna ubicación */}
+                  <div className="rounded-xl border bg-card p-4">
+                    <Label className="text-xs text-muted-foreground">Ubicación actual</Label>
+                    <Separator className="my-3" />
+                    <div className="space-y-3">
+                      <InfoRow label="Almacén" value={cargoData.warehouse} icon={Warehouse} />
+                      <InfoRow label="Rack" value={cargoData.rack} icon={PanelTopClose} />
+                      <InfoRow label="Nivel" value={cargoData.level} icon={Rows3} />
+                      <InfoRow label="Columna" value={cargoData.column} icon={Columns3} />
                     </div>
                   </div>
 
-                  {/* Columna 2 */}
-                  <div className="space-y-6">
-                    <div className="ml-4">
-                      <Label className="text-sm text-muted-foreground">
-                        Dimensiones
-                      </Label>
-                      <div className="mt-2 space-y-1">
-                        <p>
-                          <span className="text-muted-foreground">Ancho:</span>{" "}
-                          <span className="font-medium">
-                            {cargoData.dimensions.Width} cm
-                          </span>
-                        </p>
-                        <p>
-                          <span className="text-muted-foreground">Alto:</span>{" "}
-                          <span className="font-medium">
-                            {cargoData.dimensions.Height} cm
-                          </span>
-                        </p>
-                        <p>
-                          <span className="text-muted-foreground">Largo:</span>{" "}
-                          <span className="font-medium">
-                            {cargoData.dimensions.Length} cm
-                          </span>
-                        </p>
+                  {/* Columna detalles */}
+                  <div className="rounded-xl border bg-card p-4">
+                    <Label className="text-xs text-muted-foreground">Detalles</Label>
+                    <Separator className="my-3" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <InfoRow label="Descripción" value={cargoData.description} icon={Info} />
+                      <InfoRow label="Volumen" value={`${cargoData.volumeM3} m³`} />
+                      <InfoRow label="Cantidad" value={`${cargoData.quantity} unidades`} icon={Hash} />
+                      <InfoRow label="Peso" value={`${cargoData.weightKg} kg`} icon={Weight} />
+                      <InfoRow label="Entrada" value={formatDate(cargoData.entryDate)} icon={Calendar} />
+                    </div>
+                  </div>
+
+                  {/* Columna documentación */}
+                  <div className="rounded-xl border bg-card p-4">
+                    <Label className="text-xs text-muted-foreground">Documentación</Label>
+                    <Separator className="my-3" />
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">AWB Number</Label>
+                        <p className="mt-1 rounded bg-muted/40 px-3 py-2 font-mono text-sm">{cargoData.airWaybillNumber || "-"}</p>
                       </div>
-                    </div>
-                    <div className="ml-4">
-                      <Label className="text-sm text-muted-foreground">
-                        AWB Number
-                      </Label>
-                      <p className="font-mono text-sm bg-muted/30 px-3 py-2 rounded mt-1">
-                        {cargoData.airWaybillNumber}
-                      </p>
-                    </div>
-                    <div className="ml-4">
-                      <Label className="text-sm text-muted-foreground">
-                        House AWB Number
-                      </Label>
-                      <p className="font-mono text-sm bg-muted/30 px-3 py-2 rounded mt-1">
-                        {cargoData.houseAirWaybillNumber}
-                      </p>
+                      <div>
+                        <Label className="text-sm text-muted-foreground">House AWB Number</Label>
+                        <p className="mt-1 rounded bg-muted/40 px-3 py-2 font-mono text-sm">{cargoData.houseAirWaybillNumber || "-"}</p>
+                      </div>
+                      {cargoData?.dimensions ? (
+                        <div>
+                          <Label className="text-sm text-muted-foreground">Dimensiones</Label>
+                          <div className="mt-1 grid grid-cols-3 gap-3 text-sm">
+                            <p><span className="text-muted-foreground">Ancho:</span> <span className="font-medium">{cargoData.dimensions.Width} cm</span></p>
+                            <p><span className="text-muted-foreground">Alto:</span> <span className="font-medium">{cargoData.dimensions.Height} cm</span></p>
+                            <p><span className="text-muted-foreground">Largo:</span> <span className="font-medium">{cargoData.dimensions.Length} cm</span></p>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          )}
-        </div>
-        <div className="mt-6">
-          <Card className="mt-6 w-full max-w-4xl mx-auto">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ArrowRightLeft className="w-5 h-5" />
-                Transferir Carga
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-sm font-medium">
-                    Razon de Transferencia
-                  </Label>
-                  <Textarea
-                    placeholder="Escribe la razón de la transferencia..."
-                    required
-                    className="mt-2"
-                    rows={3}
-                    value={transferReason}
-                    onChange={(e) => setTransferReason(e.target.value)}
-                  />
-                </div>
-                <LocationSelector
-                  warehouseId={watch("warehouseId")}
-                  rackId={watch("rackId")}
-                  level={watch("level")}
-                  column={watch("column").toString()}
-                  onLocationChange={handleLocationChange}
+          ) : null}
+        </motion.div>
+
+        {/* Transferencia */}
+        <Card className="mt-6 w-full max-w-5xl mx-auto">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ArrowRightLeft className="h-5 w-5" /> Transferir Carga
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium">Razón de transferencia</Label>
+                <Textarea
+                  placeholder="Escribe la razón de la transferencia..."
+                  required
+                  className="mt-2"
+                  rows={3}
+                  value={transferReason}
+                  onChange={(e) => setTransferReason(e.target.value)}
                 />
-                {errors.warehouseId && (
-                  <p className="text-sm text-red-600 flex items-center gap-1 mt-2">
-                    <AlertCircle className="w-3 h-3" />
-                    {errors.warehouseId.message}
-                  </p>
-                )}
+                <p className="mt-1 text-xs text-muted-foreground">Mínimo 10 caracteres.</p>
               </div>
-            </CardContent>
-          </Card>
+              <LocationSelector
+                warehouseId={watch("warehouseId")}
+                rackId={watch("rackId")}
+                level={watch("level")}
+                column={watch("column").toString()}
+                onLocationChange={handleLocationChange}
+              />
+              {errors.warehouseId && (
+                <p className="mt-2 flex items-center gap-1 text-sm text-red-600">
+                  <AlertCircle className="h-3 w-3" /> {errors.warehouseId.message}
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Action bar */}
+        <div className="pointer-events-none sticky bottom-0 mt-10 flex justify-end">
+          <div className="pointer-events-auto mx-auto w-full max-w-5xl rounded-t-2xl border bg-background/95 p-3 shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-background/70">
+            <div className="flex items-center justify-between gap-3">
+              <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
+                <Info className="h-4 w-4" />
+                <span>
+                  Completa todos los campos y proporciona una razón de al menos 10 caracteres.
+                </span>
+              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button
+                        size="lg"
+                        className="shadow-lg hover:shadow-xl transition-shadow"
+                        disabled={!canSubmit || isTransferring}
+                        onClick={() => {
+                          if (!cargoData) return;
+                          if (!canSubmit) {
+                            setSearchError("");
+                            toast({
+                              title: "Faltan datos",
+                              description: "Selecciona la ubicación completa y explica la razón de transferencia.",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          setConfirmOpen(true);
+                        }}
+                      >
+                        <Save className="mr-2 h-4 w-4" />
+                        {isTransferring ? "Guardando..." : "Guardar"}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Confirma antes de transferir la carga</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
         </div>
-        <div className="fixed bottom-6 right-6 z-50">
-          <Button
-            onClick={handleTransfer}
-            disabled={!cargoData || !location.warehouseId}
-            size="lg"
-            className="shadow-lg hover:shadow-xl transition-shadow"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            Guardar Carga
-          </Button>
-        </div>
+
+        {/* Confirmación */}
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar transferencia</AlertDialogTitle>
+              <AlertDialogDescription>
+                Revisa los detalles antes de confirmar la operación. Esta acción registrará el movimiento.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  await handleTransfer();
+                  setConfirmOpen(false);
+                }}
+              >
+                Confirmar y transferir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
