@@ -6,15 +6,15 @@ import {
   Search,
   Layers,
   MapPin,
-  ChevronRight,
   Grid as GridIcon,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   LocationDetailsModal,
   RackLocationsModal,
-  LocationsTable,
 } from "@/components/warehouse";
-import { buildWarehouseTree } from "@/utils/warehouse";
 import type { Location, Rack, Warehouse } from "@/lib/types";
 import { useLocationsByWarehouse } from "@/lib/locations";
 import { useWarehouses } from "@/lib/warehouse";
@@ -25,7 +25,19 @@ import {
   CardContent,
   CardHeader,
   Input,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui";
+import { statusConfig } from "@/components/common/status-config";
 
 type BackendExtras = {
   airWaybillNumber?: string;
@@ -42,6 +54,16 @@ type SelectedLocation = Location & {
   rack: Rack;
   warehouse: Warehouse;
 } & BackendExtras;
+
+/** 👇 Tipo enriquecido para filas de la tabla */
+type EnrichedLocation = Location &
+  BackendExtras & {
+    warehouseId: string;
+    warehouseName?: string;
+    rackId: string;
+    rackName?: string;
+    statusNorm: string;
+  };
 
 const EmptyState = ({
   title,
@@ -70,9 +92,9 @@ const WarehouseCard = ({
     Name: string;
     Code?: string;
     Address?: string;
-    racksCount?: string;
-    levelsCount?: string;
-    columnsCount?: string;
+    racksCount?: string | number;
+    levelsCount?: string | number;
+    columnsCount?: string | number;
   };
   onSelect: (id: string) => void;
 }) => {
@@ -99,19 +121,18 @@ const WarehouseCard = ({
           </span>
         </div>
 
-        {/* mini KPIs decorativos (placeholder sin llamadas extra) */}
         <div className="grid grid-cols-3 gap-2 mb-4">
           <div className="rounded-lg border p-2">
             <div className="text-[10px] text-muted-foreground">Racks</div>
-            <div className="font-semibold">{wh.racksCount}</div>
+            <div className="font-semibold">{wh.racksCount ?? "-"}</div>
           </div>
           <div className="rounded-lg border p-2">
             <div className="text-[10px] text-muted-foreground">Niveles</div>
-            <div className="font-semibold">{wh.levelsCount}</div>
+            <div className="font-semibold">{wh.levelsCount ?? "-"}</div>
           </div>
           <div className="rounded-lg border p-2">
             <div className="text-[10px] text-muted-foreground">Columnas</div>
-            <div className="font-semibold">{wh.columnsCount}</div>
+            <div className="font-semibold">{wh.columnsCount ?? "-"}</div>
           </div>
         </div>
 
@@ -149,58 +170,104 @@ export const WarehouseTracker = () => {
   // --- Datos: Almacenes ---
   const { data: allWarehouses = [], isLoading: isWhLoading } = useWarehouses();
 
-  // --- Datos: Ubicaciones por almacén (client paging) ---
+  // --- Datos: Ubicaciones por almacén ---
   const {
     data: warehouseData,
     isLoading: isLocLoading,
     error: locError,
   } = useLocationsByWarehouse(selectedWarehouse);
 
-  // --- Normalizar para tabla/árbol ---
-  const enrichedLocations = useMemo(() => {
-    const raw = warehouseData || [];
-    return raw.map((loc: any, idx: number) => ({
-      ...loc,
-      warehouseId: loc.warehouseId ?? loc.warehouse,
-      warehouseName: loc.warehouse,
-      rackId: loc.rackId ?? loc.rackCode ?? `rack-${idx}`,
-      rackName: loc.rackName ?? loc.rack ?? "Rack Desconocido",
-    }));
+  // --- Normalizar / enriquecer a EnrichedLocation[] ---
+  const enrichedLocations: EnrichedLocation[] = useMemo(() => {
+    const raw: (Location & Partial<BackendExtras> & Record<string, any>)[] =
+      (warehouseData as any[]) || [];
+    return raw.map((loc, idx) => {
+      const warehouseId = (loc as any).warehouseId ?? (loc as any).warehouse;
+      const rackId =
+        (loc as any).rackId ?? (loc as any).rackCode ?? `rack-${idx}`;
+      const rackName = (loc as any).rackName ?? (loc as any).rack ?? "Rack";
+      const warehouseName = (loc as any).warehouse;
+
+      return {
+        ...(loc as Location),
+        airWaybillNumber: (loc as any).airWaybillNumber,
+        houseAirWaybillNumber: (loc as any).houseAirWaybillNumber,
+        masterAirWaybillNumber: (loc as any).masterAirWaybillNumber,
+        manifestNumber: (loc as any).manifestNumber,
+        weightKg: (loc as any).weightKg,
+        dimensionsCm: (loc as any).dimensionsCm,
+        rackCode: (loc as any).rackCode,
+        isOccupied:
+          (loc as any).status === "almacenado" ||
+          (loc as any).status === "reservado",
+
+        warehouseId: String(warehouseId),
+        warehouseName,
+        rackId: String(rackId),
+        rackName,
+        statusNorm: String((loc as any).status ?? "").toLowerCase(),
+      };
+    });
   }, [warehouseData]);
 
-  const rowsForTree = useMemo(() => {
-    return enrichedLocations.map((loc: any) => ({
-      warehouse: loc.warehouseId,
-      warehouseName: loc.warehouseName,
-      rackCode: loc.rackId,
-      rack: loc.rackName,
-      level: loc.level,
-      column: loc.column,
-      status: loc.status,
-      trackingCode: loc.trackingCode,
-      description: loc.description,
-      isOccupied: loc.status === "almacenado" || loc.status === "reservado",
-      airWaybillNumber: loc.airWaybillNumber ?? null,
-      houseAirWaybillNumber: loc.houseAirWaybillNumber ?? null,
-      masterAirWaybillNumber: loc.masterAirWaybillNumber ?? null,
-      manifestNumber: loc.manifestNumber ?? null,
-      weightKg: loc.weightKg ?? null,
-      dimensionsCm: loc.dimensionsCm ?? null,
-    }));
-  }, [enrichedLocations]);
+  // --- Filtro por almacén + filtros UI ---
+  const filtered: EnrichedLocation[] = useMemo(() => {
+    const q = cargoQuery.trim().toLowerCase();
+    const st = filterStatus.toLowerCase();
 
-  const warehouseLocations = useMemo(
-    () => buildWarehouseTree(rowsForTree),
-    [rowsForTree]
-  );
+    return enrichedLocations.filter((loc) => {
+      const whOk = !selectedWarehouse || loc.warehouseId === selectedWarehouse;
 
-  const totalCount = warehouseData?.length || 0;
+      const statusOk =
+        st === "all" ||
+        loc.statusNorm === st ||
+        (st === "ocupado" &&
+          (loc.statusNorm === "almacenado" || loc.statusNorm === "reservado"));
+
+      const searchOk =
+        !q ||
+        String((loc as any).trackingCode ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        String(loc.airWaybillNumber ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        String(loc.houseAirWaybillNumber ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        String(loc.masterAirWaybillNumber ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        String(loc.manifestNumber ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        String(loc.rackName ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        String(loc.rackId ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        String((loc as any).description ?? "")
+          .toLowerCase()
+          .includes(q);
+
+      return whOk && statusOk && searchOk;
+    });
+  }, [enrichedLocations, cargoQuery, filterStatus, selectedWarehouse]);
+
+  // --- Paginación en cliente ---
+  const totalCount = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+  const pageSafe = Math.min(page, totalPages);
+  const pageSlice: EnrichedLocation[] = useMemo(() => {
+    const start = (pageSafe - 1) * limit;
+    return filtered.slice(start, start + limit);
+  }, [filtered, pageSafe, limit]);
 
   // --- Navegación entre modos ---
   const handleSelectWarehouse = (id: string) => {
     setSelectedWarehouse(id);
     setMode("locations");
-    // reset UI de la vista de ubicaciones
     setPage(1);
     setFilterStatus("all");
     setCargoQuery("");
@@ -210,6 +277,8 @@ export const WarehouseTracker = () => {
     setMode("overview");
     setSelectedWarehouse("");
     setCargoQuery("");
+    setFilterStatus("all");
+    setPage(1);
   };
 
   // --- Reset de página al cambiar filtros/búsqueda ---
@@ -219,31 +288,45 @@ export const WarehouseTracker = () => {
     }
   }, [filterStatus, cargoQuery, mode]);
 
-  // --- Fuente plana (para los modales, merge extras) ---
-  const flatLocations = (warehouseData as any[]) || [];
+  // Fuente plana (para modales)
+  const flatLocations = ((warehouseData as any[]) || []) as EnrichedLocation[];
 
-  const handleLocationClick = (
-    location: Location,
-    rack: Rack,
-    warehouse: Warehouse
-  ) => {
-    const original = (flatLocations as any[]).find(
+  const handleRowClick = (row: EnrichedLocation) => {
+    const original = (flatLocations as EnrichedLocation[]).find(
       (fl) =>
-        (fl.warehouseId ?? fl.warehouse) === (location as any).warehouseId &&
-        (fl.rackId ?? fl.rackCode) === (location as any).rackId &&
-        fl.level === (location as any).level &&
-        fl.column === (location as any).column
+        fl.warehouseId === row.warehouseId &&
+        fl.rackId === row.rackId &&
+        (fl as any).level === (row as any).level &&
+        (fl as any).column === (row as any).column
     );
-    setSelectedLocation({
-      ...(location as any),
-      rack,
-      warehouse,
+
+    const sel: SelectedLocation = {
+      ...(row as Location),
+      rack: { Id: row.rackId, Name: row.rackName ?? "Rack" } as unknown as Rack,
+      warehouse: {
+        Id: row.warehouseId,
+        Name:
+          allWarehouses.find((w: any) => w.Id === row.warehouseId)?.Name ??
+          "Almacén",
+        Code:
+          allWarehouses.find((w: any) => w.Id === row.warehouseId)?.Code ??
+          undefined,
+      } as unknown as Warehouse,
+      airWaybillNumber: row.airWaybillNumber,
+      houseAirWaybillNumber: row.houseAirWaybillNumber,
+      masterAirWaybillNumber: row.masterAirWaybillNumber,
+      manifestNumber: row.manifestNumber,
+      weightKg: row.weightKg,
+      dimensionsCm: row.dimensionsCm,
+      rackCode: row.rackCode,
+      isOccupied: row.isOccupied,
       ...(original ?? {}),
-    });
+    };
+
+    setSelectedLocation(sel);
     setIsDetailOpen(true);
   };
 
-  // --- Render ---
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -251,10 +334,9 @@ export const WarehouseTracker = () => {
         <div className="flex items-center gap-3">
           <Package className="w-8 h-8 text-blue-600 dark:text-blue-400" />
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Todos los Almacenes
+            Explorador de Almacenes
           </h1>
         </div>
-
         <div className="hidden sm:flex items-center gap-2">
           <Badge variant="outline" className="gap-1">
             <Layers className="w-3.5 h-3.5" /> {allWarehouses.length} almacenes
@@ -264,7 +346,7 @@ export const WarehouseTracker = () => {
 
       {/* Body */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* --- MODO OVERVIEW: grid de almacenes con búsqueda --- */}
+        {/* --- OVERVIEW --- */}
         {mode === "overview" && (
           <>
             <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
@@ -326,7 +408,7 @@ export const WarehouseTracker = () => {
           </>
         )}
 
-        {/* --- MODO LOCATIONS: tabla del almacén seleccionado --- */}
+        {/* --- LOCATIONS (tabla con colores/estilos de LocationsTable) --- */}
         {mode === "locations" && (
           <>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -350,39 +432,203 @@ export const WarehouseTracker = () => {
               </div>
             </div>
 
-            {isLocLoading && (
-              <div className="p-6 text-sm">
-                Cargando ubicaciones del almacén…
+            {/* Controles con mismos componentes */}
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:items-center sm:justify-between">
+              <div className="relative w-full sm:w-96">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Buscar por tracking, AWB, rack, descripción…"
+                  value={cargoQuery}
+                  onChange={(e) => setCargoQuery(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-            )}
-            {locError && (
-              <div className="p-6 text-sm text-red-600">
-                Error al cargar ubicaciones. Intenta de nuevo.
-              </div>
-            )}
 
-            {!isLocLoading && !locError && (
-              <LocationsTable
-                warehouseLocations={warehouseLocations}
-                allWarehouses={allWarehouses || []}
-                page={page}
-                limit={limit}
-                totalCount={totalCount}
-                onPageChange={setPage}
-                // Forzamos client paging pasando un almacén específico
-                selectedWarehouse={selectedWarehouse}
-                setSelectedWarehouse={(id) => {
-                  handleSelectWarehouse(id);
-                }}
-                filterStatus={filterStatus}
-                setFilterStatus={setFilterStatus}
-                viewMode="all"
-                onLocationClick={handleLocationClick}
-                // Búsqueda (tracking / AWB / HAWB) en cliente
-                searchTerm={cargoQuery}
-                onSearchChange={setCargoQuery}
-              />
-            )}
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-full sm:w-56">
+                  <SelectValue placeholder="Estados" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los estados</SelectItem>
+                  {Object.entries(statusConfig).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-3 h-3 rounded-full ${config.color}`}
+                        />
+                        {config.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="ocupado">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-amber-400" />
+                      Ocupado (almacenado/reservado)
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Tabla shadcn/ui */}
+            <div className="border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Rack</TableHead>
+                      <TableHead>Posición</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead>Tracking</TableHead>
+                      <TableHead>AWB / HAWB / MAWB</TableHead>
+                      <TableHead>Descripción</TableHead>
+                      <TableHead>Peso (kg)</TableHead>
+                      <TableHead>Dimensiones (cm)</TableHead>
+                      <TableHead className="w-20">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isLocLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center py-8">
+                          Cargando ubicaciones…
+                        </TableCell>
+                      </TableRow>
+                    ) : locError ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={9}
+                          className="text-center py-8 text-red-600"
+                        >
+                          Error al cargar ubicaciones. Intenta de nuevo.
+                        </TableCell>
+                      </TableRow>
+                    ) : pageSlice.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={9}
+                          className="text-center py-8 text-muted-foreground"
+                        >
+                          No hay ubicaciones que coincidan con los filtros.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      pageSlice.map((loc, i) => {
+                        const dims = loc.dimensionsCm
+                          ? `${loc.dimensionsCm?.Width ?? "-"}×${
+                              loc.dimensionsCm?.Height ?? "-"
+                            }×${loc.dimensionsCm?.Length ?? "-"}`
+                          : "—";
+
+                        const st = (loc as any)
+                          .status as keyof typeof statusConfig;
+                        const status = statusConfig[st] ?? {
+                          label: (loc as any).status || "Desconocido",
+                          bgColor: "bg-gray-100",
+                          textColor: "text-gray-500",
+                          borderColor: "border-gray-300",
+                        };
+
+                        return (
+                          <TableRow
+                            key={`${loc.warehouseId}-${loc.rackId}-${
+                              (loc as any).level
+                            }-${(loc as any).column}-${i}`}
+                            className="hover:bg-muted/30 transition-colors"
+                          >
+                            <TableCell>
+                              <div className="flex flex-col">
+                                <span className="text-sm">
+                                  {loc.rackName ?? loc.rackId}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {loc.rackId}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-mono text-sm">
+                                {(loc as any).level}-{(loc as any).column}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                className={`${status.bgColor} ${status.textColor} ${status.borderColor} border text-xs`}
+                              >
+                                {status.label}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {(loc as any).trackingCode ? (
+                                <span className="font-mono text-sm bg-muted px-2 py-1 rounded">
+                                  {(loc as any).trackingCode}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">
+                                  —
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {loc.airWaybillNumber ?? "—"}
+                              {loc.houseAirWaybillNumber ||
+                              loc.masterAirWaybillNumber
+                                ? " / "
+                                : ""}
+                              {loc.houseAirWaybillNumber ?? ""}
+                              {loc.masterAirWaybillNumber
+                                ? ` / ${loc.masterAirWaybillNumber}`
+                                : ""}
+                            </TableCell>
+                            <TableCell className="max-w-[280px] truncate">
+                              {(loc as any).description ?? "—"}
+                            </TableCell>
+                            <TableCell>{loc.weightKg ?? "—"}</TableCell>
+                            <TableCell>{dims}</TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRowClick(loc)}
+                                className="h-8 w-8 p-0"
+                                title="Ver detalles"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Paginación con los mismos estilos */}
+              <div className="flex justify-end items-center gap-4 px-4 py-3 border-t bg-muted/30">
+                <span className="text-sm text-muted-foreground">
+                  Página {pageSafe} de {totalPages}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={pageSafe <= 1}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={pageSafe >= totalPages}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           </>
         )}
       </div>
@@ -397,7 +643,17 @@ export const WarehouseTracker = () => {
         isOpen={isRackModalOpen}
         onClose={setIsRackModalOpen}
         selectedRack={selectedRack}
-        onLocationClick={handleLocationClick}
+        onLocationClick={(loc, rack, wh) => {
+          // Reusa el mismo mapeo al tipo enriquecido para abrir el modal
+          handleRowClick({
+            ...(loc as unknown as EnrichedLocation),
+            rackId: (rack as any)?.Id ?? (loc as any).rackId,
+            rackName: (rack as any)?.Name ?? (loc as any).rackName,
+            warehouseId: (wh as any)?.Id ?? (loc as any).warehouseId,
+            warehouseName: (wh as any)?.Name ?? (loc as any).warehouseName,
+            statusNorm: String((loc as any).status ?? "").toLowerCase(),
+          });
+        }}
       />
     </div>
   );
