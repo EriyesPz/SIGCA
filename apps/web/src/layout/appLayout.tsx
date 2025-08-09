@@ -35,7 +35,9 @@ import {
   PackagePlus,
   MoveHorizontal,
   Truck,
-  ShieldCheck
+  ShieldCheck,
+  MapPin,
+  Building2,
 } from "lucide-react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -54,6 +56,7 @@ export const AppLayout = () => {
   const [cookies] = useCookies(["userName", "email"]);
   const [openUsers, setOpenUsers] = useState(false);
   const [openWarehouse, setOpenWarehouse] = useState(false);
+  const [openTracker, setOpenTracker] = useState(false);
 
   const user = {
     name: cookies.userName || "Invitado",
@@ -95,13 +98,14 @@ export const AppLayout = () => {
                 <SidebarMenuButton
                   onClick={() => navigate("/")}
                   aria-current={location.pathname === "/" ? "page" : undefined}
+                  className="cursor-pointer"
                 >
                   <HomeIcon className="mr-2" />
                   Inicio
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => navigate("/dashboard")}>
+                <SidebarMenuButton onClick={() => navigate("/dashboard")} className="cursor-pointer">
                   <LayoutDashboard className="mr-2" />
                   Dashboard
                 </SidebarMenuButton>
@@ -115,6 +119,7 @@ export const AppLayout = () => {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => setOpenWarehouse((prev) => !prev)}
+                  className="cursor-pointer"
                 >
                   <Warehouse className="mr-2" />
                   <span className="flex-1 text-left">Almacén</span>
@@ -129,16 +134,20 @@ export const AppLayout = () => {
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton
                         onClick={() => navigate("/almacen/registrar-carga")}
-                        isActive={location.pathname === "/almacen/registrar-carga"}
+                        isActive={
+                          location.pathname === "/almacen/registrar-carga"
+                        }
                       >
-                        <PackagePlus  className="mr-0.5" />
+                        <PackagePlus className="mr-0.5" />
                         Registrar Carga
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton
                         onClick={() => navigate("/almacen/trasladar-carga")}
-                        isActive={location.pathname === "/almacen/trasladar-carga"}
+                        isActive={
+                          location.pathname === "/almacen/trasladar-carga"
+                        }
                       >
                         <MoveHorizontal className="mr-0.5 ml-0" />
                         Traslado
@@ -157,14 +166,47 @@ export const AppLayout = () => {
                 )}
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => navigate("/tracker")}>
+                <SidebarMenuButton
+                  onClick={() => setOpenTracker((prev) => !prev)}
+                  className="cursor-pointer"
+                >
                   <Grid3X3 className="mr-2" />
-                  Tracker
+                  <span className="flex-1 text-left">Tracker</span>
+                  {openTracker ? (
+                    <ChevronUp className="h-4 w-4 shrink-0" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 shrink-0" />
+                  )}
                 </SidebarMenuButton>
+                {openTracker && (
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        onClick={() => navigate("tracker/ubicaciones")}
+                        isActive={location.pathname === "tracker/ubicaciones"}
+                        className="cursor-pointer"
+                      >
+                        <MapPin className="mr-2" />
+                        Ubicaciones
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        onClick={() => navigate("tracker/almacenes")}
+                        isActive={location.pathname === "tracker/almacenes"}
+                        className="cursor-pointer"
+                      >
+                        <Building2 className="mr-2"/>
+                        Almacenes
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                )}
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => setOpenUsers((prev) => !prev)}
+                  className="cursor-pointer"
                 >
                   <Users className="mr-2" />
                   <span className="flex-1 text-left">Usuarios</span>
@@ -197,7 +239,9 @@ export const AppLayout = () => {
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton
                         onClick={() => navigate("/usuarios/roles-permisos")}
-                        isActive={location.pathname === "/usuarios/roles-permisos"}
+                        isActive={
+                          location.pathname === "/usuarios/roles-permisos"
+                        }
                       >
                         <ShieldCheck className="mr-0.5" />
                         Roles y Permisos
@@ -208,13 +252,14 @@ export const AppLayout = () => {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => navigate("/reportes")}>
+                <SidebarMenuButton onClick={() => navigate("/reportes")} className="cursor-pointer">
                   <BarChart3 className="mr-2" />
+                  
                   Reportes
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => navigate("/actividad")}>
+                <SidebarMenuButton onClick={() => navigate("/actividad")} className="cursor-pointer">
                   <Activity className="mr-2" />
                   Actividad
                 </SidebarMenuButton>
@@ -230,7 +275,7 @@ export const AppLayout = () => {
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton
                     size="lg"
-                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer"
                   >
                     <Avatar className="h-8 w-8 rounded-lg">
                       <AvatarImage

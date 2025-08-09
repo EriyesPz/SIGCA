@@ -61,7 +61,7 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute><DeliverCargoPage /></ProtectedRoute>,
       },
       {
-        path: "tracker",
+        path: "tracker/ubicaciones",
         element: <ProtectedRoute><WarehouseLocationTracker /></ProtectedRoute>
       },
       {
