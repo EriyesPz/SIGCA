@@ -243,20 +243,16 @@ export const CargoExitsReport = () => {
 
   /* ---------- UI ---------- */
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-200">
+    <div className="min-h-screen bg-background pl-4 pt-6">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          Reporte de Salidas de Carga
+        </h1>
+        <p className="text-slate-400 mt-1 sm:mt-2">
+          Lista completa de cargas que han salido del almacén
+        </p>
+      </div>
       <div className="mx-auto max-w-7xl space-y-6">
-        {/* header */}
-        <header className="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-sm">
-          <div className="mb-2 flex items-center gap-3">
-            <LogOut className="h-8 w-8 text-red-600" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Reporte de Salidas de Carga
-            </h1>
-          </div>
-          <p className="text-gray-600 dark:text-gray-300">
-            Lista completa de cargas que han salido del almacén
-          </p>
-        </header>
 
         {/* preview / actions */}
         <ReportPreview

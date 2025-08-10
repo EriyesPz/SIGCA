@@ -17,7 +17,7 @@ import { ModeToggle } from "@/components/ui/mode-toggle";
 import { AlertCircle } from "lucide-react";
 
 import { useLoginUser } from "@/lib/auth";
-import type { LoginResponse, LoginInput } from "@/lib/types";
+import type { LoginInput } from "@/lib/types";
 
 // 👇 usa el AuthProvider (guarda cookies y helpers)
 import { useAuth } from "@/components/providers/auth";

@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/select";
 
 import {
-  Package,
   LogOut,
   Wrench,
   RotateCcw,
@@ -147,7 +146,7 @@ export function CargoTypeReport() {
   const { data, isLoading, error } = useDailyCargoByTypeReport({
     from: toYMD(startDate),
     to: toYMD(endDate),
-    warehouseId: warehouse || undefined,
+    warehouseName: warehouse || undefined,
   });
 
   // aplanar
@@ -296,24 +295,24 @@ Unidades totales: ${kpis.unidadesTotales}`,
 
   return (
     <div className="min-h-screen bg-background p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          Reporte diario – Carga por tipo
+        </h1>
+        <p className="text-slate-400 mt-1 sm:mt-2">
+          Entradas, salidas, devoluciones y dañadas — tabla y gráficos
+        </p>
+      </div>
       <div className="mx-auto max-w-7xl space-y-6">
         {/* header */}
         <div className="rounded-lg bg-card p-6 border border-border">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold">
-                Reporte diario – Carga por tipo
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Entradas, salidas, devoluciones y dañadas — tabla y gráficos
-              </p>
-            </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={onDownloadExcel}>
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
                 Excel
               </Button>
-              <Button className="bg-red-600 hover:bg-red-700" onClick={onDownloadPDF}>
+              <Button className="" onClick={onDownloadPDF} variant="outline">
                 <Download className="h-4 w-4 mr-2" />
                 PDF
               </Button>
@@ -462,7 +461,7 @@ Unidades totales: ${kpis.unidadesTotales}`,
                     outerRadius={90}
                     label
                   >
-                    {perTypeTotals.map((entry, index) => (
+                    {perTypeTotals.map((index) => (
                       <Cell key={`cell-${index}`} />
                     ))}
                   </Pie>

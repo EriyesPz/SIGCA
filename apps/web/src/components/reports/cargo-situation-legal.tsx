@@ -19,7 +19,7 @@ import {
   TableRow,
   Badge,
 } from "@/components/ui";
-import { FileText, Download, Eye, Filter, RotateCcw } from "lucide-react";
+import { FileText, Download, Filter, RotateCcw } from "lucide-react";
 import { PDFPreview } from "@/components/pdf";
 import { generatePDF } from "@/utils/pdfExport";
 
@@ -248,37 +248,20 @@ export const SituationLegal = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen bg-background p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          Situación Legal de Cargas
+        </h1>
+      </div>
       {/* Header */}
-      <div className="bg-slate-800 dark:bg-slate-950 p-6">
+      <div className="">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <FileText className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-white text-xl font-medium">
-                  Situación Legal de Cargas – Terminal La Mesa (SAN‑EHISA)
-                </h1>
-                <p className="text-slate-400 text-sm">
-                  Análisis detallado desde junio 2022 • 2024-01-16 - 2024-01-18
-                </p>
-              </div>
-            </div>
             <div className="flex items-center gap-2">
               <Button
+                size="sm"
                 variant="outline"
-                size="sm"
-                className="text-slate-300 border-slate-600 hover:bg-slate-700"
-                onClick={() => setShowPDF(true)}
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                Vista previa
-              </Button>
-              <Button
-                className="bg-red-600 hover:bg-red-700 text-white"
-                size="sm"
                 onClick={() =>
                   generatePDF(
                     "Situación Legal de Cargas",
@@ -307,7 +290,7 @@ export const SituationLegal = () => {
 
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Filtros */}
-        <Card className="bg-slate-800 dark:bg-slate-950 border-slate-700">
+        <Card className=" dark:bg-slate-950 border-slate-700">
           <CardHeader className="pb-4">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-slate-400" />

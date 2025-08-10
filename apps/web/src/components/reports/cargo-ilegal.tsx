@@ -5,13 +5,11 @@ import {
   Calendar,
   Search,
   Shield,
-  AlertTriangle,
   DollarSign,
   Scale,
   Truck,
   MapPin,
   Clock,
-  Eye,
   BarChart3,
   PieChart,
   TrendingUp,
@@ -574,43 +572,21 @@ export const IlegalCargo = () => {
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-slate-900 min-h-screen transition-colors">
-      <div className="bg-gradient-to-r rounded-lg p-6 mb-6 transition-colors">
-        <div className="flex items-center gap-3 mb-2">
-          <Shield className="h-8 w-8 text-red-500 dark:text-red-400" />
-          <h1 className="text-3xl text-gray-900 dark:text-gray-100">
-            Reporte de Cargas Ilegales
-          </h1>
-        </div>
-        <p className="text-gray-600 dark:text-gray-300">
+    <div className="min-h-screen bg-background p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          Reporte de Cargas Ilegales
+        </h1>
+        <p className="text-slate-400 mt-1 sm:mt-2">
           Análisis completo de cargas ilegales o no autorizadas detectadas en el
           sistema
         </p>
       </div>
       <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-4 mb-6 transition-colors">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
-            <div>
-              <h3 className="text-gray-900 dark:text-gray-100">
-                Reporte de Cargas Ilegales
-              </h3>
-              <p className="text-sm text-gray-400 dark:text-gray-400">
-                {totalCargas} casos detectados • {filtroFechaInicio} -{" "}
-                {filtroFechaFin}
-              </p>
-            </div>
-          </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Vista previa
-            </Button>
-            <Button variant="destructive" size="sm" onClick={handleExportPDF}>
+            
+            <Button variant="outline" size="sm" onClick={handleExportPDF}>
               Generar reporte PDF
             </Button>
             <Button

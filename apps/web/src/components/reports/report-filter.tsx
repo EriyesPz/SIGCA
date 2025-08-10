@@ -17,10 +17,11 @@ interface ReportFiltersComponentProps {
   onFiltersChange: (filters: CargoEntryFilters) => void;
   onResetFilters: () => void;
   showStatusFilter?: boolean;
-  showUserFilter?: boolean;
-  showWarehouseFilter?: boolean;
+  showUserFilter?: boolean;        // reservado si luego lo usas por ID
+  showWarehouseFilter?: boolean;   // ← usamos esto para renderizar el select
   showCargoTypeFilter?: boolean;
   title?: string;
+  warehouseOptions?: { id: string; name: string }[]; // ← NUEVO
 }
 
 export const ReportFiltersComponent = ({
@@ -29,7 +30,9 @@ export const ReportFiltersComponent = ({
   onResetFilters,
   showStatusFilter = false,
   showCargoTypeFilter = false,
+  showWarehouseFilter = false,
   title = "Filtros del Reporte",
+  warehouseOptions = [],
 }: ReportFiltersComponentProps) => {
   const handleFilterChange = (key: keyof CargoEntryFilters, value: string) => {
     onFiltersChange({ ...filters, [key]: value });
@@ -101,7 +104,7 @@ export const ReportFiltersComponent = ({
               />
             </div>
 
-            {/* Status */}
+            {/* Estado */}
             {showStatusFilter && (
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">
@@ -118,7 +121,7 @@ export const ReportFiltersComponent = ({
                     <SelectItem value="all">Todos los estados</SelectItem>
                     <SelectItem value="almacenado">Almacenado</SelectItem>
                     <SelectItem value="en_transito">En Tránsito</SelectItem>
-                    <SelectItem value="revision">En Revisión</SelectItem>
+                    <SelectItem value="en_revision">En Revisión</SelectItem>
                     <SelectItem value="liberado">Liberado</SelectItem>
                     <SelectItem value="entregado">Entregado</SelectItem>
                   </SelectContent>
@@ -126,7 +129,32 @@ export const ReportFiltersComponent = ({
               </div>
             )}
 
-            {/* Cargo type */}
+            {/* Almacén */}
+            {showWarehouseFilter && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                  Almacén
+                </Label>
+                <Select
+                  value={filters.warehouse || "all"}
+                  onValueChange={(v) => handleFilterChange("warehouse", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar almacén" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los almacenes</SelectItem>
+                    {warehouseOptions.map((w) => (
+                      <SelectItem key={w.id} value={w.id}>
+                        {w.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Tipo de Carga */}
             {showCargoTypeFilter && (
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">

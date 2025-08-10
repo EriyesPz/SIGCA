@@ -1,10 +1,7 @@
-"use client";
-
 import { useState } from "react";
 import {
   Filter,
   Download,
-  FileText,
   Calendar,
   Search,
   Package,
@@ -204,14 +201,12 @@ export const CargoDamaged = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-gray-100 p-6">
-      {/* Title Section */}
-      <div className="bg-gradient-to-r  rounded-lg p-6 mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <Package className="h-8 w-8 text-red-500 dark:text-red-400" />
-          <h1 className="text-3xl">Reporte de Cargas Dañadas</h1>
-        </div>
-        <p className="text-gray-600 dark:text-gray-300">
+    <div className="min-h-screen bg-background p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          Reporte de Cargas Dañadas
+        </h1>
+        <p className="text-slate-400 mt-1 sm:mt-2">
           Lista completa de cargas con daños registrados y documentos adjuntos
         </p>
       </div>
@@ -219,20 +214,9 @@ export const CargoDamaged = () => {
       {/* Action Bar */}
       <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-4 mb-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <FileText className="h-5 w-5 text-red-500 dark:text-red-400" />
-            <div>
-              <h3 className="font-medium">Reporte de Cargas Dañadas</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {totalCargas} registros • {filtroFechaInicio} - {filtroFechaFin}
-              </p>
-            </div>
-          </div>
+          
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              Vista previa
-            </Button>
-            <Button variant="destructive" size="sm" onClick={exportarPDF}>
+            <Button variant="outline" size="sm" onClick={exportarPDF}>
               Generar reporte PDF
             </Button>
             <Button variant="outline" size="sm" onClick={exportarExcel}>

@@ -1,6 +1,4 @@
 /* eslint-disable react-hooks/rules-of-hooks */
-"use client";
-
 import { useMemo, useState } from "react";
 import {
   Filter,
@@ -12,7 +10,6 @@ import {
   Warehouse as WarehouseIcon,
   BarChart3,
   TrendingUp,
-  Eye,
   Timer,
 } from "lucide-react";
 import {
@@ -313,35 +310,22 @@ export const CargoAverage = () => {
   /* ---------------- UI ---------------- */
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-6">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-6 mb-6 border border-border">
-        <div className="flex items-center gap-3 mb-2">
-          <Clock className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl">Promedio de Permanencia</h1>
-        </div>
-        <p className="text-muted-foreground">
+    <div className="min-h-screen bg-background p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          Promedio de Permanencia
+        </h1>
+        <p className="text-slate-400 mt-1 sm:mt-2">
           Análisis de tiempos de estadía y rotación de inventario en almacén
         </p>
       </div>
-
       {/* Action Bar */}
       <div className="bg-card rounded-lg p-4 mb-6 border border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Timer className="h-5 w-5 text-primary" />
-            <div>
-              <h3 className="text-card-foreground">Reporte de Permanencia en Almacén</h3>
-              <p className="text-sm text-muted-foreground">
-                {filtered.length} cargas visibles {from || to ? `• ${from || "?"} - ${to || "?"}` : ""}
-              </p>
-            </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Eye className="h-4 w-4 mr-2" />
-              Vista previa
-            </Button>
             <Button variant="default" size="sm" onClick={handleDownloadPDF}>
               Generar PDF
             </Button>

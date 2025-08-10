@@ -18,7 +18,6 @@ import {
   Badge,
 } from "@/components/ui";
 import {
-  FileText,
   Download,
   FileSpreadsheet,
   Filter,
@@ -151,7 +150,7 @@ export const DistributionCargo = () => {
       `• Reubicar exceso en racks con utilización alta.\n• Verificar niveles con sobrecarga.\n• Considerar redistribución en columnas poco usadas.`,
       fechaInicio && fechaFin
         ? `${toYMD(fechaInicio)} - ${toYMD(fechaFin)}`
-        : "Sin rango de fechas"
+        : ""
     );
   };
 
@@ -195,27 +194,23 @@ export const DistributionCargo = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 text-foreground">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="bg-card rounded-lg p-6 border border-border">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-600 rounded-lg">
-                <FileText className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl">
-                  Reporte de Distribución por Ubicación
-                </h1>
-                <p className="text-muted-foreground">
+    <div className="min-h-screen bg-background p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">
+         Reporte de Distribución por Ubicación
+        </h1>
+        <p className="text-muted-foreground">
                   Análisis de Rack, Nivel y Columna •{" "}
                   {fechaInicio && fechaFin
                     ? `${toYMD(fechaInicio)} - ${toYMD(fechaFin)}`
                     : "Sin rango de fechas"}
                 </p>
-              </div>
-            </div>
+      </div>
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="bg-card rounded-lg p-6 border border-border">
+          <div className="flex items-center justify-between">
+
             <div className="flex items-center gap-2">
               
               <Button

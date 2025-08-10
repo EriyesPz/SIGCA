@@ -131,6 +131,7 @@ export interface DailyCargoByTypeFilters {
   from?: string;       // YYYY-MM-DD (opcional; si no, backend usa rango auto)
   to?: string;         // YYYY-MM-DD (opcional)
   warehouseId?: string;
+  warehouseName?: string;
 }
 
 const fetchDailyCargoByTypeReport = async (filters: DailyCargoByTypeFilters) => {
@@ -138,6 +139,7 @@ const fetchDailyCargoByTypeReport = async (filters: DailyCargoByTypeFilters) => 
   if (filters.from) queryParams.append("from", filters.from);
   if (filters.to) queryParams.append("to", filters.to);
   if (filters.warehouseId) queryParams.append("warehouseId", filters.warehouseId);
+  if (filters.warehouseName) queryParams.append("warehouseName", filters.warehouseName); // <-- nuevo
 
   const res = await fetch(`${getApiUrl()}/reports/cargo-type?${queryParams.toString()}`);
 
@@ -160,6 +162,7 @@ export interface CargoAverageFilters {
   from?: string;       // YYYY-MM-DD (opcional)
   to?: string;         // YYYY-MM-DD (opcional)
   warehouseId?: string;
+  warehouseName?: string;
 }
 
 const fetchCargoAverageReport = async (filters: CargoAverageFilters) => {

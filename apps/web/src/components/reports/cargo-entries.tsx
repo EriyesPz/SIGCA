@@ -35,7 +35,7 @@ export const CargoEntriesReport = () => {
     trackingCode: "",
     status: "all",
     user: "all",
-    warehouse: "all",
+    warehouse: "all", // aquí guardaremos el warehouseId o "all"
     cargoType: "all",
   });
 
@@ -44,12 +44,29 @@ export const CargoEntriesReport = () => {
   const [pageSize, setPageSize] = useState(25);
   const pageSizes = [10, 25, 50, 100];
 
+  // Si quieres filtrar en backend cuando haya almacén seleccionado, descomenta:
+  const selectedWarehouseId =
+    filters.warehouse && filters.warehouse !== "all" ? filters.warehouse : undefined;
+
   // Llamada al backend (fechas opcionales)
   const { data: apiData, isLoading, error } = useCargoEntryReport({
     from: toYMD(filters.startDate),
     to: toYMD(filters.endDate),
-    // warehouseId: selectedWarehouseId, // si quieres filtrar en backend
+    warehouseId: selectedWarehouseId, // ← opcional (si tu API lo soporta)
   });
+
+const warehouseOptions: { id: string; name: string }[] =
+  Array.from(
+    new Map<string, { id: string; name: string }>(
+      (apiData?.data ?? [])
+        .filter((c: any) => c.warehouse?.id && c.warehouse?.name)
+        .map((c: any) => [
+          c.warehouse.id,
+          { id: c.warehouse.id, name: c.warehouse.name }
+        ])
+    ).values()
+  );
+
 
   // Normalizar data del backend al shape que usa tu UI.
   // Backend: { data: Cargo[], total, totalWeightKg, totalWithLocation, totalWithDocuments }
@@ -64,7 +81,8 @@ export const CargoEntriesReport = () => {
       quantity: c.quantity ?? 0,
       entryDate: c.entryDate,
       status: (c.status ?? "").toString().toLowerCase(),
-      warehouse: c.warehouse?.name ?? "Sin almacén",
+      warehouseId: c.warehouse?.id ?? null,          // ← añadimos ID
+      warehouse: c.warehouse?.name ?? "Sin almacén", // ← nombre
       location: {
         rack: c.location?.rackCode || c.location?.rackName || "-",
         level: c.location?.levelNumber ?? "-",
@@ -91,7 +109,11 @@ export const CargoEntriesReport = () => {
 
       const statusOk = filters.status === "all" || e.status === filters.status;
       const userOk = filters.user === "all" || e.createdBy === filters.user;
-      const warehouseOk = filters.warehouse === "all" || e.warehouse === filters.warehouse;
+
+      // Filtrado por almacén: comparamos por ID para precisión
+      const warehouseOk =
+        filters.warehouse === "all" || e.warehouseId === filters.warehouse;
+
       const cargoTypeOk = filters.cargoType === "all" || e.cargoType === filters.cargoType;
 
       return dateOk && codeOk && statusOk && userOk && warehouseOk && cargoTypeOk;
@@ -198,7 +220,7 @@ export const CargoEntriesReport = () => {
       Cantidad: e.quantity ?? 0,
       "Fecha Ingreso": e.entryDate,
       Estado: e.status?.replace("_", " "),
-      Almacén: e.warehouse,
+      Almacén: e.warehouse, // nombre visible
       Ubicación: `${e.location.rack}-${e.location.level}-${e.location.column}`,
       "Creado Por": e.createdBy,
       "Documentos Adjuntos": e.documentsCount,
@@ -258,9 +280,8 @@ export const CargoEntriesReport = () => {
           Lista completa de cargas registradas
         </p>
       </div>
+
       <div className="mx-auto max-w-7xl space-y-6">
-
-
         {/* ---------- PREVIEW WRAPPER ---------- */}
         <ReportPreview
           title=""
@@ -281,9 +302,9 @@ export const CargoEntriesReport = () => {
               onFiltersChange={setFilters}
               onResetFilters={resetFilters}
               showStatusFilter
-              showUserFilter
               showWarehouseFilter
               title="Filtros de Cargas Ingresadas"
+              warehouseOptions={warehouseOptions} // ← pasamos opciones al filtro
             />
 
             {/* ---------- SUMMARY CARDS ---------- */}
