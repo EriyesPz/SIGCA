@@ -36,7 +36,7 @@ import {
   PaginationEllipsis,
   PaginationLink,
 } from "@/components/ui";
-import { MoreHorizontal, Eye, RefreshCw, AlertCircle } from "lucide-react";
+import { MoreHorizontal, Eye, AlertCircle } from "lucide-react";
 import { useSessionsLogs } from "@/lib/session";
 import type { UseQueryResult } from "@tanstack/react-query";
 
@@ -61,7 +61,6 @@ export const Sessions = () => {
     isLoading,
     isError,
     error,
-    refetch,
   }: UseQueryResult<Session[], Error> = useSessionsLogs();
 
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
@@ -194,28 +193,16 @@ export const Sessions = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6">
+    <div className="min-h-screen bg-background pl-4">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          Sesiones de Usuarios
+        </h1>
+        <p className="text-slate-400 mt-1 sm:mt-2">
+          Lista de todas las sesiones activas e históricas
+        </p>
+      </div>
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Sesiones de Usuarios</h1>
-            <p className="text-slate-400 mt-2">
-              Lista de todas las sesiones activas e históricas
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            className="text-slate-300 hover:text-white"
-            onClick={() => {
-              refetch();
-              setCurrentPage(1); // Resetear a la primera página al actualizar
-            }}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Actualizar
-          </Button>
-        </div>
-
         <Card className="bg-slate-900 border-slate-800">
           <CardHeader>
             <div className="flex items-center justify-between">

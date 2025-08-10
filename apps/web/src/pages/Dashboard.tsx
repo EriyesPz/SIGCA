@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -6,12 +5,6 @@ import {
   CardHeader,
   CardTitle,
   Badge,
-  Button,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   ChartTooltip,
   Skeleton,
 } from "@/components/ui";
@@ -36,7 +29,6 @@ import {
   TrendingUp,
   MapPin,
   Activity,
-  Download,
   ArrowUpRight,
   Clock,
   CheckCircle,
@@ -66,7 +58,6 @@ type Categoria = {
 };
 
 export const Dashboard = () => {
-  const [selectedView, setSelectedView] = useState("general");
   const { data: dashboardData, isLoading, error } = useDashboardData();
 
   if (isLoading) return <DashboardSkeleton />;
@@ -138,52 +129,27 @@ export const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6">
+    <div className="min-h-screen bg-background pl-4">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold">Dashbord en vivo</h1>
+        <p className="text-slate-400 mt-1 sm:mt-2">
+          Datos actuales del sistema de gestión de cargas
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-3 md:gap-6 mt-2 md:mt-4">
+        <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+          Sistema conectado
+        </div>
+        <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+          <Clock className="h-3 w-3 md:h-4 md:w-4" />
+          Actualizado: {new Date().toLocaleTimeString()}
+        </div>
+      </div>
       <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
-        {/* Header */}
-        <Card className="border-border shadow-lg">
-          <CardHeader className="pb-4 md:pb-6">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 md:gap-6">
-              <div>
-                <CardTitle className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-2 md:mb-3">
-                  Sistema Logístico - Dashboard en Vivo
-                </CardTitle>
-                <CardDescription className="text-sm md:text-base lg:text-lg text-muted-foreground">
-                  Datos actuales del sistema de gestión de cargas
-                </CardDescription>
-                <div className="flex flex-wrap items-center gap-3 md:gap-6 mt-2 md:mt-4">
-                  <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                    Sistema conectado
-                  </div>
-                  <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
-                    <Clock className="h-3 w-3 md:h-4 md:w-4" />
-                    Actualizado: {new Date().toLocaleTimeString()}
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 md:gap-4">
-                <Select value={selectedView} onValueChange={setSelectedView}>
-                  <SelectTrigger className="w-full md:w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="general">Vista General</SelectItem>
-                    <SelectItem value="almacenes">Almacenes</SelectItem>
-                    <SelectItem value="movimientos">Movimientos</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button className="w-full md:w-auto">
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
 
         {/* KPIs Principales - Responsive Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6 pt-8">
           {renderKPICard(
             "Total Cargas",
             dashboardData.general.totalCargos,

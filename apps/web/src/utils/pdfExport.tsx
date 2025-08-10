@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import autoTable, { type RowInput } from "jspdf-autotable";
 
 interface ColumnDefinition {
   header: string;
@@ -16,61 +16,125 @@ export function generatePDF(
   data: Record<string, any>[],
   resumen?: string,
   analisis?: string,
-  periodo = "2024-01-01 - 2024-01-31"
+  periodo = "Sin rango de fechas"
 ) {
-  const doc = new jsPDF();
-  const currentDate = new Date().toLocaleDateString("es-ES");
+  // A4 horizontal
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const currentDate = new Date().toLocaleString("es-ES");
 
-  // Agregar logo
-  doc.addImage(logoBase64, "PNG", 14, 10, 25, 25);
+  // ---- ENCABEZADO LIMPIO ----
+  const left = 14;
+  const right = pageWidth - 14;
 
-  // Header
+  // Logo
+  doc.addImage(logoBase64, "PNG", left, 10, 22, 22);
+
+  // Título centrado
   doc.setFontSize(16);
-  doc.text("SAN-EHISA", 45, 20);
+  doc.setFont("helvetica", "bold");
+  doc.text("SAN-EHISA", pageWidth / 2, 16, { align: "center" });
+
   doc.setFontSize(12);
-  doc.text(`Reporte: ${title}`, 45, 30);
-  doc.text(`Fecha de reporte: ${currentDate}`, 45, 36);
-  doc.text(`Período analizado: ${periodo}`, 45, 42);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Reporte: ${title}`, pageWidth / 2, 23, { align: "center" });
 
-  let y = 55;
-
-  // Resumen Ejecutivo
-  if (resumen) {
-    doc.setFontSize(12);
-    doc.text("Resumen Ejecutivo:", 14, y);
-    doc.setFontSize(10);
-    y += 6;
-    const lines = doc.splitTextToSize(resumen, 180);
-    doc.text(lines, 14, y);
-    y += lines.length * 5;
+  // Rango de fechas (Del … al …)
+  const hasRange = periodo && periodo !== "Sin rango de fechas" && periodo.includes("-");
+  if (hasRange) {
+    const [from, to] = periodo.split("-").map((s) => s.trim());
+    doc.text(`Del: ${from}   al: ${to}`, pageWidth / 2, 29, { align: "center" });
+  } else {
+    doc.text("Período analizado: Sin rango de fechas", pageWidth / 2, 29, { align: "center" });
   }
 
-  // Tabla de datos
-  const headers = columns.map((col) => col.header);
-  const rows = data.map((row) =>
-    columns.map((col) =>
-      col.render ? col.render(row[col.accessor], row) : row[col.accessor]
-    )
+  // Fecha de generación (esquina derecha)
+  doc.setFontSize(10);
+  doc.text(`Generado: ${currentDate}`, right, 12, { align: "right" });
+
+  // Línea divisoria suave
+  doc.setDrawColor(210);
+  doc.line(left, 34, right, 34);
+
+  let y = 40;
+
+  // ---- RESUMEN EJECUTIVO (opcional) ----
+  if (resumen) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Resumen Ejecutivo", left, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    const lines = doc.splitTextToSize(resumen, pageWidth - left - 14);
+    doc.text(lines, left, y);
+    y += lines.length * 5 + 4;
+  }
+
+  // ---- TABLA ----
+  const headers = columns.map((c) => c.header);
+  const rows: RowInput[] = data.map((row) =>
+    columns.map((c) => (c.render ? c.render(row[c.accessor], row) : row[c.accessor]))
   );
 
   autoTable(doc, {
-    startY: y + 10,
+    startY: y,
     head: [headers],
     body: rows,
-    styles: { fontSize: 9 },
     theme: "grid",
+    margin: { left, right: 14, bottom: 18 },
+    styles: {
+      fontSize: 9,
+      cellPadding: 2.2,
+      lineColor: [215, 215, 215],
+      lineWidth: 0.2,
+      overflow: "linebreak",
+      valign: "middle",
+    },
+    headStyles: {
+      fillColor: [110, 199, 221],   // encabezado blanco
+      textColor: [30, 30, 30],
+      fontStyle: "bold",
+      lineColor: [180, 180, 180],
+      lineWidth: 0.3,
+      halign: "center",             // headers centrados
+    },
+    bodyStyles: {
+      halign: "center",             // alineación horizontal por defecto
+    },
+    alternateRowStyles: {
+      fillColor: [248, 248, 248],
+    },
+    columnStyles: {
+      // Ajusta por nombre visible del header:
+      [headers.indexOf("Peso (kg)")]: { halign: "right" },
+      [headers.indexOf("Cantidad")]: { halign: "right" },
+      [headers.indexOf("Descripción")]: { halign: "left" },
+      [headers.indexOf("Creado Por")]: { halign: "left" },
+    },
   });
 
-  // Footer o análisis
+  // ---- ANÁLISIS (opcional) ----
   if (analisis) {
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
-    doc.setFontSize(12);
-    doc.text("Análisis y Recomendaciones:", 14, finalY);
+    const finalY = (doc as any).lastAutoTable.finalY + 8;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Análisis y Recomendaciones", left, finalY);
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    const lines = doc.splitTextToSize(analisis, 180);
-    doc.text(lines, 14, finalY + 6);
+    const lines = doc.splitTextToSize(analisis, pageWidth - left - 14);
+    doc.text(lines, left, finalY + 6);
   }
 
-  // Descargar
+  // ---- FOOTER: número de página ----
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(9);
+    doc.setTextColor(90);
+    doc.text(`Página ${i} de ${pageCount}`, pageWidth / 2, pageHeight - 8, { align: "center" });
+  }
+
   doc.save(`${title.replace(/\s+/g, "_")}.pdf`);
 }

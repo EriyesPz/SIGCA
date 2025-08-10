@@ -22,7 +22,6 @@ import {
   Save,
   AlertCircle,
   Search,
-  Truck,
   ClipboardSignature,
   Info,
   CheckCircle2,
@@ -125,8 +124,6 @@ export const DeliverCargoPage = () => {
         title: "✅ Carga entregada",
         description: "La salida de la carga fue registrada exitosamente.",
       });
-      // Mantener funcionalidad: no modificamos nada del flujo; sólo UI
-      // Podrías limpiar el campo de evidencia si quieres sin afectar lógica del backend
       reset({ deliveredBy: userId, verifiedBy: userId });
     } catch (err) {
       setSubmitErr("No se pudo completar la entrega.");
@@ -148,29 +145,20 @@ export const DeliverCargoPage = () => {
     });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background">
-      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
-        {/* Encabezado */}
-        <motion.header
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="space-y-2"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-2xl bg-primary/10">
-              <Truck className="w-6 h-6 text-primary" />
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight">Salida de Carga</h1>
-          </div>
-          <p className="text-muted-foreground">
-            Registra la entrega física de una carga desde el almacén al receptor.
-          </p>
-        </motion.header>
+    // --------- rail izquierdo consistente ---------
+    <div className="min-h-screen pl-4 ">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold">Salida de Cargas</h1>
+        <p className="text-slate-400 mt-1 sm:mt-2">
+          Registra la entrega física de una carga desde el almacén al receptor.
+        </p>
+      </div>
 
-        {/* Alerts de estado global */}
+      {/* Contenido: todo a la izquierda, sin centrado */}
+      <div className="mt-6 w-full space-y-6">
+        {/* Alerts */}
         {searchError && (
-          <Alert variant="destructive" className="border-destructive/30">
+          <Alert variant="destructive" className="border-destructive/30 w-full">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error al buscar</AlertTitle>
             <AlertDescription>{searchError}</AlertDescription>
@@ -178,7 +166,7 @@ export const DeliverCargoPage = () => {
         )}
 
         {submitOk && (
-          <Alert className="border-green-500/30">
+          <Alert className="border-green-500/30 w-full">
             <CheckCircle2 className="h-4 w-4" />
             <AlertTitle>¡Listo!</AlertTitle>
             <AlertDescription>{submitOk}</AlertDescription>
@@ -186,7 +174,7 @@ export const DeliverCargoPage = () => {
         )}
 
         {submitErr && (
-          <Alert variant="destructive" className="border-destructive/30">
+          <Alert variant="destructive" className="border-destructive/30 w-full">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>{submitErr}</AlertDescription>
@@ -195,7 +183,7 @@ export const DeliverCargoPage = () => {
 
         {/* Tarjeta de búsqueda */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="w-full max-w-4xl mx-auto shadow-sm">
+          <Card className="w-full">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Search className="w-5 h-5" />
@@ -211,7 +199,7 @@ export const DeliverCargoPage = () => {
                     value={searchType}
                     onValueChange={(v) => setSearchType(v as keyof CargoIdentifier)}
                   >
-                    <SelectTrigger className="h-10 rounded-xl">
+                    <SelectTrigger className="h-10 rounded-xl w-full">
                       <SelectValue placeholder="Selecciona..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -230,17 +218,13 @@ export const DeliverCargoPage = () => {
                     value={searchValue}
                     onChange={(e) => setSearchValue(e.target.value)}
                     onKeyUp={(e) => e.key === "Enter" && handleSearch()}
-                    className="h-10 rounded-xl"
+                    className="h-10 rounded-xl w-full"
                   />
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  onClick={handleSearch}
-                  disabled={isSearching}
-                  className="rounded-xl"
-                >
+              <div className="flex items-start gap-3">
+                <Button onClick={handleSearch} disabled={isSearching} className="rounded-xl">
                   <Search className="w-4 h-4 mr-2" />
                   {isSearching ? "Buscando..." : "Buscar carga"}
                 </Button>
@@ -256,12 +240,14 @@ export const DeliverCargoPage = () => {
         {/* Datos de la carga */}
         {cargoData && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-            <Card className="w-full max-w-4xl mx-auto shadow-sm">
+            <Card className="w-full shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Package className="w-5 h-5" />
                   Datos de la Carga
-                  <Badge variant="outline" className="rounded-full px-3 py-0.5">Liberada</Badge>
+                  <Badge variant="outline" className="rounded-full px-3 py-0.5">
+                    Liberada
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <Separator />
@@ -290,7 +276,7 @@ export const DeliverCargoPage = () => {
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-6"
           >
-            <Card className="w-full max-w-4xl mx-auto shadow-sm">
+            <Card className="w-full shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <ClipboardSignature className="w-5 h-5" />
@@ -304,7 +290,7 @@ export const DeliverCargoPage = () => {
                     <Label>Nombre del Receptor</Label>
                     <Input
                       {...register("receiver", { required: "Campo obligatorio" })}
-                      className="h-10 rounded-xl"
+                      className="h-10 rounded-xl w-full"
                     />
                     <FieldError message={errors.receiver?.message} />
                   </div>
@@ -315,10 +301,10 @@ export const DeliverCargoPage = () => {
 
                 <div className="space-y-2">
                   <Label>Notas / Evidencia (opcional)</Label>
-                  <Input {...register("metadata.evidence")} className="h-10 rounded-xl" />
+                  <Input {...register("metadata.evidence")} className="h-10 rounded-xl w-full" />
                 </div>
 
-                <Alert className="bg-muted/40">
+                <Alert className="bg-muted/40 w-full">
                   <Info className="h-4 w-4" />
                   <AlertTitle>Verifica antes de registrar</AlertTitle>
                   <AlertDescription>
@@ -328,7 +314,8 @@ export const DeliverCargoPage = () => {
               </CardContent>
             </Card>
 
-            <div className="max-w-4xl mx-auto flex gap-3">
+            {/* Acciones siempre a la izquierda */}
+            <div className="flex gap-3">
               <Button type="submit" size="lg" className="rounded-xl" disabled={isSubmitting}>
                 <Save className="w-4 h-4 mr-2" />
                 {isSubmitting ? "Guardando..." : "Registrar Entrega"}

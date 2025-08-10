@@ -219,18 +219,21 @@ export const ListUsers = () => {
   }, [users, searchTerm]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-4 sm:p-6">
+    <div className="min-h-screen bg-background pl-4">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          Usuarios
+        </h1>
+        <p className="text-slate-400 mt-1 sm:mt-2">
+          Administra los usuarios del sistema.
+        </p>
+      </div>
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 sm:mb-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Usuarios</h1>
-            <p className="text-slate-400 mt-1 sm:mt-2">
-              Administra los usuarios del sistema.
-            </p>
-          </div>
           <Button
-            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+            className="w-full sm:w-auto"
             onClick={() => setIsCreateOpen(true)}
+            variant="outline"
           >
             <Plus className="h-4 w-4 mr-2" />
             Nuevo Usuario

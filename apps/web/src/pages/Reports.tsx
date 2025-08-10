@@ -5,13 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  FileText,
   Package,
   ArrowRightLeft,
   RotateCcw,
   LogOut,
   BarChart3,
-  Calendar,
   Activity,
   TrendingUp,
   Eye,
@@ -246,28 +244,16 @@ export const Reports = () => {
   }
 
   return (
-    <div className="min-h-screen p-4 sm:p-5">
+    <div className="min-h-screen bg-background pl-4">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          Centro de Reportes
+        </h1>
+        <p className="text-slate-400 mt-1 sm:mt-2">
+          Genera, visualiza y descarga reportes del sistema de almacén
+        </p>
+      </div>
       <div className="max-w-7xl mx-auto space-y-3">
-        {/* Header compacto */}
-        <div className="rounded-xl border bg-card px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-                  Centro de Reportes
-                </h1>
-              </div>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Genera, visualiza y descarga reportes del sistema de almacén
-              </p>
-            </div>
-            <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
-              <Calendar className="w-4 h-4" />
-              <span>Actualizado: {new Date().toLocaleDateString("es-ES")}</span>
-            </div>
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Columna principal */}
@@ -303,13 +289,6 @@ export const Reports = () => {
                         <p className="text-xs text-muted-foreground">
                           {report.description}
                         </p>
-                      </div>
-
-                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                        <span>
-                          {report.stats.total.toLocaleString("es-HN")} registros
-                        </span>
-                        <span>{report.stats.lastGenerated}</span>
                       </div>
 
                       <Button

@@ -28,8 +28,6 @@ export const ReportFiltersComponent = ({
   onFiltersChange,
   onResetFilters,
   showStatusFilter = false,
-  showUserFilter = false,
-  showWarehouseFilter = false,
   showCargoTypeFilter = false,
   title = "Filtros del Reporte",
 }: ReportFiltersComponentProps) => {
@@ -123,53 +121,6 @@ export const ReportFiltersComponent = ({
                     <SelectItem value="revision">En Revisión</SelectItem>
                     <SelectItem value="liberado">Liberado</SelectItem>
                     <SelectItem value="entregado">Entregado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* User */}
-            {showUserFilter && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                  Usuario
-                </Label>
-                <Select
-                  value={filters.user || "all"}
-                  onValueChange={(v) => handleFilterChange("user", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar usuario" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos los usuarios</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="supervisor1">Supervisor 1</SelectItem>
-                    <SelectItem value="operador1">Operador 1</SelectItem>
-                    <SelectItem value="operador2">Operador 2</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Warehouse */}
-            {showWarehouseFilter && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                  Almacén
-                </Label>
-                <Select
-                  value={filters.warehouse || "all"}
-                  onValueChange={(v) => handleFilterChange("warehouse", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar almacén" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos los almacenes</SelectItem>
-                    <SelectItem value="A">Almacén A</SelectItem>
-                    <SelectItem value="B">Almacén B</SelectItem>
-                    <SelectItem value="C">Almacén C</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

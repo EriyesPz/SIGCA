@@ -56,7 +56,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 type DialogKind = "info" | "error" | "success";
@@ -331,28 +330,15 @@ export const CargoRegistrationWizard = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pl-4">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold">Registrar Carga</h1>
+        <p className="text-slate-400 mt-1 sm:mt-2">
+          Registrar cargas en el sistema
+        </p>
+      </div>
       <div className="max-w-7xl mx-auto p-6">
-        {/* Header */}
-        <div className="mb-8">
-          <Card className="shadow-lg">
-            <CardContent>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center">
-                  <Package className="w-8 h-8 text-blue-700 dark:text-white" />
-                </div>
-                <div>
-                  <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
-                    Sistema de Gestión de Carga
-                  </h1>
-                  <p className="text-gray-600 dark:text-gray-400 text-lg">
-                    Registra nuevas cargas y asigna ubicaciones de almacén de forma independiente
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">

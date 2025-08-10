@@ -23,7 +23,7 @@ import { ReportPreview } from "./report-preview";
 import type { CargoEntryFilters as ReportFiltersType } from "./types";
 import { generatePDF } from "@/utils/pdfExport";
 import { generateExcelReport } from "@/utils/excelExport";
-import { useCargoEntryReport } from "@/lib/reports"; // hook que llama tu backend
+import { useCargoEntryReport } from "@/lib/reports";
 
 // Helper para formatear YYYY-MM-DD o dejar undefined
 const toYMD = (d?: string) => (d ? new Date(d).toISOString().slice(0, 10) : undefined);
@@ -249,24 +249,21 @@ export const CargoEntriesReport = () => {
 
   /* -------------------------------- JSX ------------------------------- */
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-background p-6">
+    <div className="min-h-screen bg-background pl-4 pt-6">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          Reporte de Cargas Ingresadas
+        </h1>
+        <p className="text-slate-400 mt-1 sm:mt-2">
+          Lista completa de cargas registradas
+        </p>
+      </div>
       <div className="mx-auto max-w-7xl space-y-6">
-        {/* ---------- HEADER ---------- */}
-        <div className="rounded-lg bg-white dark:bg-card shadow-sm px-6 py-4">
-          <div className="mb-1 flex items-center gap-3">
-            <Package className="h-8 w-8 text-green-600 dark:text-green-400" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Reporte de Cargas Ingresadas
-            </h1>
-          </div>
-          <p className="text-gray-600 dark:text-gray-300">
-            Lista completa de cargas registradas
-          </p>
-        </div>
+
 
         {/* ---------- PREVIEW WRAPPER ---------- */}
         <ReportPreview
-          title="Reporte de Cargas Ingresadas"
+          title=""
           data={filteredEntries}
           summary={summary}
           dateRange={

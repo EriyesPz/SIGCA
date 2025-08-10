@@ -58,7 +58,7 @@ export const getDashboardOverview = async () => {
     _count: { Type: true },
   });
   const alertasPorTipo = alertasPorTipoRaw.map((item) => ({
-    tipo: item.Type,
+    tipo: item.Type === "TEMPERATURE" ? "Temperatura" : item.Type,
     cantidad: item._count.Type,
   }));
 

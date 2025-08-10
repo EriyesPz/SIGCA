@@ -29,7 +29,7 @@ import {
   Label,
   Checkbox,
 } from "@/components/ui";
-import { MoreHorizontal, Eye, Edit, Trash2, Plus } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react";
 import {
   useGetPermissions,
   useGetRoles,
@@ -72,16 +72,16 @@ export const RolesPermissions = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6">
+    <div className="min-h-screen bg-background pl-4">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          Roles y Permisos
+        </h1>
+        <p className="text-slate-400 mt-1 sm:mt-2">
+          Roles y permisos de los usuarios del sistema.
+        </p>
+      </div>
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Roles y Permisos</h1>
-            <p className="text-slate-400 mt-2">
-              Roles y permisos de los usuarios del sistema.
-            </p>
-          </div>
-        </div>
         <div className="grid grid-cols-1 lg:grid-rows-2 gap-6">
           {/* Roles Table */}
           <Card className="bg-slate-900 border-slate-800">
@@ -93,10 +93,6 @@ export const RolesPermissions = () => {
                     Gestiona los roles del sistema
                   </CardDescription>
                 </div>
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Crear Rol
-                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -207,10 +203,6 @@ export const RolesPermissions = () => {
                     Lista de permisos del sistema
                   </CardDescription>
                 </div>
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Crear Permiso
-                </Button>
               </div>
             </CardHeader>
             <CardContent>

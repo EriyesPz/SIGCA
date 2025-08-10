@@ -19,7 +19,6 @@ import {
 } from "@/components/ui";
 import {
   FileText,
-  Eye,
   Download,
   FileSpreadsheet,
   Filter,
@@ -82,7 +81,6 @@ export const DistributionCargo = () => {
   // fechas opcionales
   const [fechaInicio, setFechaInicio] = useState<string>("");
   const [fechaFin, setFechaFin] = useState<string>("");
-  const [, setShowPDF] = useState(false);
   const warehouseId: string | undefined = undefined;
 
   // PAGINACIÓN (cliente)
@@ -219,18 +217,11 @@ export const DistributionCargo = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowPDF(true)}
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                Vista previa
-              </Button>
+              
               <Button
                 size="sm"
-                className="bg-red-600 hover:bg-red-700 text-white"
                 onClick={onDownloadPdf}
+                variant="outline"
               >
                 <Download className="h-4 w-4 mr-2" />
                 Descargar PDF

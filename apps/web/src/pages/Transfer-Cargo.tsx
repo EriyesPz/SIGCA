@@ -52,7 +52,6 @@ import {
   Rows3,
   Columns3,
   Info,
-  Sparkles,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { type CargoIdentifier } from "@/types/cargo";
@@ -285,23 +284,17 @@ export const TransferCargo = () => {
   );
 
   return (
-    <div className="min-h-screen p-4 sm:p-6">
+    <div className="min-h-screen pl-4">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold">Transferir Carga</h1>
+        <p className="text-slate-400 mt-1 sm:mt-2">
+          Transfiera la carga a una nueva ubicación de forma segura.
+        </p>
+      </div>
       <div className="mx-auto max-w-7xl">
-        <header className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 p-2">
-              <ArrowRightLeft className="h-7 w-7 text-primary" />
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight">Transferir Carga</h1>
-            <Badge className="ml-1 flex items-center gap-1" variant="secondary">
-              <Sparkles className="h-3 w-3" /> Mejorado
-            </Badge>
-          </div>
-          <p className="text-muted-foreground">Transfiera la carga a una nueva ubicación de forma segura y con confirmación.</p>
-        </header>
 
         {/* Búsqueda */}
-        <Card className="mt-6 w-full max-w-5xl mx-auto border-muted-foreground/10 shadow-sm">
+        <Card className="mt-6 w-full max-w-5xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Search className="h-5 w-5" /> Búsqueda de carga
@@ -376,7 +369,7 @@ export const TransferCargo = () => {
         {/* Información de carga */}
         <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
           {loading ? (
-            <Card className="mt-6 w-full max-w-5xl mx-auto">
+            <Card className="mt-6 w-full max-w-5xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="h-5 w-5" /> Información de Carga
@@ -389,9 +382,9 @@ export const TransferCargo = () => {
               </CardContent>
             </Card>
           ) : cargoData ? (
-            <Card className="mt-6 w-full max-w-5xl mx-auto">
+            <Card className="mt-6 w-full max-w-5xl">
               <CardHeader className="pb-4">
-                <CardTitle className="flex flex-wrap items-center gap-3">
+                <CardTitle className="flex items-center gap-3">
                   <div className="rounded-lg bg-emerald-500/10 p-2">
                     <Package className="h-5 w-5 text-emerald-600" />
                   </div>
@@ -460,7 +453,7 @@ export const TransferCargo = () => {
         </motion.div>
 
         {/* Transferencia */}
-        <Card className="mt-6 w-full max-w-5xl mx-auto">
+        <Card className="">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ArrowRightLeft className="h-5 w-5" /> Transferir Carga

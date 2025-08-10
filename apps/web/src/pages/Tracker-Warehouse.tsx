@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Package,
   Building2,
   ArrowLeft,
   Search,
-  Layers,
   MapPin,
   Grid as GridIcon,
   Eye,
@@ -328,23 +326,16 @@ export const WarehouseTracker = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Package className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Explorador de Almacenes
-          </h1>
-        </div>
-        <div className="hidden sm:flex items-center gap-2">
-          <Badge variant="outline" className="gap-1">
-            <Layers className="w-3.5 h-3.5" /> {allWarehouses.length} almacenes
-          </Badge>
-        </div>
+    <div className="min-h-screen bg-background pl-4">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          Tracker de Almacenes
+        </h1>
+        <p className="text-slate-400 mt-1 sm:mt-2">
+          Elige un almacén para explorar sus ubicaciones (ocupadas o
+                    disponibles).
+        </p>
       </div>
-
-      {/* Body */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* --- OVERVIEW --- */}
         {mode === "overview" && (
@@ -355,8 +346,7 @@ export const WarehouseTracker = () => {
                 <div>
                   <h2 className="text-xl font-semibold">Todos los almacenes</h2>
                   <p className="text-sm text-muted-foreground">
-                    Elige un almacén para explorar sus ubicaciones (ocupadas o
-                    disponibles).
+                    
                   </p>
                 </div>
               </div>
@@ -473,7 +463,8 @@ export const WarehouseTracker = () => {
             {/* Tabla shadcn/ui */}
             <div className="border rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
-                <Table>
+                <Card className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+                <Table className="border rounded-lg overflow-hidden">
                   <TableHeader>
                     <TableRow className="bg-muted/50">
                       <TableHead>Rack</TableHead>
@@ -602,7 +593,9 @@ export const WarehouseTracker = () => {
                     )}
                   </TableBody>
                 </Table>
+                </Card>
               </div>
+              
 
               {/* Paginación con los mismos estilos */}
               <div className="flex justify-end items-center gap-4 px-4 py-3 border-t bg-muted/30">

@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from "react";
-import { Package, Grid3X3 } from "lucide-react";
 import {
   LocationDetailsModal,
   RackLocationsModal,
@@ -155,12 +154,12 @@ export const WarehouseLocationTracker = () => {
   };
 
   return (
-    <div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3">
-        <Package className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Tracker de Ubicaciones de Almacén
-        </h1>
+    <div className="min-h-screen bg-background pl-4">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">Tracker de Ubicaciones</h1>
+        <p className="text-slate-400 mt-1 sm:mt-2">
+          Lista completa de todas las ubicaciones
+        </p>
       </div>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
         {/* Body */}
@@ -168,15 +167,6 @@ export const WarehouseLocationTracker = () => {
         {error && <div className="p-6 text-red-600">Error al cargar datos</div>}
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-          <div className="flex items-center gap-3">
-            <Grid3X3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            <div>
-              <h2 className="text-2xl font-bold">Ubicaciones</h2>
-              <p className="text-muted-foreground">
-                Lista completa de todas las ubicaciones
-              </p>
-            </div>
-          </div>
 
           <LocationsTable
             warehouseLocations={warehouseLocations}

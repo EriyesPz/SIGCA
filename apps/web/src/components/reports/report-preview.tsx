@@ -9,10 +9,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Eye,
   Download,
   FileText,
   Calendar,
@@ -65,13 +63,7 @@ export const ReportPreview = ({
             {/* Botones */}
             <div className="flex gap-2">
               <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Eye className="h-4 w-4" />
-                    Vista previa
-                  </Button>
-                </DialogTrigger>
-
+                
                 <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
@@ -93,7 +85,8 @@ export const ReportPreview = ({
 
               <Button
                 onClick={onDownloadPDF}
-                className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
+                className="flex items-center gap-2"
+                variant="outline"
               >
                 <Download className="h-4 w-4" />
                 Descargar PDF
