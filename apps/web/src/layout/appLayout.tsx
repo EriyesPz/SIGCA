@@ -24,7 +24,6 @@ import {
   BarChart3,
   Activity,
   User,
-  CreditCard,
   Bell,
   LogOut,
   ChevronUp,
@@ -427,13 +426,9 @@ export const AppLayout = () => {
                   </DropdownMenuLabel>
 
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/account")}>
+                  <DropdownMenuItem onClick={() => navigate("/cuenta")}>
                     <User />
                     Cuenta
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/billing")}>
-                    <CreditCard />
-                    Facturación
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/notifications")}>
                     <Bell />

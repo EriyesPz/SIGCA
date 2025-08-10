@@ -18,6 +18,7 @@ import { ListUsers } from "@/pages/ListUsers";
 import { Sessions } from "@/pages/Sessions";
 import { RolesPermissions } from "@/pages/RolesPermisions";
 import { WarehouseTracker } from "./Tracker-Warehouse";
+import { AccountPage } from "./Account";
 
 export const router = createBrowserRouter([
   { path: "*", element: <NotFound /> },
@@ -137,6 +138,14 @@ export const router = createBrowserRouter([
             <RolesPermissions />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "cuenta",
+        element: (
+          <ProtectedRoute allOf={["cargo.view"]}>
+            <AccountPage />
+          </ProtectedRoute>
+        )
       },
     ],
   },
