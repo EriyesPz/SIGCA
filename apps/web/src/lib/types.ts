@@ -14,12 +14,17 @@ export interface LoginInput {
   Password: string;
 }
 
-export interface LoginResponse {
-  token: string;
+// frontend: src/lib/types.ts
+export type LoginResponse = {
+  message: string;
   userId: string;
   userName: string;
   email: string;
-}
+  token: string;
+  roles?: string[];        // opcional si quieres ser defensivo
+  permissions?: string[];  // opcional si quieres ser defensivo
+};
+
 
 export interface Location {
   id: string

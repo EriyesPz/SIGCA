@@ -13,86 +13,131 @@ import { Reports } from "./Reports";
 import { RegisterCargoWarehouse } from "./RegisterCargoWarehouse";
 import { CargoRegistrationWizard } from "./RegisterCargo";
 import { TransferCargo } from "@/pages/Transfer-Cargo";
-import { DeliverCargoPage } from '@/pages/DeliverCargo';
+import { DeliverCargoPage } from "@/pages/DeliverCargo";
 import { ListUsers } from "@/pages/ListUsers";
 import { Sessions } from "@/pages/Sessions";
 import { RolesPermissions } from "@/pages/RolesPermisions";
 import { WarehouseTracker } from "./Tracker-Warehouse";
 
 export const router = createBrowserRouter([
-  {
-    path: "*",
-    element: <NotFound />,
-  },
-  {
-    path: "/login",
-    element: <Login />,
-  },
-  {
-    path: "register",
-    element: <Register />,
-  },
-  {
-    path: "forgot-password",
-    element: <ForgotPasswordSendOtp />,
-  },
-  {
-    path: "forgot-password/verify",
-    element: <ForgotPasswordVerify />,
-  },
+  { path: "*", element: <NotFound /> },
+  { path: "/login", element: <Login /> },
+  { path: "register", element: <Register /> },
+  { path: "forgot-password", element: <ForgotPasswordSendOtp /> },
+  { path: "forgot-password/verify", element: <ForgotPasswordVerify /> },
+
   {
     path: "/",
     element: <AppLayout />,
     children: [
+      // Solo autenticación
       {
         path: "",
-        element: <ProtectedRoute><Home /></ProtectedRoute>,
+        element: (
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "dashboard",
-        element: <ProtectedRoute><Dashboard /></ProtectedRoute>,
+        element: (
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        ),
       },
+
+      // Almacén
       {
         path: "almacen/registrar-carga",
-        element: <ProtectedRoute><RegisterCargoWarehouse /></ProtectedRoute>,
+        element: (
+          <ProtectedRoute anyOf={["cargo.register"]}>
+            <RegisterCargoWarehouse />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        // ojo: esta es absoluta en tu código actual; la dejo igual
+        path: "/almacen/trasladar-carga",
+        element: (
+          <ProtectedRoute anyOf={["cargo.transfer"]}>
+            <TransferCargo />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "almacen/salida-carga",
-        element: <ProtectedRoute><DeliverCargoPage /></ProtectedRoute>,
+        element: (
+          <ProtectedRoute anyOf={["cargo.deliver"]}>
+            <DeliverCargoPage />
+          </ProtectedRoute>
+        ),
       },
+
+      // Tracker
       {
         path: "tracker/ubicaciones",
-        element: <ProtectedRoute><WarehouseLocationTracker /></ProtectedRoute>
+        element: (
+          <ProtectedRoute anyOf={["cargo.view"]}>
+            <WarehouseLocationTracker />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "tracker/almacenes",
-        element: <ProtectedRoute><WarehouseTracker></WarehouseTracker></ProtectedRoute>
+        element: (
+          <ProtectedRoute anyOf={["cargo.view"]}>
+            <WarehouseTracker />
+          </ProtectedRoute>
+        ),
       },
+
+      // Wizard alterno de registro
       {
         path: "register-cargo",
-        element: <ProtectedRoute><CargoRegistrationWizard /></ProtectedRoute>,
+        element: (
+          <ProtectedRoute anyOf={["cargo.register"]}>
+            <CargoRegistrationWizard />
+          </ProtectedRoute>
+        ),
       },
+
+      // Reportes (solo ver)
       {
         path: "reportes",
-        element: <ProtectedRoute><Reports /></ProtectedRoute>,
+        element: (
+          <ProtectedRoute anyOf={["cargo.view"]}>
+            <Reports />
+          </ProtectedRoute>
+        ),
       },
-      {
-        path: "/almacen/trasladar-carga",
-        element: <ProtectedRoute><TransferCargo /></ProtectedRoute>,
-      },
+
+      // Usuarios / Administración
       {
         path: "usuarios/lista",
-        element: <ProtectedRoute><ListUsers /></ProtectedRoute>,
+        element: (
+          <ProtectedRoute anyOf={["user.manage"]}>
+            <ListUsers />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "usuarios/sesiones",
-        element: <ProtectedRoute><Sessions /></ProtectedRoute>,
+        element: (
+          <ProtectedRoute anyOf={["user.manage"]}>
+            <Sessions />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "usuarios/roles-permisos",
-        element: <ProtectedRoute><RolesPermissions /></ProtectedRoute>,
-      }
-
+        element: (
+          <ProtectedRoute allOf={["role.manage", "permission.manage"]}>
+            <RolesPermissions />
+          </ProtectedRoute>
+        ),
+      },
     ],
   },
 ]);

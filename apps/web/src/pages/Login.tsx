@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { Link, useNavigate } from "react-router-dom";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,18 +14,19 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ModeToggle } from "@/components/ui/mode-toggle";
+import { AlertCircle } from "lucide-react";
+
 import { useLoginUser } from "@/lib/auth";
 import type { LoginResponse, LoginInput } from "@/lib/types";
-import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
-import { useCookies } from "react-cookie";
-import { useEffect } from "react";
-import { AlertCircle } from "lucide-react";
+
+// 👇 usa el AuthProvider (guarda cookies y helpers)
+import { useAuth } from "@/components/providers/auth";
 
 export const Login = () => {
   const navigate = useNavigate();
+  const { login, isAuthenticated } = useAuth();
   const { mutate, isPending } = useLoginUser();
-  const [cookies, setCookies] = useCookies(["token", "userName", "email", "userId"]);
+
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const {
@@ -31,31 +35,30 @@ export const Login = () => {
     formState: { errors },
   } = useForm<LoginInput>();
 
+  // Si ya estás autenticado, vete al home
   useEffect(() => {
-    if (cookies.token) {
-      navigate("/");
+    if (isAuthenticated) {
+      navigate("/", { replace: true });
     }
-  }, [cookies.token, navigate]);
+  }, [isAuthenticated, navigate]);
 
   const onSubmit = (formData: LoginInput) => {
     setLoginError(null);
+
     mutate(formData, {
-      onSuccess: (response: LoginResponse) => {
-        setCookies("token", response.token, { path: "/" });
-        setCookies("userName", response.userName, { path: "/" });
-        setCookies("email", response.email, { path: "/" });
-        setCookies("userId", response.userId, { path: "/" });
-        console.log(
-          "Login successful, token:",
-          response.token + " userId:",
-          response.userName
-        );
-        navigate("/");
+      onSuccess: (res) => {
+        login({
+          token: res.token,
+          userName: res.userName,
+          email: res.email,
+        });
+        navigate("/", { replace: true });
       },
+
       onError: (error: Error) => {
         console.error("Login failed:", error.message);
         setLoginError(
-          "Credenciales incorrectas. Por favor, inténtalo de nuevo."
+          "Credenciales incorrectas o usuario inválido. Intenta nuevamente."
         );
       },
     });
@@ -66,6 +69,7 @@ export const Login = () => {
       <div className="absolute top-4 right-4">
         <ModeToggle />
       </div>
+
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
@@ -75,8 +79,10 @@ export const Login = () => {
             Ingresa tu email y contraseña para acceder a tu cuenta
           </CardDescription>
         </CardHeader>
+
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -95,15 +101,17 @@ export const Login = () => {
                 </p>
               )}
             </div>
+
+            {/* Password */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Contraseña</Label>
-                <a
-                  href="/forgot-password"
+                <Link
+                  to="/forgot-password"
                   className="text-sm text-blue-600 hover:underline"
                 >
                   ¿Olvidaste tu contraseña?
-                </a>
+                </Link>
               </div>
               <Input
                 id="password"
@@ -113,12 +121,13 @@ export const Login = () => {
                 disabled={isPending}
                 {...register("Password", {
                   required: "La contraseña es obligatoria",
-                  pattern: {
-                    value:
-                      /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}[\]:;<>,.?~\\/-]).{8,}$/,
-                    message:
-                      "Debe tener 8+ caracteres, una mayúscula, un número y un símbolo especial",
-                  },
+                  // Puedes quitar la validación fuerte si no aplica para LOGIN
+                  // pattern: {
+                  //   value:
+                  //     /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}[\]:;<>,.?~\\/-]).{8,}$/,
+                  //   message:
+                  //     "Debe tener 8+ caracteres, una mayúscula, un número y un símbolo especial",
+                  // },
                 })}
               />
               {errors.Password && (
@@ -127,6 +136,8 @@ export const Login = () => {
                 </p>
               )}
             </div>
+
+            {/* Error de login */}
             {loginError && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
@@ -134,9 +145,13 @@ export const Login = () => {
                 <AlertDescription>{loginError}</AlertDescription>
               </Alert>
             )}
+
+            {/* Submit */}
             <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? "Ingresando..." : "Iniciar Sesión"}
             </Button>
+
+            {/* Divider */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
@@ -148,14 +163,16 @@ export const Login = () => {
               </div>
             </div>
           </form>
+
+          {/* Registro */}
           <div className="mt-6 text-center text-sm">
             ¿No tienes una cuenta?{" "}
-            <a
-              href="/register"
+            <Link
+              to="/register"
               className="text-blue-600 hover:underline font-medium"
             >
               Regístrate aquí
-            </a>
+            </Link>
           </div>
         </CardContent>
       </Card>

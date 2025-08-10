@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import { router } from "./routes";
+import { meRouter } from "./me";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
@@ -12,6 +13,7 @@ app.use(cors({
 }));
 app.use(cookieParser());
 app.use(router);
+app.use(meRouter);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello, World!");

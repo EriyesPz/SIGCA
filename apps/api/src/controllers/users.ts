@@ -1,5 +1,7 @@
+// src/controllers/users.ts
 import { Request, Response } from "express";
 import { z } from "zod";
+import bcrypt from "bcrypt"; // 👈 AÑADIDO
 import {
   getUsers,
   createUserWithRoles,
@@ -28,7 +30,7 @@ const patchUserSchema = z
     Email: z.string().email().optional(),
     Name: z.string().nullable().optional(),
     User: z.string().optional(),
-    Password: z.string().min(6).nullable().optional(),
+    Password: z.string().min(6).nullable().optional(), // texto plano; se hashea aquí
     IsActive: z.boolean().optional(),
     Avatar: z.string().url().nullable().optional(),
 
@@ -82,30 +84,21 @@ export const listUsers = async (req: Request, res: Response): Promise<void> => {
 };
 
 // POST /users  (crear usuario con roles)
-export const createUserWithRolesController = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const parsed = createUserWithRolesSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ message: parsed.error.flatten() });
-      return;
-    }
-
-    const { email, userName, password, roles } = parsed.data;
-
-    const created = await createUserWithRoles(email, userName, password, roles);
-
-    // No retornamos password
-    res.status(201).json(created);
-  } catch (error: any) {
-    if (String(error?.message || "").startsWith("Role(s) not found")) {
-      res.status(400).json({ message: error.message });
-      return;
-    }
-    res.status(500).json({ message: "Internal server error" });
+export const createUserWithRolesController = async (req: Request, res: Response) => {
+  const parsed = createUserWithRolesSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: parsed.error.flatten() });
+    return;
   }
+
+  const email = parsed.data.email.trim().toLowerCase(); // 👈 normaliza
+  const userName = parsed.data.userName.trim();
+  const pwd = parsed.data.password.trim();
+  const roles = parsed.data.roles;
+
+  const hashed = await bcrypt.hash(pwd, 10); // 👈 hashea aquí
+  const created = await createUserWithRoles(email, userName, hashed, roles);
+  res.status(201).json(created);
 };
 
 // POST /users/:userId/roles  (agregar roles SIN reemplazar)
@@ -208,11 +201,15 @@ export const patchUserController = async (
 
     const { roleOps, ...data } = parsed.data;
 
-    const updated = await updateUserAndRoles(
-      { id: userId }, // identificamos por Id en la ruta
-      data,
-      roleOps
-    );
+    // 👇 Si viene Password, hasheamos. Si viene null o "", lo ignoramos.
+    if (data.Password && typeof data.Password === "string") {
+      data.Password = await bcrypt.hash(data.Password, 10);
+    } else {
+      // evitar sobreescribir a null o vacío
+      delete (data as any).Password;
+    }
+
+    const updated = await updateUserAndRoles({ id: userId }, data, roleOps);
 
     if (!updated) {
       res.status(404).json({ message: "User not found" });
@@ -221,7 +218,6 @@ export const patchUserController = async (
 
     res.status(200).json(updated);
   } catch (error: any) {
-    // Mensajes “amigables” desde el modelo
     if (String(error?.message || "").startsWith("Role(s) not found")) {
       res.status(400).json({ message: error.message });
       return;

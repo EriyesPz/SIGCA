@@ -6,6 +6,7 @@ import { findUserByEmail, createUser, updateUserPassword } from "../model/user";
 import { createSession } from "../model/session";
 import { sendOtpEmail } from "../utils/email";
 import bcrypt from "bcrypt";
+import { getUserWithRolesAndPermissions } from "../model/user";
 
 export async function requestOtp(req: Request, res: Response): Promise<void> {
   const { email } = req.body;
@@ -63,8 +64,14 @@ export async function login(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  // 🔥 obtener roles y permisos efectivos
+  const full = await getUserWithRolesAndPermissions(user.Id);
+  const roles = full?.Roles?.map((r) => r.Id) ?? [];
+  const permissions = full?.Permissions?.map((p) => p.Id) ?? [];
+
   const token = jwt.sign(
-    { sub: user.Id, email: user.Email },
+    // 👇 ahora sí van embebidos en el JWT
+    { sub: user.Id, email: user.Email, roles, permissions },
     process.env.JWT_SECRET!,
     { expiresIn: "96h" }
   );
@@ -90,9 +97,9 @@ export async function login(req: Request, res: Response): Promise<void> {
     userName: user.User,
     email: user.Email,
     token,
+    roles,
+    permissions,
   });
-
-  return;
 }
 
 export async function sendPasswordResetOtp(
