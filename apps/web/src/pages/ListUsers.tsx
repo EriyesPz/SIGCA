@@ -224,7 +224,7 @@ export const ListUsers = () => {
         <h1 className="text-2xl sm:text-3xl font-bold">
           Usuarios
         </h1>
-        <p className="text-slate-400 mt-1 sm:mt-2">
+        <p className=" mt-1 sm:mt-2">
           Administra los usuarios del sistema.
         </p>
       </div>
@@ -240,14 +240,14 @@ export const ListUsers = () => {
           </Button>
         </div>
 
-        <Card className="bg-slate-900 border-slate-800">
+        <Card className="">
           <CardHeader>
             <div className="flex items-center space-x-2 mt-2 sm:mt-4">
               <Input
                 placeholder="Buscar usuarios..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full sm:max-w-sm bg-slate-800 border-slate-700 text-white"
+                className="w-full sm:max-w-sm "
               />
             </div>
           </CardHeader>
@@ -255,26 +255,26 @@ export const ListUsers = () => {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-slate-700">
-                    <TableHead className="text-slate-300 min-w-[170px]">
+                  <TableRow className="">
+                    <TableHead className=" min-w-[170px]">
                       Usuario
                     </TableHead>
-                    <TableHead className="text-slate-300 min-w-[200px]">
+                    <TableHead className=" min-w-[200px]">
                       Email
                     </TableHead>
-                    <TableHead className="text-slate-300 hidden md:table-cell min-w-[160px]">
+                    <TableHead className=" hidden md:table-cell min-w-[160px]">
                       Último Login
                     </TableHead>
-                    <TableHead className="text-slate-300 hidden sm:table-cell min-w-[180px]">
+                    <TableHead className=" hidden sm:table-cell min-w-[180px]">
                       Roles
                     </TableHead>
-                    <TableHead className="text-slate-300 hidden sm:table-cell min-w-[120px]">
+                    <TableHead className=" hidden sm:table-cell min-w-[120px]">
                       Estado
                     </TableHead>
-                    <TableHead className="text-slate-300 hidden lg:table-cell min-w-[120px]">
+                    <TableHead className=" hidden lg:table-cell min-w-[120px]">
                       Creado
                     </TableHead>
-                    <TableHead className="text-slate-300 min-w-[120px]">
+                    <TableHead className=" min-w-[120px]">
                       Acciones
                     </TableHead>
                   </TableRow>
@@ -283,7 +283,7 @@ export const ListUsers = () => {
                   {filteredUsers.map((user: UserType) => (
                     <TableRow
                       key={user.Id}
-                      className="border-slate-700 hover:bg-slate-800/50 transition-colors"
+                      className=" transition-colors"
                       onClick={() => handleViewClick(user)}
                     >
                       <TableCell className="flex items-center space-x-3">
@@ -291,20 +291,20 @@ export const ListUsers = () => {
                           <AvatarImage
                             src={user.Avatar || "/placeholder.svg"}
                           />
-                          <AvatarFallback className="bg-slate-700 text-white">
+                          <AvatarFallback className="">
                             {user.User.split(" ")
                               .map((n) => n[0])
                               .join("")}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-white font-medium truncate">
+                        <span className="font-medium truncate">
                           {user.User}
                         </span>
                       </TableCell>
-                      <TableCell className="text-slate-300">
+                      <TableCell className="">
                         {user.Email}
                       </TableCell>
-                      <TableCell className="text-slate-300 hidden md:table-cell">
+                      <TableCell className=" hidden md:table-cell">
                         {formatDate(user.LastSessionAt)}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
@@ -313,7 +313,6 @@ export const ListUsers = () => {
                             <Badge
                               key={role.Id}
                               variant="secondary"
-                              className="bg-slate-700 text-slate-300"
                             >
                               {role.Name}
                             </Badge>
@@ -327,13 +326,13 @@ export const ListUsers = () => {
                               user.IsActive
                             )}`}
                           ></div>
-                          <span className="text-slate-300">
+                          <span className="">
                             {user.IsActive ? "Activo" : "Inactivo"}
                           </span>
                         </div>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
-                        <span className="text-slate-300">
+                        <span className="">
                           {new Date(user.CreatedAt).toLocaleDateString()}
                         </span>
                       </TableCell>
@@ -342,35 +341,34 @@ export const ListUsers = () => {
                           <DropdownMenuTrigger asChild>
                             <Button
                               variant="ghost"
-                              className="h-8 w-8 p-0 text-slate-400 hover:text-white"
+                              className="h-8 w-8 p-0"
                             >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent
                             align="end"
-                            className="bg-slate-800 border-slate-700"
+                            className=""
                           >
-                            <DropdownMenuLabel className="text-white">
+                            <DropdownMenuLabel className="">
                               Acciones
                             </DropdownMenuLabel>
-                            <DropdownMenuSeparator className="bg-slate-700" />
+                            <DropdownMenuSeparator className="" />
                             <DropdownMenuItem
-                              className="text-slate-300 hover:text-white"
+                              className=""
                               onClick={() => handleViewClick(user)}
                             >
                               <Eye className="mr-2 h-4 w-4" />
                               Ver detalles
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              className="text-slate-300 hover:text-white"
                               onClick={() => openEdit(user)}
                             >
                               <Edit className="mr-2 h-4 w-4" />
                               Editar
                             </DropdownMenuItem>
                            
-                            <DropdownMenuSeparator className="bg-slate-700" />
+                            <DropdownMenuSeparator className="" />
                             <DropdownMenuItem className="text-red-400 hover:text-red-300">
                               <Trash2 className="mr-2 h-4 w-4" />
                               Eliminar
@@ -384,7 +382,7 @@ export const ListUsers = () => {
                     <TableRow>
                       <TableCell
                         colSpan={7}
-                        className="text-center text-slate-400"
+                        className="text-center "
                       >
                         No hay usuarios que coincidan con “{searchTerm}”.
                       </TableCell>
@@ -400,14 +398,13 @@ export const ListUsers = () => {
         <Dialog open={isViewUserOpen} onOpenChange={setIsViewUserOpen}>
           <DialogContent
             className="
-              bg-slate-900 border-slate-700
               w-[96vw] sm:max-w-xl lg:max-w-2xl
               max-h-[calc(100svh-3rem)]
               p-0 overflow-hidden rounded-xl
             "
           >
-            <DialogHeader className="p-4 sm:p-6 border-b border-slate-800">
-              <DialogTitle className="text-white">
+            <DialogHeader className="p-4 sm:p-6 border-b">
+              <DialogTitle className="">
                 Detalles del Usuario
               </DialogTitle>
               <DialogDescription>
@@ -423,17 +420,17 @@ export const ListUsers = () => {
                       <AvatarImage
                         src={viewingUser.Avatar || "/placeholder.svg"}
                       />
-                      <AvatarFallback className="bg-slate-700 text-white text-lg">
+                      <AvatarFallback className=" text-lg">
                         {viewingUser.User.split(" ")
                           .map((n) => n[0])
                           .join("")}
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <h3 className="text-xl font-semibold text-white truncate">
+                      <h3 className="text-xl font-semibold  truncate">
                         {viewingUser.User}
                       </h3>
-                      <p className="text-slate-400 truncate">
+                      <p className=" truncate">
                         {viewingUser.Email}
                       </p>
                     </div>
@@ -441,26 +438,26 @@ export const ListUsers = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-white">Nombre</Label>
-                      <p className="text-slate-300 bg-slate-800 p-2 rounded">
+                      <Label className="">Nombre</Label>
+                      <p className="p-2 rounded">
                         {viewingUser.Name || "No especificado"}
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-white">Usuario</Label>
-                      <p className="text-slate-300 bg-slate-800 p-2 rounded">
+                      <Label className="">Usuario</Label>
+                      <p className="p-2 rounded">
                         {viewingUser.User}
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-white">Estado</Label>
-                      <div className="flex items-center gap-2 bg-slate-800 p-2 rounded">
+                      <Label className="">Estado</Label>
+                      <div className="flex items-center gap-2  p-2 rounded">
                         <div
                           className={`w-2 h-2 rounded-full ${getStatusColor(
                             viewingUser.IsActive
                           )}`}
                         />
-                        <span className="text-slate-300">
+                        <span className="">
                           {viewingUser.IsActive ? "Activo" : "Inactivo"}
                         </span>
                       </div>
@@ -469,28 +466,28 @@ export const ListUsers = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-white">Roles</Label>
-                      <div className="flex flex-wrap gap-1 bg-slate-800 p-2 rounded">
+                      <Label className="">Roles</Label>
+                      <div className="flex flex-wrap gap-1  p-2 rounded">
                         {viewingUser.Roles.length > 0 ? (
                           viewingUser.Roles.map((role) => (
                             <Badge
                               key={role.Id}
                               variant="secondary"
-                              className="bg-slate-700 text-slate-300"
+                              className=" "
                             >
                               {role.Name}
                             </Badge>
                           ))
                         ) : (
-                          <span className="text-slate-400 text-sm">
+                          <span className=" text-sm">
                             Sin roles asignados
                           </span>
                         )}
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-white">Fecha de Creación</Label>
-                      <p className="text-slate-300 bg-slate-800 p-2 rounded">
+                      <Label className="">Fecha de Creación</Label>
+                      <p className="  p-2 rounded">
                         {new Date(viewingUser.CreatedAt).toLocaleString()}
                       </p>
                     </div>
@@ -498,15 +495,15 @@ export const ListUsers = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-white">Última Sesión</Label>
-                      <p className="text-slate-300 bg-slate-800 p-2 rounded">
+                      <Label className="">Última Sesión</Label>
+                      <p className="  p-2 rounded">
                         {formatDate(viewingUser.LastSessionAt)}
                       </p>
                     </div>
                     {viewingUser.LastSessionIp && (
                       <div className="space-y-2">
-                        <Label className="text-white">IP Última Sesión</Label>
-                        <p className="text-slate-300 bg-slate-800 p-2 rounded">
+                        <Label className="">IP Última Sesión</Label>
+                        <p className="  p-2 rounded">
                           {viewingUser.LastSessionIp}
                         </p>
                       </div>
@@ -515,10 +512,10 @@ export const ListUsers = () => {
 
                   {viewingUser.LastSessionUserAgent && (
                     <div className="space-y-2">
-                      <Label className="text-white">
+                      <Label className="">
                         Dispositivo/Navegador
                       </Label>
-                      <p className="text-slate-300 bg-slate-800 p-2 rounded text-sm">
+                      <p className="  p-2 rounded text-sm">
                         {viewingUser.LastSessionUserAgent}
                       </p>
                     </div>
@@ -527,7 +524,7 @@ export const ListUsers = () => {
               )}
             </div>
 
-            <DialogFooter className="p-4 sm:p-6 border-t border-slate-800 bg-slate-900 sticky bottom-0">
+            <DialogFooter className="p-4 sm:p-6 border-t sticky bottom-0">
               <Button
                 onClick={() => setIsViewUserOpen(false)}
                 className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
@@ -549,7 +546,7 @@ export const ListUsers = () => {
             "
           >
             <DialogHeader className="p-4 sm:p-6 border-b border-slate-800">
-              <DialogTitle className="text-white">Nuevo Usuario</DialogTitle>
+              <DialogTitle className="">Nuevo Usuario</DialogTitle>
               <DialogDescription>
                 Crear usuario y asignar roles
               </DialogDescription>
@@ -558,7 +555,7 @@ export const ListUsers = () => {
             <div className="px-4 sm:px-6 py-4 overflow-y-auto max-h-[calc(100svh-12rem)] sm:max-h-[65vh]">
               <div className="grid gap-4">
                 <div className="space-y-2">
-                  <Label className="text-white" htmlFor="email">
+                  <Label className="" htmlFor="email">
                     Email
                   </Label>
                   <Input
@@ -566,12 +563,12 @@ export const ListUsers = () => {
                     placeholder="usuario@empresa.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="bg-slate-800 border-slate-700 text-white"
+                    className=" "
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-white" htmlFor="username">
+                  <Label className="" htmlFor="username">
                     Usuario
                   </Label>
                   <Input
@@ -579,12 +576,12 @@ export const ListUsers = () => {
                     placeholder="Nombre de usuario"
                     value={userName}
                     onChange={(e) => setUserName(e.target.value)}
-                    className="bg-slate-800 border-slate-700 text-white"
+                    className=" "
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-white" htmlFor="password">
+                  <Label className="" htmlFor="password">
                     Contraseña
                   </Label>
                   <Input
@@ -593,16 +590,16 @@ export const ListUsers = () => {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="bg-slate-800 border-slate-700 text-white"
+                    className=" "
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-white">Roles</Label>
+                  <Label className="">Roles</Label>
                   <div
                     className="
                       grid grid-cols-1 sm:grid-cols-2 gap-2
-                      bg-slate-800 p-3 rounded-md border border-slate-700
+                       p-3 rounded-md border border-slate-700
                       max-h-56 overflow-auto
                     "
                   >
@@ -611,7 +608,7 @@ export const ListUsers = () => {
                       return (
                         <label
                           key={r.id}
-                          className="flex items-center gap-2 text-slate-200 cursor-pointer"
+                          className="flex items-center gap-2  cursor-pointer"
                         >
                           <Checkbox
                             checked={checked}
@@ -629,7 +626,7 @@ export const ListUsers = () => {
                         return (
                           <Badge
                             key={rid}
-                            className="bg-slate-700 text-slate-300"
+                            className=" "
                           >
                             {role?.name || rid}
                           </Badge>
@@ -641,7 +638,7 @@ export const ListUsers = () => {
               </div>
             </div>
 
-            <DialogFooter className="p-4 sm:p-6 border-t border-slate-800 bg-slate-900 sticky bottom-0">
+            <DialogFooter className="p-4 sm:p-6 border-t border-slate-800  sticky bottom-0">
               <div className="flex w-full gap-2">
                 <Button
                   variant="ghost"
@@ -666,14 +663,14 @@ export const ListUsers = () => {
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
           <DialogContent
             className="
-              bg-slate-900 border-slate-700
+             border-slate-700
               w-[96vw] sm:max-w-xl lg:max-w-2xl
               max-h-[calc(100svh-3rem)]
               p-0 overflow-hidden rounded-xl
             "
           >
             <DialogHeader className="p-4 sm:p-6 border-b border-slate-800">
-              <DialogTitle className="text-white">Editar Usuario</DialogTitle>
+              <DialogTitle className="">Editar Usuario</DialogTitle>
               <DialogDescription>
                 Actualiza campos y roles (opcional)
               </DialogDescription>
@@ -683,7 +680,7 @@ export const ListUsers = () => {
               <div className="grid gap-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-white" htmlFor="eemail">
+                    <Label className="" htmlFor="eemail">
                       Email
                     </Label>
                     <Input
@@ -691,12 +688,12 @@ export const ListUsers = () => {
                       placeholder="usuario@empresa.com"
                       value={eEmail}
                       onChange={(e) => setEEmail(e.target.value)}
-                      className="bg-slate-800 border-slate-700 text-white"
+                      className=" "
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-white" htmlFor="euser">
+                    <Label className="" htmlFor="euser">
                       Usuario
                     </Label>
                     <Input
@@ -704,14 +701,14 @@ export const ListUsers = () => {
                       placeholder="Nombre de usuario"
                       value={eUser}
                       onChange={(e) => setEUser(e.target.value)}
-                      className="bg-slate-800 border-slate-700 text-white"
+                      className=" "
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-white" htmlFor="ename">
+                    <Label className="" htmlFor="ename">
                       Nombre (opcional)
                     </Label>
                     <Input
@@ -719,12 +716,12 @@ export const ListUsers = () => {
                       placeholder="Nombre real"
                       value={eName ?? ""}
                       onChange={(e) => setEName(e.target.value)}
-                      className="bg-slate-800 border-slate-700 text-white"
+                      className=" "
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-white" htmlFor="eavatar">
+                    <Label className="" htmlFor="eavatar">
                       Avatar URL (opcional)
                     </Label>
                     <Input
@@ -732,13 +729,13 @@ export const ListUsers = () => {
                       placeholder="https://..."
                       value={eAvatar ?? ""}
                       onChange={(e) => setEAvatar(e.target.value)}
-                      className="bg-slate-800 border-slate-700 text-white"
+                      className=" "
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-white" htmlFor="epass">
+                  <Label className="" htmlFor="epass">
                     Nueva contraseña (dejar vacío para no cambiar)
                   </Label>
                   <Input
@@ -747,13 +744,13 @@ export const ListUsers = () => {
                     placeholder="••••••••"
                     value={ePassword}
                     onChange={(e) => setEPassword(e.target.value)}
-                    className="bg-slate-800 border-slate-700 text-white"
+                    className=" "
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-white">Estado</Label>
-                  <label className="flex items-center gap-2 text-slate-200 cursor-pointer">
+                  <Label className="">Estado</Label>
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <Checkbox
                       checked={eIsActive}
                       onCheckedChange={() => setEIsActive((v) => !v)}
@@ -763,11 +760,11 @@ export const ListUsers = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-white">Roles</Label>
+                  <Label className="">Roles</Label>
                   <div
                     className="
                       grid grid-cols-1 sm:grid-cols-2 gap-2
-                      bg-slate-800 p-3 rounded-md border border-slate-700
+                       p-3 rounded-md border border-slate-700
                       max-h-56 overflow-auto
                     "
                   >
@@ -776,7 +773,7 @@ export const ListUsers = () => {
                       return (
                         <label
                           key={r.id}
-                          className="flex items-center gap-2 text-slate-200 cursor-pointer"
+                          className="flex items-center gap-2 cursor-pointer"
                         >
                           <Checkbox
                             checked={checked}
@@ -795,7 +792,7 @@ export const ListUsers = () => {
                         return (
                           <Badge
                             key={rid}
-                            className="bg-slate-700 text-slate-300"
+                            className=" "
                           >
                             {role?.name || rid}
                           </Badge>
@@ -807,7 +804,7 @@ export const ListUsers = () => {
               </div>
             </div>
 
-            <DialogFooter className="p-4 sm:p-6 border-t border-slate-800 bg-slate-900 sticky bottom-0">
+            <DialogFooter className="p-4 sm:p-6 border-t border-slate-800 sticky bottom-0">
               <div className="flex w-full gap-2">
                 <Button
                   variant="ghost"

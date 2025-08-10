@@ -170,7 +170,7 @@ export const Sessions = () => {
   if (isLoading) {
     console.log("Renderizando estado de carga...");
     return (
-      <div className="min-h-screen bg-slate-950 text-white p-6 flex items-center justify-center">
+      <div className="min-h-screen p-6 flex items-center justify-center">
         Cargando sesiones...
       </div>
     );
@@ -179,7 +179,7 @@ export const Sessions = () => {
   if (isError) {
     console.error("Error detectado:", error);
     return (
-      <div className="min-h-screen bg-slate-950 text-white p-6 flex items-center justify-center">
+      <div className="min-h-screen p-6 flex items-center justify-center">
         <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -193,21 +193,21 @@ export const Sessions = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pl-4">
+    <div className="min-h-screen pl-4">
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold">
           Sesiones de Usuarios
         </h1>
-        <p className="text-slate-400 mt-1 sm:mt-2">
+        <p className=" mt-1 sm:mt-2">
           Lista de todas las sesiones activas e históricas
         </p>
       </div>
       <div className="max-w-7xl mx-auto">
-        <Card className="bg-slate-900 border-slate-800">
+        <Card className="">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-white">Sesiones</CardTitle>
+                <CardTitle className="">Sesiones</CardTitle>
                 <CardDescription>
                   Mostrando {currentSessions.length} de {sessions?.length ?? 0}{" "}
                   sesiones
@@ -220,43 +220,43 @@ export const Sessions = () => {
               <>
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-slate-700">
-                      <TableHead className="text-slate-300">Usuario</TableHead>
-                      <TableHead className="text-slate-300">Email</TableHead>
-                      <TableHead className="text-slate-300">
+                    <TableRow className="">
+                      <TableHead className="">Usuario</TableHead>
+                      <TableHead className="">Email</TableHead>
+                      <TableHead className="">
                         Dispositivo
                       </TableHead>
-                      <TableHead className="text-slate-300">IP</TableHead>
-                      <TableHead className="text-slate-300">Creada</TableHead>
-                      <TableHead className="text-slate-300">Expira</TableHead>
-                      <TableHead className="text-slate-300">Estado</TableHead>
-                      <TableHead className="text-slate-300">Acciones</TableHead>
+                      <TableHead className="">IP</TableHead>
+                      <TableHead className="">Creada</TableHead>
+                      <TableHead className="">Expira</TableHead>
+                      <TableHead className="">Estado</TableHead>
+                      <TableHead className="">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {currentSessions.map((session) => (
                       <TableRow
                         key={session.sessionId}
-                        className="border-slate-700"
+                        className=""
                       >
-                        <TableCell className="text-white font-medium">
+                        <TableCell className=" font-medium">
                           {session.user.username || session.user.name || "N/A"}
                         </TableCell>
-                        <TableCell className="text-slate-300">
+                        <TableCell className="">
                           {session.user.email}
                         </TableCell>
-                        <TableCell className="text-slate-300">
+                        <TableCell className="">
                           <div className="max-w-[200px] truncate">
                             {session.userAgent}
                           </div>
                         </TableCell>
-                        <TableCell className="text-slate-300">
+                        <TableCell className="">
                           {session.ipAddress}
                         </TableCell>
-                        <TableCell className="text-slate-300">
+                        <TableCell className="">
                           {formatDate(session.createdAt)}
                         </TableCell>
-                        <TableCell className="text-slate-300">
+                        <TableCell className="">
                           {formatDate(session.expiresAt)}
                         </TableCell>
                         <TableCell>
@@ -264,7 +264,7 @@ export const Sessions = () => {
                             variant="outline"
                             className={`${getStatusColor(
                               session.expiresAt
-                            )} text-white border-transparent`}
+                            )}  border-transparent`}
                           >
                             {getStatus(session.expiresAt)}
                           </Badge>
@@ -274,27 +274,27 @@ export const Sessions = () => {
                             <DropdownMenuTrigger asChild>
                               <Button
                                 variant="ghost"
-                                className="h-8 w-8 p-0 text-slate-400 hover:text-white"
+                                className="h-8 w-8 p-0  :"
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className="bg-slate-800 border-slate-700"
+                              className=" "
                             >
-                              <DropdownMenuLabel className="text-white">
+                              <DropdownMenuLabel className="">
                                 Acciones
                               </DropdownMenuLabel>
-                              <DropdownMenuSeparator className="bg-slate-700" />
+                              <DropdownMenuSeparator className="" />
                               <DropdownMenuItem
-                                className="text-slate-300 hover:text-white"
+                                className=" :"
                                 onClick={() => openSessionDetails(session)}
                               >
                                 <Eye className="mr-2 h-4 w-4" />
                                 Ver detalles
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator className="bg-slate-700" />
+                              <DropdownMenuSeparator className="" />
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -370,7 +370,7 @@ export const Sessions = () => {
                 )}
               </>
             ) : (
-              <div className="text-center py-8 text-slate-400">
+              <div className="text-center py-8 ">
                 No se encontraron sesiones
               </div>
             )}
@@ -379,12 +379,12 @@ export const Sessions = () => {
 
         {/* Dialog para detalles de sesión */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="bg-slate-900 border-slate-800 sm:max-w-2xl">
+          <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
-              <DialogTitle className="text-white">
+              <DialogTitle className="">
                 Detalles de Sesión
               </DialogTitle>
-              <DialogDescription className="text-slate-400">
+              <DialogDescription className="">
                 Información detallada de la sesión seleccionada
               </DialogDescription>
             </DialogHeader>
@@ -393,43 +393,43 @@ export const Sessions = () => {
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Usuario</Label>
-                    <div className="text-white">
+                    <Label className="">Usuario</Label>
+                    <div className="">
                       {selectedSession.user.username ||
                         selectedSession.user.name ||
                         "N/A"}
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Email</Label>
-                    <div className="text-white">
+                    <Label className="">Email</Label>
+                    <div className="">
                       {selectedSession.user.email}
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-slate-300">ID de Sesión</Label>
-                  <div className="text-white font-mono text-sm p-2 bg-slate-800 rounded">
+                  <Label className="">ID de Sesión</Label>
+                  <div className=" font-mono text-sm p-2  rounded">
                     {selectedSession.sessionId}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Estado</Label>
+                    <Label className="">Estado</Label>
                     <Badge
                       variant="outline"
                       className={`${getStatusColor(
                         selectedSession.expiresAt
-                      )} text-white border-transparent`}
+                      )}  border-transparent`}
                     >
                       {getStatus(selectedSession.expiresAt)}
                     </Badge>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Dirección IP</Label>
-                    <div className="text-white">
+                    <Label className="">Dirección IP</Label>
+                    <div className="">
                       {selectedSession.ipAddress}
                     </div>
                   </div>
@@ -437,24 +437,24 @@ export const Sessions = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Creada</Label>
-                    <div className="text-white">
+                    <Label className="">Creada</Label>
+                    <div className="">
                       {formatDate(selectedSession.createdAt)}
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Expira</Label>
-                    <div className="text-white">
+                    <Label className="">Expira</Label>
+                    <div className="">
                       {formatDate(selectedSession.expiresAt)}
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-slate-300">
+                  <Label className="">
                     Dispositivo/Navegador
                   </Label>
-                  <div className="text-white p-2 bg-slate-800 rounded">
+                  <div className=" p-2  rounded">
                     {selectedSession.userAgent}
                   </div>
                 </div>
@@ -465,7 +465,7 @@ export const Sessions = () => {
               <Button
                 variant="outline"
                 onClick={closeSessionDetails}
-                className="border-slate-700 text-slate-300 hover:text-white"
+                className="  :"
               >
                 Cerrar
               </Button>
