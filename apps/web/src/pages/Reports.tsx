@@ -1,8 +1,5 @@
 /* eslint-disable react-hooks/rules-of-hooks */
-"use client";
-
 import type React from "react";
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,7 +19,7 @@ import {
   Scale,
   Clock,
   MapPin,
-  FileCheck
+  FileCheck,
 } from "lucide-react";
 import { CargoTypeReport } from "@/components/reports/cargo-type";
 import { CargoEntriesReport } from "@/components/reports/cargo-entries";
@@ -46,8 +43,7 @@ type ReportType =
   | "cargo-illegal"
   | "cargo-average"
   | "cargo-location"
-  | "cargo-situation-legal"
-
+  | "cargo-situation-legal";
 
 interface ReportCard {
   id: ReportType;
@@ -67,139 +63,103 @@ const reportCards: ReportCard[] = [
   {
     id: "cargo-entries",
     title: "Cargas Ingresadas",
-    description: "Lista completa de cargas registradas con documentos adjuntos",
-    icon: <Package className="w-6 h-6" />,
+    description: "Cargas registradas y documentos adjuntos",
+    icon: <Package className="w-5 h-5" />,
     color: "text-green-600 dark:text-green-400",
     bgColor:
-      "bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-600",
-    stats: {
-      total: 892,
-      lastGenerated: "Hace 1 hora",
-      frequency: "Diario",
-    },
+      "bg-green-50/70 dark:bg-green-900/50 border-green-200/70 dark:border-green-700/60",
+    stats: { total: 892, lastGenerated: "Hace 1 hora", frequency: "Diario" },
   },
   {
     id: "internal-transfers",
     title: "Traslados Internos",
-    description: "Movimientos de ubicación de cargas dentro del almacén",
-    icon: <ArrowRightLeft className="w-6 h-6" />,
+    description: "Movimientos entre ubicaciones",
+    icon: <ArrowRightLeft className="w-5 h-5" />,
     color: "text-purple-600 dark:text-purple-400",
     bgColor:
-      "bg-purple-50 dark:bg-purple-900 border-purple-200 dark:border-purple-600",
-    stats: {
-      total: 156,
-      lastGenerated: "Hace 3 horas",
-      frequency: "Semanal",
-    },
+      "bg-purple-50/70 dark:bg-purple-900/50 border-purple-200/70 dark:border-purple-700/60",
+    stats: { total: 156, lastGenerated: "Hace 3 horas", frequency: "Semanal" },
   },
   {
     id: "cargo-returns",
-    title: "Cargas Devueltas/Reingresadas",
-    description:
-      "Casos de cargas rechazadas, devueltas o reingresadas al sistema",
-    icon: <RotateCcw className="w-6 h-6" />,
+    title: "Cargas Devueltas",
+    description: "Rechazadas / reingresadas",
+    icon: <RotateCcw className="w-5 h-5" />,
     color: "text-orange-600 dark:text-orange-400",
     bgColor:
-      "bg-orange-50 dark:bg-orange-900 border-orange-200 dark:border-orange-600",
-    stats: {
-      total: 43,
-      lastGenerated: "Hace 4 horas",
-      frequency: "Semanal",
-    },
+      "bg-orange-50/70 dark:bg-orange-900/50 border-orange-200/70 dark:border-orange-700/60",
+    stats: { total: 43, lastGenerated: "Hace 4 horas", frequency: "Semanal" },
   },
   {
     id: "cargo-exits",
     title: "Salidas de Carga",
-    description: "Lista completa de cargas que han salido del almacén",
-    icon: <LogOut className="w-6 h-6" />,
+    description: "Cargas que ya egresaron",
+    icon: <LogOut className="w-5 h-5" />,
     color: "text-red-600 dark:text-red-400",
-    bgColor: "bg-red-50 dark:bg-red-900 border-red-200 dark:border-red-600",
-    stats: {
-      total: 734,
-      lastGenerated: "Hace 1 hora",
-      frequency: "Diario",
-    },
+    bgColor:
+      "bg-red-50/70 dark:bg-red-900/50 border-red-200/70 dark:border-red-700/60",
+    stats: { total: 734, lastGenerated: "Hace 1 hora", frequency: "Diario" },
   },
   {
     id: "cargo-type",
-    title: "Reporte de Carga por Tipo",
-    description: "Análisis detallado de movimientos IN, OUT, DAMAGED, RETURNED",
-    icon: <BarChart3 className="w-6 h-6" />,
+    title: "Carga por Tipo",
+    description: "IN / OUT / DAMAGED / RETURNED",
+    icon: <BarChart3 className="w-5 h-5" />,
     color: "text-blue-600 dark:text-blue-400",
-    bgColor: "bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-600",
-    stats: {
-      total: 1247,
-      lastGenerated: "Hace 2 horas",
-      frequency: "Diario",
-    },
+    bgColor:
+      "bg-blue-50/70 dark:bg-blue-900/50 border-blue-200/70 dark:border-blue-700/60",
+    stats: { total: 1247, lastGenerated: "Hace 2 horas", frequency: "Diario" },
   },
   {
     id: "cargo-damaged",
-    title: "Reporte de Carga Dañada",
-    description: "Análisis de incidencias y daños en mercancía",
-    icon: <TrendingUp className="w-6 h-6" />,
+    title: "Carga Dañada",
+    description: "Incidencias y daños",
+    icon: <TrendingUp className="w-5 h-5" />,
     color: "text-orange-600 dark:text-orange-400",
     bgColor:
-      "bg-orange-50 dark:bg-orange-900 border-orange-200 dark:border-orange-600",
-    stats: {
-      total: 43,
-      lastGenerated: "Hace 4 horas",
-      frequency: "Semanal",
-    },
+      "bg-orange-50/70 dark:bg-orange-900/50 border-orange-200/70 dark:border-orange-700/60",
+    stats: { total: 43, lastGenerated: "Hace 4 horas", frequency: "Semanal" },
   },
   {
     id: "cargo-illegal",
-    title: "Reporte de Carga Ilegal",
-    description: "Análisis de cargas ilegales o no autorizadas",
-    icon: <Scale className="w-6 h-6" />,
-    color: "text-red-600 dark:text-red-400",
-    bgColor: "bg-amber-50 dark:bg-amber-900 border-amber-200 dark:border-amber-600",
-    stats: {
-      total: 12,
-      lastGenerated: "Hace 2 días",
-      frequency: "Mensual",
-    },
+    title: "Carga Ilegal",
+    description: "No autorizadas / irregulares",
+    icon: <Scale className="w-5 h-5" />,
+    color: "text-amber-600 dark:text-amber-400",
+    bgColor:
+      "bg-amber-50/70 dark:bg-amber-900/50 border-amber-200/70 dark:border-amber-700/60",
+    stats: { total: 12, lastGenerated: "Hace 2 días", frequency: "Mensual" },
   },
   {
     id: "cargo-average",
-    title: "Promedio de Permanencia",
-    description: "Análisis de tiempos de estadía en almacén",
-    icon: <Clock className="w-6 h-6" />,
-    color: "text-blue-600 dark:text-blue-400",
-    bgColor: "bg-purple-50 dark:bg-purple-900 border-purple-200 dark:border-purple-600",
-    stats: {
-      total: 250,
-      lastGenerated: "Hace 1 semana",
-      frequency: "Mensual",
-    },
+    title: "Permanencia Promedio",
+    description: "Tiempo de estadía",
+    icon: <Clock className="w-5 h-5" />,
+    color: "text-indigo-600 dark:text-indigo-400",
+    bgColor:
+      "bg-indigo-50/70 dark:bg-indigo-900/50 border-indigo-200/70 dark:border-indigo-700/60",
+    stats: { total: 250, lastGenerated: "Hace 1 semana", frequency: "Mensual" },
   },
   {
     id: "cargo-location",
     title: "Distribución por Ubicación",
-    description: "Análisis detallado de Rack, Nivel y Columna",
-    icon: <MapPin className="w-6 h-6" />,
-    color: "text-green-600 dark:text-green-400",
-    bgColor: "bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-600",
-    stats: {
-      total: 500,
-      lastGenerated: "Hace 3 días",
-      frequency: "Mensual",
-    },
+    description: "Rack / Nivel / Columna",
+    icon: <MapPin className="w-5 h-5" />,
+    color: "text-emerald-600 dark:text-emerald-400",
+    bgColor:
+      "bg-emerald-50/70 dark:bg-emerald-900/50 border-emerald-200/70 dark:border-emerald-700/60",
+    stats: { total: 500, lastGenerated: "Hace 3 días", frequency: "Mensual" },
   },
   {
     id: "cargo-situation-legal",
-    title: "Situación Legal de Cargas",
-    description: "Análisis de cargas con situación legal pendiente",
-    icon: <FileCheck className="w-6 h-6" />,
-    color: "text-blue-600 dark:text-blue-400",
-    bgColor: "bg-blue-600 dark:bg-blue-900 border-blue-200 dark:border-blue-600",
-    stats: {
-      total: 8,
-      lastGenerated: "Hace 2 semanas",
-      frequency: "Mensual",
-    },
+    title: "Situación Legal",
+    description: "Cargas con pendientes legales",
+    icon: <FileCheck className="w-5 h-5" />,
+    color: "text-sky-600 dark:text-sky-400",
+    bgColor:
+      "bg-sky-50/70 dark:bg-sky-900/50 border-sky-200/70 dark:border-sky-700/60",
+    stats: { total: 8, lastGenerated: "Hace 2 semanas", frequency: "Mensual" },
   },
-  
 ];
 
 const recentActivity = [
@@ -270,11 +230,11 @@ export const Reports = () => {
   if (currentView !== "overview") {
     return (
       <div className="min-h-screen">
-        <div className="border-b px-6 py-1">
+        <div className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur px-4 py-2">
           <Button
             variant="ghost"
             onClick={() => setCurrentView("overview")}
-            className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+            className="gap-2 h-8 text-sm"
           >
             <ArrowLeft className="w-4 h-4" />
             Volver a Reportes
@@ -286,79 +246,81 @@ export const Reports = () => {
   }
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-7xl mx-auto space-y-4">
-        <div className="rounded-lg shadow-sm px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <FileText className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+    <div className="min-h-screen p-4 sm:p-5">
+      <div className="max-w-7xl mx-auto space-y-3">
+        {/* Header compacto */}
+        <div className="rounded-xl border bg-card px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
                   Centro de Reportes
                 </h1>
               </div>
-              <p className="text-gray-600 dark:text-gray-300">
-                Genera, visualiza y descarga reportes detallados del sistema de
-                gestión de almacén
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Genera, visualiza y descarga reportes del sistema de almacén
               </p>
             </div>
-            <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-300">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                <span>
-                  Última actualización: {new Date().toLocaleDateString("es-ES")}
-                </span>
-              </div>
+            <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
+              <Calendar className="w-4 h-4" />
+              <span>Actualizado: {new Date().toLocaleDateString("es-ES")}</span>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          {/* Columna principal */}
+          <div className="lg:col-span-2 space-y-3">
+            {/* Cards compactas */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
               {reportCards.map((report) => (
                 <Card
                   key={report.id}
-                  className={`${report.bgColor} hover:shadow-md transition-shadow cursor-pointer`}
+                  className={`group ${report.bgColor} border rounded-xl hover:shadow-sm transition-all duration-150`}
                 >
-                  <CardHeader className="pb-3">
+                  <CardHeader className="p-3 pb-2">
                     <div className="flex items-start justify-between">
                       <div
-                        className={`p-2 rounded-lg bg-white dark:bg-gray-800 ${report.color}`}
+                        className={`p-1.5 rounded-md bg-white/80 dark:bg-gray-800/70 ${report.color}`}
                       >
                         {report.icon}
                       </div>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge
+                        variant="outline"
+                        className="h-6 text-[10px] leading-none px-2"
+                      >
                         {report.stats.frequency}
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+                  <CardContent className="p-3 pt-0">
+                    <div className="space-y-2.5">
+                      <div className="space-y-1">
+                        <h3 className="font-semibold text-sm leading-tight">
                           {report.title}
                         </h3>
-                        <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                        <p className="text-xs text-muted-foreground">
                           {report.description}
                         </p>
                       </div>
 
-                      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                        <span>{report.stats.total} registros</span>
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>
+                          {report.stats.total.toLocaleString("es-HN")} registros
+                        </span>
                         <span>{report.stats.lastGenerated}</span>
                       </div>
 
-                      <div className="flex gap-2 cursor-pointer">
-                        <Button
-                          size="sm"
-                          onClick={() => setCurrentView(report.id)}
-                          className="flex-1 h-8 text-xs"
-                        >
-                          <Eye className="w-3 h-3 mr-1" />
-                          Ver
-                        </Button>
-                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => setCurrentView(report.id)}
+                        className="w-full h-8 text-xs gap-1.5"
+                        variant="default"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        Ver
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -366,51 +328,50 @@ export const Reports = () => {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Actividad Reciente
-            </h2>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Activity className="w-5 h-5" />
-                  Últimas Acciones
+          {/* Sidebar: actividad reciente (compacto) */}
+          <div className="space-y-2.5">
+            <h2 className="text-base font-semibold">Actividad Reciente</h2>
+            <Card className="rounded-xl">
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Activity className="w-4 h-4" />
+                  Últimas acciones
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {recentActivity.map((activity) => (
+              <CardContent className="p-3 pt-0 space-y-2">
+                {recentActivity.map((a) => (
                   <div
-                    key={activity.id}
-                    className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    key={a.id}
+                    className="flex items-start gap-2.5 p-2.5 rounded-lg border bg-muted/40"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {activity.user}
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium truncate">
+                          {a.user}
                         </span>
                         <Badge
                           variant="outline"
-                          className={`text-xs ${
-                            activity.status === "completado"
-                              ? "bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-400 border-green-200 dark:border-green-600"
-                              : activity.status === "en_progreso"
-                              ? "bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-600"
-                              : "bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600"
+                          className={`h-5 px-2 text-[10px] ${
+                            a.status === "completado"
+                              ? "bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-400 border-green-200 dark:border-green-700"
+                              : a.status === "en_progreso"
+                              ? "bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700"
+                              : "bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
                           }`}
                         >
-                          {activity.status === "completado"
+                          {a.status === "completado"
                             ? "Completado"
-                            : activity.status === "en_progreso"
+                            : a.status === "en_progreso"
                             ? "En progreso"
                             : "Visualizado"}
                         </Badge>
                       </div>
-                      <p className="text-xs text-gray-600 dark:text-gray-300">
-                        {activity.action}{" "}
-                        <span className="font-medium">"{activity.report}"</span>
+                      <p className="text-xs text-muted-foreground">
+                        {a.action}{" "}
+                        <span className="font-medium">“{a.report}”</span>
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {activity.time}
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {a.time}
                       </p>
                     </div>
                   </div>
