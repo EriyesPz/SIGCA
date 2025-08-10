@@ -26,7 +26,7 @@ import {
   replaceUserRolesController,
   getUserDetailsController,
   getUserPermissionsController,
-  patchUserController
+  patchUserController,
 } from "./controllers/users";
 import {
   allPermisions,
@@ -44,6 +44,11 @@ import {
   getAverageCargoStayReport,
   getDailyCargoByTypeReport,
 } from "./controllers/reports";
+import {
+  getAlertsController,
+  patchResolveAlertController,
+  postBulkResolveAlertsController,
+} from "./controllers/alerts";
 
 const router = Router();
 
@@ -84,5 +89,9 @@ router.put("/users/:userId/roles", replaceUserRolesController);
 router.get("/users/:userId", getUserDetailsController);
 router.get("/users/:userId/permissions", getUserPermissionsController);
 router.patch("/users/:userId", patchUserController);
+
+router.get("/alerts", getAlertsController);
+router.patch("/alerts/:id/resolve", patchResolveAlertController);
+router.post("/alerts/resolve-bulk", postBulkResolveAlertsController);
 
 export { router };

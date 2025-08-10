@@ -37,6 +37,7 @@ import {
   ShieldCheck,
   MapPin,
   Building2,
+  AlertTriangle,
 } from "lucide-react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -357,14 +358,14 @@ export const AppLayout = () => {
 
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  onClick={() => navigate("/actividad")}
+                  onClick={() => navigate("/alertas")}
                   className="cursor-pointer"
                   aria-current={
-                    location.pathname === "/actividad" ? "page" : undefined
+                    location.pathname === "/alertas" ? "page" : undefined
                   }
                 >
-                  <Activity className="mr-2" />
-                  Actividad
+                  <AlertTriangle  className="mr-2" />
+                  Alertas
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -430,7 +431,7 @@ export const AppLayout = () => {
                     <User />
                     Cuenta
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/notifications")}>
+                  <DropdownMenuItem onClick={() => navigate("/notificaciones")}>
                     <Bell />
                     Notificaciones
                   </DropdownMenuItem>

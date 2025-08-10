@@ -19,6 +19,8 @@ import { Sessions } from "@/pages/Sessions";
 import { RolesPermissions } from "@/pages/RolesPermisions";
 import { WarehouseTracker } from "./Tracker-Warehouse";
 import { AccountPage } from "./Account";
+import { AlertsPage } from "./Alerts";
+import { NotificationsPage } from "./Notifications";
 
 export const router = createBrowserRouter([
   { path: "*", element: <NotFound /> },
@@ -147,6 +149,22 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         )
       },
+      {
+        path: "alertas",
+        element: (
+          <ProtectedRoute allOf={["cargo.view"]}>
+            <AlertsPage />
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: "notificaciones",
+        element: (
+          <ProtectedRoute allOf={["cargo.view"]}>
+            <NotificationsPage/>
+          </ProtectedRoute>
+        )
+      }
     ],
   },
 ]);
