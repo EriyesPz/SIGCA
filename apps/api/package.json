@@ -12,7 +12,8 @@
     "db:generate": "prisma generate",
     "db:seed": "ts-node prisma/seed.ts",
     "db:seed-users": "ts-node prisma/seed-user.ts",
-    "db:seed-roles": "ts-node prisma/seed-roles.ts"
+    "db:seed-roles": "ts-node prisma/seed-roles.ts",
+    "db:seed-transfer": "ts-node prisma/seed-trasnfers.ts"
   },
   "keywords": [],
   "author": "",
